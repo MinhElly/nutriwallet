@@ -1,4 +1,8 @@
 spring:
+  config:
+    # Load the shared root .env when the backend runs directly from this folder.
+    # Docker supplies the same values through Compose environment variables.
+    import: optional:file:../.env[.properties]
   jpa:
     hibernate:
       # MVP only. Replace with validate after adopting Flyway or Liquibase.
