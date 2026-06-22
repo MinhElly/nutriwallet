@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    hibernate:
+      # MVP only. Replace with validate after adopting Flyway or Liquibase.
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    com.nutricash.api: DEBUG

@@ -1,0 +1,8 @@
+spring:
+  jpa:
+    show-sql: ${JPA_SHOW_SQL:false}
+
+logging:
+  level:
+    com.nutricash.api: INFO
+    org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:INFO}
