@@ -1,6 +1,6 @@
 # NutriWallet
 
-Monorepo gồm frontend React/Vite và backend Spring Boot phục vụ ứng dụng theo dõi dinh dưỡng, chi tiêu ăn uống và ngân sách.
+Monorepo gồm frontend React/Vite và backend Spring Boot cho ứng dụng theo dõi dinh dưỡng, chi tiêu ăn uống và ngân sách.
 
 ## Cấu trúc dự án
 
@@ -10,34 +10,26 @@ nutriwallet/
 └── nutriwallet_backend/    # Java 21, Spring Boot, MySQL
 ```
 
-Backend được tổ chức theo feature (`auth`, `user`, `meal`, `nutrition`, `expense`, `budget`, `ai`, `messenger`, `admin`, `setting`) và mỗi feature tách controller/service/repository/entity/dto. Cấu trúc này phù hợp với modular monolith ở giai đoạn hiện tại.
-
-Frontend hiện mới là khung Vite tối thiểu. Khi phát triển tiếp nên tạo các thư mục `src/api`, `src/components`, `src/features`, `src/pages`, `src/routes` và `src/hooks`; không nên dồn logic vào `App.jsx`.
+Backend được tách theo feature (`auth`, `user`, `meal`, `nutrition`, `expense`, `budget`, `ai`, `messenger`, `admin`, `setting`). Frontend hiện mới là khung Vite tối thiểu.
 
 ## Yêu cầu
 
-- Node.js 20.19+ hoặc 22.12+ (Vite 8 yêu cầu phiên bản này)
+- Node.js 20.19+ hoặc 22.12+
 - npm
 - JDK 21
 - Docker Desktop và Docker Compose v2
 
-## 1. Thiết lập biến môi trường
+## 1. Thiết lập môi trường
 
 Không commit file `.env`. Chỉ commit `.env.example`.
 
-Windows CMD hoặc PowerShell, chạy tại thư mục gốc:
+Tại thư mục gốc của dự án:
 
 ```cmd
 copy .env.example .env
 ```
 
-macOS/Linux:
-
-```bash
-cp .env.example .env
-```
-
-File `.env` chung tại thư mục gốc:
+File `.env` chung ở thư mục gốc:
 
 ```dotenv
 MYSQL_DATABASE=nutricash_ai
@@ -64,53 +56,60 @@ JPA_DDL_AUTO=update
 JPA_SHOW_SQL=false
 ```
 
-Lưu ý: biến phía frontend bắt buộc có tiền tố `VITE_` và sẽ xuất hiện trong bundle trình duyệt, vì vậy không đặt secret/API key vào frontend. Các biến JWT, Cloudinary và AI đã được dự trù nhưng code hiện tại vẫn là placeholder, chưa thực sự đọc các giá trị này.
+Lưu ý:
+
+- Biến frontend bắt buộc có tiền tố `VITE_`.
+- `VITE_API_BASE_URL` sẽ xuất hiện trong bundle browser, nên không đặt secret ở đây.
+- Backend local có thể đọc `.env` ở thư mục gốc thông qua `application-dev.yml`.
 
 ## 2. Chạy dự án ở chế độ phát triển
 
-### Chạy nhanh bằng một lệnh
+### Cách nhanh nhất
 
-Tại thư mục gốc, chọn một trong hai chế độ:
+Từ thư mục gốc:
 
 ```cmd
 run.cmd docker
 ```
 
-Chạy toàn bộ frontend, backend, MySQL và phpMyAdmin bằng Docker. Script tự build ở lần đầu; các lần sau chỉ khởi động lại image hiện có.
+Lần đầu script sẽ build image, các lần sau chỉ dựng lại container.
+
+### Chạy local để sửa code
 
 ```cmd
 run.cmd dev
 ```
 
-Chạy MySQL/phpMyAdmin bằng Docker, sau đó mở backend và frontend local trong hai cửa sổ CMD riêng. Chế độ này phù hợp khi đang sửa code vì không phải build lại image.
+Chế độ này:
 
-Các lệnh hỗ trợ:
+- chạy MySQL và phpMyAdmin bằng Docker
+- mở backend và frontend local trong 2 cửa sổ CMD riêng
+
+Lệnh hỗ trợ:
 
 ```cmd
-run.cmd logs
 run.cmd stop
+run.cmd logs
 ```
 
-### Cách khuyến nghị: database bằng Docker, backend và frontend chạy local
+### Chạy thủ công
 
-Mở CMD tại thư mục gốc của dự án.
-
-CMD 1 — MySQL và phpMyAdmin:
+CMD 1 - database:
 
 ```cmd
 docker compose up -d mysql phpmyadmin
 ```
 
-CMD 2 — backend:
+CMD 2 - backend:
 
 ```cmd
 cd nutriwallet_backend
 mvnw.cmd spring-boot:run
 ```
 
-Profile `dev` tự nạp file `.env` tại thư mục gốc, vì vậy không cần chạy các lệnh `set`. MySQL phải được khởi động trước.
+Backend local tự đọc `.env` ở thư mục gốc, nên không cần `set` thủ công.
 
-CMD 3 — frontend:
+CMD 3 - frontend:
 
 ```cmd
 cd nutriwallet_frontend
@@ -118,7 +117,7 @@ npm ci
 npm run dev
 ```
 
-Truy cập:
+### URL khi chạy local
 
 | Thành phần | URL |
 | --- | --- |
@@ -127,15 +126,19 @@ Truy cập:
 | Swagger UI | http://localhost:8082/swagger-ui/index.html |
 | phpMyAdmin | http://localhost:8081 |
 
-### Chạy toàn bộ dự án bằng Docker
+## 3. Chạy toàn bộ bằng Docker
 
 ```cmd
 docker compose up -d --build
 ```
 
-Lệnh này chạy frontend, backend, MySQL và phpMyAdmin. Compose tự đọc `.env` tại thư mục gốc.
+Sau lần build đầu tiên, bạn có thể chỉ cần:
 
-## 3. Kiểm tra trước khi commit
+```cmd
+docker compose up -d
+```
+
+## 4. Kiểm tra trước khi commit
 
 Backend:
 
@@ -153,7 +156,49 @@ npm run lint
 npm run build
 ```
 
-## 4. Dừng dịch vụ
+## 5. CI/CD với GitHub Actions + Docker
+
+Repo đã có 2 workflow:
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/deploy.yml`
+
+### CI
+
+Workflow `ci.yml` chạy tự động khi push lên `main` hoặc mở pull request:
+
+- Backend: `./mvnw -B test`
+- Frontend: `npm ci`, `npm run lint`, `npm run build`
+- Docker: `docker compose config` và `docker compose build backend frontend`
+
+### CD
+
+Workflow `deploy.yml` deploy qua SSH. Khi bấm `Run workflow`, nhập:
+
+- `app_dir`: đường dẫn repo trên server, mặc định `/opt/nutriwallet`
+- `branch`: branch cần deploy, mặc định `main`
+
+GitHub Secrets cần có:
+
+- `SSH_HOST`
+- `SSH_USER`
+- `SSH_KEY`
+
+Luồng deploy:
+
+1. SSH vào server.
+2. Vào thư mục repo.
+3. `git pull --ff-only`.
+4. `docker compose up -d --build --remove-orphans`.
+
+### Yêu cầu tối thiểu trên server
+
+- Đã cài Docker và Docker Compose
+- Đã clone repo về server ít nhất một lần
+- Đã tạo file `.env` ở root
+- Mở các port cần thiết cho backend, frontend, MySQL và phpMyAdmin nếu dùng port mặc định
+
+## 6. Dừng dịch vụ
 
 Giữ dữ liệu MySQL:
 
@@ -161,19 +206,19 @@ Giữ dữ liệu MySQL:
 docker compose down
 ```
 
-Xóa cả volume database (mất toàn bộ dữ liệu local):
+Xóa cả volume database:
 
 ```powershell
 docker compose down -v
 ```
 
-## Các việc còn thiếu trước khi tích hợp frontend–backend
+## 7. Các phần còn thiếu trước khi tích hợp sâu backend và frontend
 
-- Cấu hình CORS cho `http://localhost:5173`; `CorsConfig` hiện chỉ là placeholder.
-- Tạo API client ở frontend sử dụng `import.meta.env.VITE_API_BASE_URL`.
-- Hoàn thiện JWT service/filter; cấu hình security hiện yêu cầu xác thực nhưng JWT implementation chưa có.
-- Hoàn thiện Cloudinary và AI clients hoặc bỏ các biến môi trường chưa dùng.
-- Thêm migration bằng Flyway/Liquibase và chuyển production sang `JPA_DDL_AUTO=validate`.
+- Cấu hình CORS cho `http://localhost:5173`
+- Tạo API client ở frontend
+- Hoàn thiện JWT service/filter
+- Hoàn thiện Cloudinary và AI client hoặc bỏ các biến môi trường chưa dùng
+- Thêm migration bằng Flyway/Liquibase và chuyển production sang `JPA_DDL_AUTO=validate`
 
 ## Bảng tổng hợp lệnh
 
@@ -185,16 +230,16 @@ Các lệnh dưới đây chạy bằng Windows CMD và bắt đầu từ thư m
 | Đi vào frontend | `cd nutriwallet_frontend` | Chuyển CMD vào thư mục frontend. |
 | Tạo `.env` chung | `copy .env.example .env` | Tạo cấu hình dùng chung cho toàn bộ dự án. |
 | Chạy MySQL và phpMyAdmin | `docker compose up -d mysql phpmyadmin` | Khởi động database và công cụ quản trị database ở chế độ nền. |
-| Chạy toàn bộ dự án bằng Docker | `docker compose up -d --build` | Build và chạy frontend, backend, MySQL và phpMyAdmin; Compose tự đọc `.env`. |
-| Chỉ build/chạy backend container | `docker compose up -d --build backend` | Chạy backend cùng database mà không cần nhập các lệnh `set`. |
+| Chạy toàn bộ dự án bằng Docker | `docker compose up -d --build` | Build và chạy frontend, backend, MySQL và phpMyAdmin. |
+| Chỉ build/chạy backend container | `docker compose up -d --build backend` | Chạy backend cùng database mà không cần nhập lệnh `set`. |
 | Chỉ build/chạy frontend container | `docker compose up -d --build frontend` | Build frontend và phục vụ bằng Nginx. |
-| Chạy backend trực tiếp | `cd nutriwallet_backend && mvnw.cmd spring-boot:run` | Chạy Spring Boot trên máy và tự đọc `.env` ở thư mục gốc; MySQL phải đang chạy. |
+| Chạy backend trực tiếp | `cd nutriwallet_backend && mvnw.cmd spring-boot:run` | Chạy Spring Boot local và tự đọc `.env` ở thư mục gốc. |
 | Cài package frontend | `cd nutriwallet_frontend && npm ci` | Cài đúng phiên bản dependency trong `package-lock.json`. |
 | Chạy frontend | `cd nutriwallet_frontend && npm run dev` | Khởi động Vite development server tại `http://localhost:5173`. |
 | Kiểm tra code frontend | `cd nutriwallet_frontend && npm run lint` | Chạy ESLint để tìm lỗi code và vi phạm convention. |
 | Build frontend | `cd nutriwallet_frontend && npm run build` | Tạo bản production trong thư mục `dist`. |
-| Test backend | `cd nutriwallet_backend && mvnw.cmd clean test` | Biên dịch và chạy test backend bằng H2; không cần bật MySQL. |
+| Test backend | `cd nutriwallet_backend && mvnw.cmd clean test` | Biên dịch và chạy test backend bằng H2. |
 | Build backend | `cd nutriwallet_backend && mvnw.cmd clean package` | Chạy test và tạo file JAR trong thư mục `target`. |
 | Xem trạng thái container | `docker compose ps` | Hiển thị trạng thái các service Docker. |
 | Dừng Docker | `docker compose down` | Dừng container nhưng giữ dữ liệu MySQL. |
-| Dừng và xóa database | `docker compose down -v` | Dừng container và xóa volume MySQL; toàn bộ dữ liệu local sẽ mất. |
+| Dừng và xóa database | `docker compose down -v` | Dừng container và xóa volume MySQL; dữ liệu local sẽ mất. |
