@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8
-    container_name: nutricash-mysql
+    container_name: nutriwallet-mysql
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -23,11 +23,11 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - nutricash-network
+      - nutriwallet-network
 
   phpmyadmin:
     image: phpmyadmin:5.2-apache
-    container_name: nutricash-phpmyadmin
+    container_name: nutriwallet-phpmyadmin
     restart: unless-stopped
     environment:
       PMA_HOST: mysql
@@ -39,21 +39,30 @@ services:
     ports:
       - "${PHPMYADMIN_PORT:-8081}:80"
     networks:
-      - nutricash-network
+      - nutriwallet-network
 
   backend:
     build:
-      context: .
+      context: ./nutriwallet_backend
       dockerfile: Dockerfile
-    container_name: nutricash-backend
+    container_name: nutriwallet-backend
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: 8080
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      AI_PROVIDER: ${AI_PROVIDER:-GEMINI}
+      AI_API_KEY: ${AI_API_KEY:-}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
       TZ: Asia/Ho_Chi_Minh
     depends_on:
       mysql:
@@ -61,13 +70,29 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     networks:
-      - nutricash-network
+      - nutriwallet-network
+
+  frontend:
+    build:
+      context: ./nutriwallet_frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api}
+    container_name: nutriwallet-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    networks:
+      - nutriwallet-network
 
 volumes:
   mysql-data:
-    name: nutricash-mysql-data
+    name: nutriwallet-mysql-data
 
 networks:
-  nutricash-network:
-    name: nutricash-network
+  nutriwallet-network:
+    name: nutriwallet-network
     driver: bridge
+
