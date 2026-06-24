@@ -1,6 +1,8 @@
 package com.nutricash.api.user.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nutricash.api.ai.entity.AiAnalysisLog;
+import com.nutricash.api.ai.entity.AiErrorReport;
 import com.nutricash.api.budget.entity.Budget;
 import com.nutricash.api.common.entity.BaseEntity;
 import com.nutricash.api.common.enums.AuthProvider;
@@ -9,6 +11,7 @@ import com.nutricash.api.common.enums.UserStatus;
 import com.nutricash.api.expense.entity.ExpenseRecord;
 import com.nutricash.api.meal.entity.MealRecord;
 import com.nutricash.api.messenger.entity.ChatbotProfile;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +22,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -68,20 +72,30 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private AuthProvider provider = AuthProvider.LOCAL;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @Builder.Default
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MealRecord> mealRecords = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExpenseRecord> expenseRecords = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Budget> budgets = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatbotProfile> chatbotProfiles = new ArrayList<>();
-}
 
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AiAnalysisLog> aiAnalysisLogs = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AiErrorReport> aiErrorReports = new ArrayList<>();
+}

@@ -5,6 +5,7 @@ import com.nutricash.api.common.entity.BaseEntity;
 import com.nutricash.api.expense.entity.ExpenseRecord;
 import com.nutricash.api.messenger.entity.ChatbotProfile;
 import com.nutricash.api.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -81,11 +82,10 @@ public class MealRecord extends BaseEntity {
     @Column(name = "confirmed_by_user", nullable = false)
     private boolean confirmedByUser = false;
 
-    @OneToOne(mappedBy = "mealRecord", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "mealRecord", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private ExpenseRecord expenseRecord;
 
     @Builder.Default
-    @OneToMany(mappedBy = "mealRecord", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "mealRecord", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AiAnalysisLog> aiAnalysisLogs = new ArrayList<>();
 }
-
