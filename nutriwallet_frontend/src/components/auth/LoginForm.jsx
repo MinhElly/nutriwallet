@@ -15,6 +15,7 @@ import {
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [healthScore, setHealthScore] = useState(0);
   const [growthScore, setGrowthScore] = useState(0);
 
@@ -238,7 +239,7 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="text-[#64748B] hover:text-[#16A34A]"
+                        className="flex items-center justify-center text-[#64748B] hover:text-[#16A34A]"
                       >
                         {showPassword ? (
                           <EyeOff size={18} />
@@ -260,7 +261,22 @@ function LoginForm() {
                   label="Nhập lại mật khẩu"
                   icon={<Lock size={18} />}
                   placeholder="Nhập lại mật khẩu"
-                  rightIcon={<Eye size={18} />}
+                  type={showConfirmPassword ? "text" : "password"}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="flex items-center justify-center text-[#64748B] hover:text-[#16A34A]"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  }
                 />
 
                 <button
