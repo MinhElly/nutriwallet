@@ -27,14 +27,35 @@ spring:
           time_zone: Asia/Ho_Chi_Minh
   jackson:
     time-zone: Asia/Ho_Chi_Minh
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
+          starttls:
+            enable: true
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: true
+    baseline-version: 1
+    locations: classpath:db/migration
 
 springdoc:
+  packages-to-scan: com.nutricash.api
+  paths-to-match: /api/**
   api-docs:
     enabled: true
     path: /v3/api-docs
   swagger-ui:
     enabled: true
-    path: /swagger-ui.html
+    path: /api
     operations-sorter: method
     tags-sorter: alpha
 
@@ -42,3 +63,14 @@ logging:
   level:
     com.nutricash.api: INFO
     org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:DEBUG}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:${FRONTEND_PORT:5173}}
+  api-url: ${API_BASE_URL:${VITE_API_BASE_URL:http://localhost:${BACKEND_PORT:8080}/api}}
+  security:
+    enabled: ${SECURITY_ENABLED:false}
+    jwt-secret: ${JWT_SECRET:replace_with_a_secure_random_secret_of_at_least_32_characters}
+    jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
+  mail:
+    from: ${MAIL_FROM:${MAIL_USERNAME:}}
+
