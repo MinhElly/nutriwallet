@@ -10,7 +10,12 @@ public enum ErrorCode {
 
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
     EMAIL_ALREADY_EXISTS("EMAIL_ALREADY_EXISTS", "Email already exists"),
-    INVALID_CREDENTIALS("INVAILD_CREDENTIALS", "Invaild email or password");
+    INVALID_CREDENTIALS("INVALID_CREDENTIALS", "Invalid email or password"),
+    EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Email has not been verified"),
+    INVALID_TOKEN("INVALID_TOKEN", "Invalid token"),
+    TOKEN_EXPIRED("TOKEN_EXPIRED", "Token has expired"),
+    TOKEN_ALREADY_USED("TOKEN_ALREADY_USED", "Token has already been used"),
+    EMAIL_SEND_FAILED("EMAIL_SEND_FAILED", "Could not send verification email");
 
     private final String code;
     private final String message;
