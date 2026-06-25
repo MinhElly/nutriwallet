@@ -1,237 +1,357 @@
-﻿import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Wallet, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ShieldCheck,
+  HeartPulse,
+  ChartColumnBig,
+  CheckCircle2,
+  User,
+  Sprout,
+} from "lucide-react";
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [focusedInput, setFocusedInput] = useState("");
+  const [healthScore, setHealthScore] = useState(0);
+  const [growthScore, setGrowthScore] = useState(0);
 
-  const focusColor = "#16A34A";
-  const iconColor = "#A7B7A7";
+  useEffect(() => {
+    const duration = 1200;
+    const steps = 60;
+    const healthTarget = 94.2;
+    const growthTarget = 12.8;
+
+    let currentStep = 0;
+
+    const timer = setInterval(() => {
+      currentStep++;
+
+      const progress = currentStep / steps;
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      setHealthScore(healthTarget * easeOut);
+      setGrowthScore(growthTarget * easeOut);
+
+      if (currentStep >= steps) {
+        setHealthScore(healthTarget);
+        setGrowthScore(growthTarget);
+        clearInterval(timer);
+      }
+    }, duration / steps);
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <main
-      className="min-h-screen flex flex-col md:flex-row min-h-screen w-full bg-[#f7f9fb] text-[#191c1e] overflow-x-hidden"
-      style={{ fontFamily: "Inter, sans-serif" }}
+      className="h-screen w-full overflow-hidden bg-[#F8FAFC] px-2 py-2 text-[#0F172A]"
+      style={{ fontFamily: "Inter, Manrope, sans-serif" }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        .glass-panel { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .btn-gradient { background: linear-gradient(135deg, #006e2f 0%, #22c55e 100%); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .btn-gradient:hover { transform: scale(1.02); box-shadow: 0 10px 20px -5px rgba(0, 110, 47, 0.3); }
-        .glass-btn { background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(15, 23, 42, 0.1); backdrop-filter: blur(10px); transition: transform 0.2s ease, background 0.2s ease; }
-        .glass-btn:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.9); }
-        .input-focus:focus { outline: none; border-color: #16A34A; box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.08); }
-        .animate-float { animation: float 5s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+
+        .intro-panel {
+          background:
+            radial-gradient(circle at 45% 18%, rgba(34, 197, 94, 0.13), transparent 28%),
+            radial-gradient(circle at 72% 82%, rgba(34, 197, 94, 0.18), transparent 28%),
+            linear-gradient(180deg, #F8FDF9 0%, #EFFAF4 100%);
+        }
+
+        @keyframes floating {
+          0% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+          100% {
+            transform: translateY(0px);
+          }
+        }
+
+        .hero-image {
+          animation: floating 5s ease-in-out infinite;
+        }
+
+        .btn-gradient {
+          background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
+          transition: 0.25s ease;
+        }
+
+        .btn-gradient:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 18px 36px -18px rgba(34, 197, 94, 0.6);
+        }
+
+        .input-transition {
+          transition: 0.25s ease;
+        }
       `}</style>
 
-      <section className="hidden md:flex relative w-full md:w-1/2 p-8 lg:p-12 items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#F6FBF8] to-[#EAF7F0]" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#006e2f]/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#6ffbbe]/20 rounded-full blur-3xl" />
-
-        <div className="relative z-10 w-full max-w-[580px] max-w-[80%] glass-panel rounded-[24px] flex flex-col items-center justify-center p-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
-          <div className="mb-8 animate-float">
-            <div className="relative h-56 w-56 lg:h-64 lg:w-64 rounded-full bg-white/40 border border-white/60 shadow-xl overflow-hidden flex items-center justify-center mx-auto">
+      <div className="flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+        {/* LEFT SIDE */}
+        <section className="intro-panel hidden w-1/2 items-center justify-center lg:flex">
+          <div className="flex w-full max-w-[420px] flex-col items-center text-center">
+            <div className="hero-image h-[150px] w-[150px] overflow-hidden rounded-full bg-[#0C3B2B] shadow-[0_18px_42px_rgba(12,59,43,0.2)]">
               <img
-                className="object-cover w-full h-full"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9AppvjATilmcMiuYEM2mvW26Fc8NrpdCJNqXJCUOimy1EWZWUs2sapk1CURkwp2bV2xgDutUexoEWJ4TMXUvD2ppVw-IkWK0jNiMRiq3XlagVttfKOft-gmgmtf15wx00VtHnyZfYK1yccBy9stNaCqbV_r5htP6nyRr7RHaUi05jGUbMT7pXRMIY63gPYw1iJPgOkp3_hZGLF0rLThFBEk70bo-R2a2Sh3HXOOjyOrKJ4PeNzhj692Qxp5QsIe46eyVjvhtWDGU"
-                alt="A vibrant salad on a digital glass plate with a wealth chart"
+                alt="NutriWallet AI"
+                className="h-full w-full object-cover"
               />
             </div>
-          </div>
 
-          <h2 className="text-[38px] font-bold text-[#006e2f] mb-4">
-            Khỏe dáng - Khỏe ví
-          </h2>
-          <p className="text-[18px] leading-7 text-[#3d4a3d] max-w-sm mx-auto">
-            Theo dõi dinh dưỡng, kiểm soát chi tiêu và phát triển tài chính cá
-            nhân trên cùng một nền tảng thông minh.
-          </p>
+            <h2 className="mt-4 text-[24px] font-extrabold tracking-[-0.03em] text-[#15803D]">
+              Khỏe dáng - Khỏe ví
+            </h2>
 
-          <div className="mt-8 grid grid-cols-2 gap-4 w-full">
-            <div className="p-4 bg-white/50 rounded-[18px] border border-white/80 flex flex-col items-start shadow-sm">
-              <span className="text-[12px] uppercase tracking-wider text-[#6d7b6c]">
-                Chỉ số sức khỏe
-              </span>
-              <span className="mt-3 text-[32px] font-bold text-[#006e2f]">
-                94.2%
-              </span>
-            </div>
-            <div className="p-4 bg-white/50 rounded-[18px] border border-white/80 flex flex-col items-start shadow-sm">
-              <span className="text-[12px] uppercase tracking-wider text-[#6d7b6c]">
-                Tăng trưởng tài sản
-              </span>
-              <span className="mt-3 text-[32px] font-bold text-[#006c49]">
-                +12.8%
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="flex flex-col w-full md:w-1/2 bg-[#f7f9fb] justify-center items-center p-6 md:p-10 relative">
-        <div className="absolute top-4 left-8 md:fixed z-50">
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="w-10 h-10 rounded-xl bg-[#006e2f] flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12 flex-shrink-0">
-              <Wallet className="text-white" size={18} />
-            </div>
-            <span className="text-xl font-bold text-[#006e2f] whitespace-nowrap">
-              NutriWallet AI
-            </span>
-          </div>
-        </div>
-
-        <div className="w-full max-w-[440px] space-y-8 mt-10 md:mt-0">
-          <div className="space-y-4">
-            <h1 className="text-[52px] font-bold tracking-tight text-[#191c1e]">
-              Chào mừng bạn trở lại 👋
-            </h1>
-            <p className="text-[18px] text-[#3d4a3d] leading-7">
-              Đăng nhập để tiếp tục theo dõi sức khỏe và quản lý tài chính thông
-              minh cùng NutriWallet AI.
+            <p className="mt-2 max-w-[390px] text-[12px] leading-5 text-[#475569]">
+              Theo dõi dinh dưỡng, kiểm soát chi tiêu và phát triển tài chính cá
+              nhân trên cùng một nền tảng thông minh.
             </p>
-          </div>
 
-          <button
-            type="button"
-            className="w-full h-[56px] rounded-[14px] border border-[#D9E3DA] bg-white text-[#191c1e] font-medium shadow-sm transition hover:bg-[#FAFAFA] flex items-center justify-center gap-3"
-          >
-            <svg
-              className="w-5 h-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
-            </svg>
-            Tiếp tục bằng Google
-          </button>
+            <div className="mt-5 grid w-full grid-cols-2 gap-3">
+              <div className="rounded-[20px] bg-white/90 p-3.5 text-left shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+                <p className="text-[13px] font-bold tracking-wide text-slate-600">
+                  Chỉ số sức khỏe
+                </p>
+                <p className="mt-2.5 text-[24px] font-extrabold leading-none text-[#16A34A]">
+                  {healthScore.toFixed(1)}%
+                </p>
+                <p className="mt-1.5 text-[12px] text-[#64748B]">
+                  Tổng quan sức khỏe
+                </p>
 
-          <div className="relative flex items-center py-3">
-            <div className="flex-1 border-t border-[#bccbb9]"></div>
-            <span className="flex-shrink mx-4 text-[13px] uppercase tracking-[0.24em] text-[#6d7b6c]">
-              hoặc email
-            </span>
-            <div className="flex-1 border-t border-[#bccbb9]"></div>
-          </div>
-
-          <form
-            className="space-y-5"
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <div className="space-y-2">
-              <label
-                className="text-[14px] font-medium text-[#6d7b6c] block"
-                htmlFor="email"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Mail
-                  size={20}
-                  className="absolute left-4 top-1/2 -translate-y-1/2"
-                  color={focusedInput === "email" ? focusColor : iconColor}
-                />
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  placeholder="email@example.com"
-                  className="w-full h-[56px] rounded-[14px] border border-[#D9E3DA] bg-white px-4 pl-12 text-[#191c1e] transition focus:border-[#16A34A] focus:outline-none focus:ring-4 focus:ring-[#16A34A]/10"
-                  onFocus={() => setFocusedInput("email")}
-                  onBlur={() => setFocusedInput("")}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label
-                className="text-[14px] font-medium text-[#6d7b6c] block"
-                htmlFor="password"
-              >
-                Mật khẩu
-              </label>
-              <div className="relative">
-                <Lock
-                  size={20}
-                  className="absolute left-4 top-1/2 -translate-y-1/2"
-                  color={focusedInput === "password" ? focusColor : iconColor}
-                />
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="••••••••"
-                  className="w-full h-[56px] rounded-[14px] border border-[#D9E3DA] bg-white px-4 pl-12 pr-12 text-[#191c1e] transition focus:border-[#16A34A] focus:outline-none focus:ring-4 focus:ring-[#16A34A]/10"
-                  onFocus={() => setFocusedInput("password")}
-                  onBlur={() => setFocusedInput("")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6d7b6c] hover:text-[#006e2f] transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                <svg
+                  className="mt-2 h-7 w-full text-[#22C55E]"
+                  viewBox="0 0 220 48"
+                  fill="none"
+                  aria-hidden="true"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+                  <path
+                    d="M2 38C18 40 22 25 36 28C50 31 58 18 72 21C86 24 94 14 106 18C120 22 126 40 138 11C148 -11 162 50 176 30C188 13 192 10 204 32"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              <div className="rounded-[20px] bg-white/90 p-3.5 text-left shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+                <p className="text-[13px] font-bold tracking-wide text-slate-600">
+                  Tăng trưởng tài sản
+                </p>
+                <p className="mt-2.5 text-[24px] font-extrabold leading-none text-[#16A34A]">
+                  +{growthScore.toFixed(1)}%
+                </p>
+                <p className="mt-1.5 text-[12px] text-[#64748B]">
+                  So với tháng trước
+                </p>
+
+                <svg
+                  className="mt-2 h-7 w-full text-[#16A34A]"
+                  viewBox="0 0 220 48"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2 36C18 38 26 30 38 31C50 32 58 25 72 26H102C116 26 124 22 134 10C142 1 150 23 160 18C170 14 172 5 182 8C194 12 206 1 218 0"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-[#3d4a3d]">
-                <input
-                  className="h-4 w-4 rounded border-[#D9E3DA] text-[#16A34A] focus:ring-[#16A34A]"
-                  type="checkbox"
-                />
-                Ghi nhớ mật khẩu
-              </label>
-              <a
-                className="text-[#006e2f] font-semibold hover:text-[#004b1e] transition-colors"
-                href="#"
-              >
-                Quên mật khẩu?
-              </a>
+            <div className="mt-5 grid w-full grid-cols-3 gap-3">
+              <Feature
+                icon={<ShieldCheck size={20} />}
+                title="Bảo mật tuyệt đối"
+                desc="Dữ liệu của bạn được mã hóa và bảo vệ."
+              />
+              <Feature
+                icon={<ChartColumnBig size={20} />}
+                title="Theo dõi thông minh"
+                desc="Phân tích và gợi ý cá nhân hóa."
+              />
+              <Feature
+                icon={<HeartPulse size={20} />}
+                title="Sức khỏe toàn diện"
+                desc="Chăm sóc sức khỏe và tài chính cùng nhau."
+              />
             </div>
+          </div>
+        </section>
 
-            <button
-              type="submit"
-              className="w-full h-[60px] rounded-[14px] btn-gradient text-white text-[18px] font-bold shadow-lg shadow-[#006e2f]/15 transition-transform duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            >
-              Đăng nhập
-              <ArrowRight size={20} />
-            </button>
-          </form>
-
-          <footer className="text-center pt-4">
-            <p className="text-sm text-[#6d7b6c]">
-              Chưa có tài khoản?{" "}
-              <a
-                className="text-[#006e2f] font-bold hover:underline ml-1"
-                href="#"
-              >
-                Đăng ký
+        {/* RIGHT SIDE */}
+        <section className="flex w-full items-center justify-center bg-white px-8 py-8 lg:w-1/2">
+          <div className="flex w-full max-w-[390px] flex-col justify-center py-2">
+            <p className="mb-5 pt-1 text-right text-[12px] text-[#64748B]">
+              Đã có tài khoản?{" "}
+              <a href="#" className="cursor-pointer font-bold text-[#15803D]">
+                Đăng nhập
               </a>
             </p>
-          </footer>
-        </div>
-      </section>
+
+            <div>
+              <h1 className="flex items-center gap-2 text-[36px] font-extrabold tracking-[-0.04em] text-[#0F172A]">
+                Đăng ký
+                <Sprout
+                  size={26}
+                  strokeWidth={2.2}
+                  className="text-[#16A34A]"
+                />
+              </h1>
+
+              <p className="mt-2 text-[13px] leading-5 text-[#64748B]">
+                Tạo tài khoản để bắt đầu quản lý sức khỏe và tài chính của bạn
+              </p>
+
+              <form
+                className="mt-5 space-y-3"
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <Input
+                  label="Họ và tên"
+                  icon={<User size={18} />}
+                  placeholder="Nhập họ và tên"
+                  rightIcon={<CheckCircle2 size={18} />}
+                />
+
+                <Input
+                  label="Email"
+                  icon={<Mail size={18} />}
+                  placeholder="Nhập email của bạn"
+                  rightIcon={<CheckCircle2 size={18} />}
+                />
+
+                <div>
+                  <Input
+                    label="Mật khẩu"
+                    icon={<Lock size={18} />}
+                    placeholder="Nhập mật khẩu"
+                    type={showPassword ? "text" : "password"}
+                    rightIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-[#64748B] hover:text-[#16A34A]"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    }
+                  />
+
+                  <div className="mt-1.5 space-y-0.5 text-[11px] font-medium text-[#16A34A]">
+                    <p>✓ Ít nhất 8 ký tự</p>
+                    <p>✓ Bao gồm số hoặc ký hiệu</p>
+                    <p>✓ Bao gồm chữ hoa và chữ thường</p>
+                  </div>
+                </div>
+
+                <Input
+                  label="Nhập lại mật khẩu"
+                  icon={<Lock size={18} />}
+                  placeholder="Nhập lại mật khẩu"
+                  rightIcon={<Eye size={18} />}
+                />
+
+                <button
+                  type="submit"
+                  className="btn-gradient flex h-[42px] w-full items-center justify-center gap-2.5 rounded-[14px] text-[13px] font-bold text-white shadow-[0_16px_36px_-18px_rgba(34,197,94,0.7)]"
+                >
+                  Đăng ký
+                  <ArrowRight size={18} />
+                </button>
+              </form>
+
+              <div className="mt-5 mb-4 flex items-center gap-3">
+                <div className="h-px flex-1 bg-[#E5E7EB]" />
+                <span className="text-[10px] uppercase tracking-[0.42em] text-[#94A3B8]">
+                  Hoặc
+                </span>
+                <div className="h-px flex-1 bg-[#E5E7EB]" />
+              </div>
+
+              <div className="pb-1">
+                <SocialGoogle />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+  );
+}
+
+function Input({ label, icon, placeholder, rightIcon, type = "text" }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-[12px] font-semibold text-[#0F172A]">
+        {label}
+      </label>
+
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]">
+          {icon}
+        </div>
+
+        <input
+          type={type}
+          placeholder={placeholder}
+          className="input-transition h-[40px] w-full rounded-[14px] border border-[#E5E7EB] bg-white pl-11 pr-11 text-[13px] text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:outline-none focus:ring-4 focus:ring-[#DCFCE7]"
+        />
+
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#16A34A]">
+          {rightIcon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Feature({ icon, title, desc }) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#DCFCE7] text-[#16A34A]">
+        {icon}
+      </div>
+      <h3 className="text-[11px] font-bold text-[#166534]">{title}</h3>
+      <p className="mt-1 text-[10px] leading-4 text-[#64748B]">{desc}</p>
+    </div>
+  );
+}
+
+function SocialGoogle() {
+  return (
+    <button className="flex h-[40px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-[#E5E7EB] bg-white text-[13px] font-semibold text-[#0F172A] shadow-sm transition hover:bg-[#F8FAFC]">
+      <svg className="h-5 w-5" viewBox="0 0 24 24">
+        <path
+          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+          fill="#4285F4"
+        />
+        <path
+          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+          fill="#34A853"
+        />
+        <path
+          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z"
+          fill="#FBBC05"
+        />
+        <path
+          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+          fill="#EA4335"
+        />
+      </svg>
+      Tiếp tục với Google
+    </button>
   );
 }
 
