@@ -68,7 +68,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:${FRONTEND_PORT:5173}}
   api-url: ${API_BASE_URL:${VITE_API_BASE_URL:http://localhost:${BACKEND_PORT:8080}/api}}
   security:
-    enabled: ${SECURITY_ENABLED:false}
+    enabled: ${SECURITY_ENABLED:true}
     jwt-secret: ${JWT_SECRET:replace_with_a_secure_random_secret_of_at_least_32_characters}
     jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
   mail:

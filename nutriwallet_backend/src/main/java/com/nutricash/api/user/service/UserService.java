@@ -5,6 +5,7 @@ import com.nutricash.api.common.enums.UserRole;
 import com.nutricash.api.common.enums.UserStatus;
 import com.nutricash.api.common.exception.AppException;
 import com.nutricash.api.common.exception.ErrorCode;
+import com.nutricash.api.security.SecurityUser;
 import com.nutricash.api.user.dto.CreateUserRequest;
 import com.nutricash.api.user.dto.UpdateUserRequest;
 import com.nutricash.api.user.dto.UserResponse;
@@ -45,6 +46,19 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public UserResponse me(SecurityUser currentUser) {
+        return userMapper.toResponse(getCurrentUser(currentUser));
+    }
+
+    @Transactional
+    public UserResponse updateMe(SecurityUser currentUser, UpdateUserRequest request) {
+        User user = getCurrentUser(currentUser);
+        user.setFullName(request.fullName());
+        user.setAvatarUrl(request.avatarUrl());
+        return userMapper.toResponse(userRepository.save(user));
+    }
+
+    @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
         return userRepository.findAllByDeletedAtIsNull()
                 .stream()
@@ -70,6 +84,14 @@ public class UserService {
         User user = getNotDeletedEntity(id);
         user.setDeletedAt(Instant.now());
         userRepository.save(user);
+    }
+
+    private User getCurrentUser(SecurityUser currentUser) {
+        if (currentUser == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        return userRepository.findByIdAndDeletedAtIsNull(currentUser.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
     private User getNotDeletedEntity(Long id) {

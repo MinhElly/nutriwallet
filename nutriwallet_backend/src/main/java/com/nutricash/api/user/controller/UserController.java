@@ -1,15 +1,19 @@
 package com.nutricash.api.user.controller;
 
 import com.nutricash.api.common.dto.ApiResponse;
+import com.nutricash.api.security.SecurityUser;
 import com.nutricash.api.user.dto.CreateUserRequest;
 import com.nutricash.api.user.dto.UpdateUserRequest;
 import com.nutricash.api.user.dto.UserResponse;
 import com.nutricash.api.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,10 +26,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@Tag(name = "Users")
+@Tag(name = "Users", description = "APIs for user profile management")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
+
+    @Operation(summary = "Get my profile", description = "Return the profile of the current authenticated user.")
+    @GetMapping("/me")
+    public ApiResponse<UserResponse> me(@AuthenticationPrincipal SecurityUser currentUser) {
+        return ApiResponse.success(userService.me(currentUser));
+    }
+
+    @Operation(summary = "Update my profile", description = "Update full name and avatar URL of the current authenticated user.")
+    @PatchMapping("/me")
+    public ApiResponse<UserResponse> updateMe(@AuthenticationPrincipal SecurityUser currentUser, @Valid @RequestBody UpdateUserRequest request) {
+        return ApiResponse.success("Profile updated", userService.updateMe(currentUser, request));
+    }
 
     @PostMapping
     public ApiResponse<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
