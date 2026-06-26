@@ -1,8 +1,18 @@
 package com.nutricash.api.meal.dto;
 
-/**
- * Skeleton type for the meal module.
- */
-public record UpdateMealRequest() {
-}
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
+public record UpdateMealRequest(
+        String mealName,
+        String description,
+        String imageUrl,
+        LocalDateTime mealTime,
+        BigDecimal totalCalories,
+        BigDecimal proteinGram,
+        BigDecimal carbGram,
+        BigDecimal fatGram,
+        Boolean aiEstimated,
+        Boolean confirmedByUser
+) {
+}
