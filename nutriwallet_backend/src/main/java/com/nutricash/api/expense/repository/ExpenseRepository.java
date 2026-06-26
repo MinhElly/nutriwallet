@@ -8,12 +8,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ExpenseRepository extends JpaRepository<ExpenseRecord, Long> {
 
+    List<ExpenseRecord> findAllByUserIdOrderByExpenseDateDesc(Long userId);
+
     List<ExpenseRecord> findAllByUserIdAndExpenseDateBetweenOrderByExpenseDateDesc(
             Long userId,
             LocalDate startDate,
             LocalDate endDate
     );
 
+    Optional<ExpenseRecord> findByIdAndUserId(Long id, Long userId);
+
     Optional<ExpenseRecord> findByMealRecordId(Long mealRecordId);
 }
-
