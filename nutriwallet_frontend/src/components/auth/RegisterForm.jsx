@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -146,9 +147,9 @@ function RegisterForm() {
           <div className="flex w-full max-w-[390px] flex-col justify-center py-2">
             <p className="mb-5 pt-1 text-right text-[12px] text-[#64748B]">
               Đã có tài khoản?{" "}
-              <a href="#" className="cursor-pointer font-bold text-[#15803D]">
+              <Link to="/login" className="cursor-pointer font-bold text-[#15803D]">
                 Đăng nhập
-              </a>
+              </Link>
             </p>
 
             <h1 className="flex items-center gap-2 text-[36px] font-extrabold tracking-[-0.04em] text-[#0F172A]">
