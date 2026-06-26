@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -206,9 +207,9 @@ function LoginForm() {
 
           <p className="mt-6 text-center text-[14px] text-[#64748B]">
             Chưa có tài khoản?{" "}
-            <a href="#" className="font-bold text-[#16A34A]">
+            <Link to="/register" className="font-bold text-[#16A34A]">
               Đăng ký ngay
-            </a>
+            </Link>
           </p>
         </div>
       </section>
