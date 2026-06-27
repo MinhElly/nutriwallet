@@ -4,6 +4,7 @@ import com.nutricash.api.common.enums.AiAnalysisStatus;
 import com.nutricash.api.common.enums.AiInputType;
 import com.nutricash.api.meal.entity.MealRecord;
 import com.nutricash.api.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -91,7 +92,7 @@ public class AiAnalysisLog {
     private Instant createdAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "aiAnalysisLog", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "aiAnalysisLog", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AiErrorReport> errorReports = new ArrayList<>();
 
     @PrePersist
@@ -101,4 +102,3 @@ public class AiAnalysisLog {
         }
     }
 }
-
