@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
 import { Leaf, Menu, Wallet } from "lucide-react";
-import {
-  getDashboardSnapshot,
-} from "../../data/dashboardData";
+import { getDashboardSnapshot } from "../../data/dashboardData";
 import AccountCard from "../../components/dashboard/AccountCard";
 import BudgetUsageCard from "../../components/dashboard/BudgetUsageCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
@@ -17,6 +15,7 @@ export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedPeriod, setSelectedPeriod] = useState("1 tháng qua");
+
   const dashboardSnapshot = useMemo(
     () => getDashboardSnapshot(selectedDate, selectedPeriod),
     [selectedDate, selectedPeriod],
