@@ -87,13 +87,19 @@ function RegisterForm() {
         }
       `}</style>
 
-      <div className="flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+      <div className="flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] relative">
+        <div className="absolute top-4 left-4 z-10">
+          <h2 className="text-[14px] font-extrabold tracking-[-0.02em] text-[#16A34A] flex items-center gap-1.5">
+            <Sprout size={18} strokeWidth={2.5} className="text-[#16A34A]" />
+            NutriWallet AI
+          </h2>
+        </div>
         <section className="intro-panel hidden w-1/2 items-center justify-center lg:flex">
           <div className="flex w-full max-w-[420px] flex-col items-center text-center">
             <div className="hero-image h-[150px] w-[150px] overflow-hidden rounded-full bg-[#0C3B2B] shadow-[0_18px_42px_rgba(12,59,43,0.2)]">
               <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9AppvjATilmcMiuYEM2mvW26Fc8NrpdCJNqXJCUOimy1EWZWUs2sapk1CURkwp2bV2xgDutUexoEWJ4TMXUvD2ppVw-IkWK0jNiMRiq3XlagVttfKOft-gmgmtf15wx00VtHnyZfYK1yccBy9stNaCqbV_r5htP6nyRr7RHaUi05jGUbMT7pXRMIY63gPYw1iJPgOkp3_hZGLF0rLThFBEk70bo-R2a2Sh3HXOOjyOrKJ4PeNzhj692Qxp5QsIe46eyVjvhtWDGU"
-                alt="NutriWallet AI"
+                src="/salad-hero.png"
+                alt="NutriWallet - Healthy Nutrition"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -147,7 +153,10 @@ function RegisterForm() {
           <div className="flex w-full max-w-[390px] flex-col justify-center py-2">
             <p className="mb-5 pt-1 text-right text-[12px] text-[#64748B]">
               Đã có tài khoản?{" "}
-              <Link to="/login" className="cursor-pointer font-bold text-[#15803D]">
+              <Link
+                to="/login"
+                className="cursor-pointer font-bold text-[#15803D]"
+              >
                 Đăng nhập
               </Link>
             </p>
