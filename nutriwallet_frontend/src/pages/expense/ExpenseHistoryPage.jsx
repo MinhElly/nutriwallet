@@ -138,12 +138,6 @@ export default function ExpenseHistoryPage() {
 
   const calendarDays = useMemo(() => buildCalendarDays(viewDate), [viewDate]);
 
-  const activeDateValue =
-    activeDateField === "start" ? draftStartDate : draftEndDate;
-  const activeDate = useMemo(
-    () => toDate(activeDateValue) ?? today,
-    [activeDateValue, today],
-  );
 
   const filteredExpenses = useMemo(() => {
     const trimmedQuery = searchQuery.trim().toLowerCase();

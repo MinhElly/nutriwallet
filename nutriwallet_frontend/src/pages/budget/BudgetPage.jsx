@@ -6,8 +6,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Leaf,
-  Menu,
   PieChart as PieChartIcon,
   Plus,
   TrendingUp,
@@ -155,7 +153,6 @@ function isDateOutsideRange(dateValue, minDateValue, maxDateValue) {
 
 function BudgetPage() {
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [activeDateField, setActiveDateField] = useState("start");
   const { budget, expenses } = budgetData;

@@ -185,11 +185,13 @@ export default function MealHistoryTable({ searchQuery = "" }) {
       return;
     }
 
-    setSelectedStartDate(liveTodayDate);
-    setSelectedEndDate(liveTodayDate);
-    setDraftStartDate(liveTodayDate);
-    setDraftEndDate(liveTodayDate);
-    setViewDate(toDate(liveTodayDate) ?? new Date());
+    queueMicrotask(() => {
+      setSelectedStartDate(liveTodayDate);
+      setSelectedEndDate(liveTodayDate);
+      setDraftStartDate(liveTodayDate);
+      setDraftEndDate(liveTodayDate);
+      setViewDate(toDate(liveTodayDate) ?? new Date());
+    });
   }, [isUsingLiveToday, liveTodayDate]);
 
   useEffect(() => {
@@ -234,15 +236,15 @@ export default function MealHistoryTable({ searchQuery = "" }) {
 
   const totalPages = Math.max(1, Math.ceil(filteredMeals.length / rowsPerPage));
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedEndDate, selectedMealType, selectedStartDate]);
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const currentFilterKey = `${searchQuery}_${selectedStartDate}_${selectedEndDate}_${selectedMealType}`;
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  if (prevFilterKey !== currentFilterKey) {
+    setPrevFilterKey(currentFilterKey);
+    setCurrentPage(1);
+  } else if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const paginatedMeals = useMemo(() => {
     const startIndex = (currentPage - 1) * rowsPerPage;
