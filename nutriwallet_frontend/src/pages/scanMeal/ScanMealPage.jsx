@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Sidebar from "../../components/dashboard/Sidebar";
+import AppShell from "../../components/layout/AppShell";
 import PageHeader from "../../components/scanMeal/PageHeader";
 import UploadCard from "../../components/scanMeal/UploadCard";
 import TipsCard from "../../components/scanMeal/TipsCard";
@@ -18,26 +18,20 @@ export default function ScanMealPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-950">
-      <div className="flex min-h-screen">
-        <Sidebar />
+    <AppShell pageLabel="Quét bữa ăn">
+      <PageHeader />
 
-        <main className="flex-1 px-8 py-7">
-          <PageHeader />
+      <div className="grid gap-6 xl:grid-cols-[1fr_520px]">
+        <div className="space-y-6">
+          <UploadCard onAnalyzeSuccess={handleAnalyzeSuccess} />
+          <TipsCard />
+        </div>
 
-          <div className="grid gap-6 xl:grid-cols-[1fr_520px]">
-            <div className="space-y-6">
-              <UploadCard onAnalyzeSuccess={handleAnalyzeSuccess} />
-              <TipsCard />
-            </div>
-
-            <AnalysisResultCard
-              result={analysisResult}
-              onUpdateResult={handleUpdateResult}
-            />
-          </div>
-        </main>
+        <AnalysisResultCard
+          result={analysisResult}
+          onUpdateResult={handleUpdateResult}
+        />
       </div>
-    </div>
+    </AppShell>
   );
 }

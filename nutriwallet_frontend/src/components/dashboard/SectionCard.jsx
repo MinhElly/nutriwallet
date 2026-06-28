@@ -1,13 +1,13 @@
 export default function SectionCard({
   title,
   icon: Icon,
-  iconClass = "bg-emerald-50 text-emerald-600",
+  iconClass = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400",
   compact = false,
   children,
 }) {
   return (
     <section
-      className={`group flex h-full min-h-0 flex-col rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/50 ${
+      className={`group flex h-full min-h-0 flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900 ${
         compact ? "p-3.5" : "p-4"
       }`}
     >
@@ -32,7 +32,7 @@ export default function SectionCard({
           )}
 
           <h3
-            className={`truncate font-semibold text-slate-900 ${
+            className={`truncate font-semibold text-slate-900 dark:text-slate-100 ${
               compact ? "text-[15px]" : "text-base"
             }`}
           >
@@ -42,7 +42,7 @@ export default function SectionCard({
 
         <button
           type="button"
-          className={`shrink-0 cursor-pointer font-medium text-slate-500 transition-colors hover:text-slate-700 ${
+          className={`shrink-0 cursor-pointer font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 ${
             compact ? "text-[10px]" : "text-[11px]"
           }`}
         >
