@@ -9,17 +9,17 @@ export default function MealSummaryCard({
   return (
     <StatCard title="Tổng số bữa ăn" icon={Utensils}>
       <div className="mt-3">
-        <p className="text-[1.45rem] font-bold tracking-tight text-slate-900 sm:text-[2.1rem]">
+        <p className="text-[1.45rem] font-bold tracking-tight text-slate-900 sm:text-[2.1rem] dark:text-white">
           {mealSummary.totalMeals}
         </p>
-        <p className="mt-0.5 text-[13px] text-slate-500 sm:text-sm">
+        <p className="mt-0.5 text-[13px] text-slate-500 sm:text-sm dark:text-slate-400">
           {mealSummary.helperText}
         </p>
 
-        <p className="mt-3 text-[13px] text-slate-500 sm:mt-4 sm:text-sm">
+        <p className="mt-3 text-[13px] text-slate-500 sm:mt-4 sm:text-sm dark:text-slate-400">
           Tổng calo
         </p>
-        <p className="mt-0.5 text-[13px] font-semibold text-slate-900 sm:text-[15px]">
+        <p className="mt-0.5 text-[13px] font-semibold text-slate-900 sm:text-[15px] dark:text-slate-200">
           {mealSummary.totalCalories}
         </p>
 

@@ -96,13 +96,13 @@ export default function ProfilePage() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold xl:text-4xl">Hồ sơ</h1>
+        <h1 className="text-3xl font-bold xl:text-4xl text-slate-950 dark:text-white">Hồ sơ</h1>
       </div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="overflow-hidden rounded-[1.6rem] bg-emerald-100 shadow-lg shadow-slate-200/70">
+            <div className="overflow-hidden rounded-[1.6rem] bg-emerald-100 shadow-lg dark:bg-emerald-950">
               <img
                 src={user.avatarUrl}
                 alt={profileForm.fullName}
@@ -112,16 +112,16 @@ export default function ProfilePage() {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+                <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {profileForm.fullName}
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                   <BadgeCheck size={14} />
                   Thành viên Pro
                 </span>
               </div>
 
-              <p className="mt-2 text-sm font-medium text-slate-500">
+              <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
                 Tham gia {formatJoinedDate(user.createdAt)} • {profileForm.headline}
               </p>
 
@@ -137,7 +137,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setIsEditOpen(true)}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
             >
               <Pencil size={17} />
               Sửa hồ sơ
@@ -146,7 +146,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleShareProfile}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition-colors hover:bg-emerald-700"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
             >
               <Share2 size={17} />
               {shareLabel}
@@ -189,7 +189,7 @@ export default function ProfilePage() {
 
 function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 p-0 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 p-0 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4 dark:bg-slate-950/60">
       <button
         type="button"
         aria-label="Đóng sửa hồ sơ"
@@ -197,14 +197,14 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
         onClick={onClose}
       />
 
-      <div className="relative z-10 w-full rounded-t-[28px] bg-white p-5 shadow-2xl sm:max-w-xl sm:rounded-3xl sm:p-6">
+      <div className="relative z-10 w-full rounded-t-[28px] bg-white p-5 shadow-2xl sm:max-w-xl sm:rounded-3xl sm:p-6 dark:border dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold text-slate-900">Sửa hồ sơ</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Sửa hồ sơ</h2>
 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             <X size={18} />
           </button>
@@ -217,7 +217,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
               name="fullName"
               value={profileForm.fullName}
               onChange={onChange}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
             />
           </Field>
 
@@ -227,7 +227,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
               name="email"
               value={profileForm.email}
               onChange={onChange}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
             />
           </Field>
 
@@ -237,7 +237,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
               name="headline"
               value={profileForm.headline}
               onChange={onChange}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
             />
           </Field>
 
@@ -248,7 +248,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
                 name="interestOne"
                 value={profileForm.interestOne}
                 onChange={onChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
               />
             </Field>
 
@@ -258,7 +258,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
                 name="interestTwo"
                 value={profileForm.interestTwo}
                 onChange={onChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
               />
             </Field>
 
@@ -268,7 +268,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
                 name="interestThree"
                 value={profileForm.interestThree}
                 onChange={onChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
               />
             </Field>
           </div>
@@ -277,7 +277,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+              className="cursor-pointer rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Hủy
             </button>
@@ -297,7 +297,7 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
 function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>
+      <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</span>
       {children}
     </label>
   );
@@ -305,7 +305,7 @@ function Field({ label, children }) {
 
 function Tag({ text }) {
   return (
-    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
       {text}
     </span>
   );
@@ -313,29 +313,29 @@ function Tag({ text }) {
 
 function MiniInfoCard({ icon, label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-      <div className="flex items-center gap-2 text-slate-500">
-        <div className="text-emerald-600">{icon}</div>
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
+      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+        <div className="text-emerald-600 dark:text-emerald-400">{icon}</div>
         <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
       </div>
-      <p className="mt-2 text-sm font-bold text-slate-900">{value}</p>
+      <p className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100">{value}</p>
     </div>
   );
 }
 
 function InfoCard({ title, items }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h2>
 
-      <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100">
+      <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100 dark:divide-slate-800 dark:border-slate-800">
         {items.map((item) => (
           <div
             key={item.label}
             className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
           >
-            <p className="text-sm text-slate-500">{item.label}</p>
-            <p className="text-sm font-bold text-slate-900">{item.value}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{item.label}</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-200">{item.value}</p>
           </div>
         ))}
       </div>

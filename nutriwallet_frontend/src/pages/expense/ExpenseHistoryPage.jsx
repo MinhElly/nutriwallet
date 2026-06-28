@@ -98,65 +98,84 @@ function getDefaultRange() {
 }
 
 export default function ExpenseHistoryPage() {
+  const today = useMemo(() => new Date(), []);
   const defaultRange = useMemo(() => getDefaultRange(), []);
-  const sectionRef = useRef(null);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [activeDateField, setActiveDateField] = useState("start");
   const [selectedStartDate, setSelectedStartDate] = useState(defaultRange.startDate);
   const [selectedEndDate, setSelectedEndDate] = useState(defaultRange.endDate);
   const [draftStartDate, setDraftStartDate] = useState(defaultRange.startDate);
   const [draftEndDate, setDraftEndDate] = useState(defaultRange.endDate);
-  const [viewDate, setViewDate] = useState(
-    () => toDate(defaultRange.endDate || defaultRange.startDate) ?? new Date(),
-  );
+  const [viewDate, setViewDate] = useState(() => toDate(defaultRange.startDate) ?? today);
+  const [activeDateField, setActiveDateField] = useState("start");
+  const [openDropdown, setOpenDropdown] = useState(null);
 
-  const weekdayLabels = useMemo(() => getWeekdayLabels(), []);
-  const monthYearLabel = useMemo(() => formatMonthYearLabel(viewDate), [viewDate]);
-  const calendarDays = useMemo(() => buildCalendarDays(viewDate), [viewDate]);
-  const normalizedDraftRange = useMemo(
-    () => normalizeDateRange(draftStartDate, draftEndDate),
-    [draftEndDate, draftStartDate],
-  );
-
-  const minExpenseDate = defaultRange.startDate;
-  const maxExpenseDate = defaultRange.endDate;
-  const dateRangeLabel = formatDateRangeLabel(selectedStartDate, selectedEndDate);
+  const sectionRef = useRef(null);
+  const weekdayLabels = getWeekdayLabels();
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (sectionRef.current && !sectionRef.current.contains(event.target)) {
         setOpenDropdown(null);
-        setDraftStartDate(selectedStartDate);
-        setDraftEndDate(selectedEndDate);
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [selectedEndDate, selectedStartDate]);
+  }, []);
+
+  const dateRangeLabel = useMemo(
+    () => formatDateRangeLabel(selectedStartDate, selectedEndDate),
+    [selectedStartDate, selectedEndDate],
+  );
+
+  const monthYearLabel = useMemo(
+    () => formatMonthYearLabel(viewDate),
+    [viewDate],
+  );
+
+  const calendarDays = useMemo(() => buildCalendarDays(viewDate), [viewDate]);
+
+  const activeDateValue =
+    activeDateField === "start" ? draftStartDate : draftEndDate;
+  const activeDate = useMemo(
+    () => toDate(activeDateValue) ?? today,
+    [activeDateValue, today],
+  );
 
   const filteredExpenses = useMemo(() => {
-    const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+    const trimmedQuery = searchQuery.trim().toLowerCase();
 
     return expenseHistoryData.filter((record) => {
+      const isAfterStart =
+        !selectedStartDate || record.expenseDate >= selectedStartDate;
+      const isBeforeEnd =
+        !selectedEndDate || record.expenseDate <= selectedEndDate;
+      const matchesDate = isAfterStart && isBeforeEnd;
+
+      if (!matchesDate) {
+        return false;
+      }
+
+      if (!trimmedQuery) {
+        return true;
+      }
+
       const categoryLabel = (
         expenseCategoryLabelMap[record.category] ?? record.category
       ).toLowerCase();
-      const matchesDate =
-        (!selectedStartDate || record.expenseDate >= selectedStartDate) &&
-        (!selectedEndDate || record.expenseDate <= selectedEndDate);
-      const matchesSearch =
-        normalizedSearchQuery.length === 0 ||
-        record.description.toLowerCase().includes(normalizedSearchQuery) ||
-        record.note.toLowerCase().includes(normalizedSearchQuery) ||
-        categoryLabel.includes(normalizedSearchQuery) ||
-        formatMoney(record.amount).toLowerCase().includes(normalizedSearchQuery);
+      const description = record.description.toLowerCase();
+      const note = record.note.toLowerCase();
+      const formattedDate = formatExpenseDate(record.expenseDate).toLowerCase();
 
-      return matchesDate && matchesSearch;
+      return (
+        description.includes(trimmedQuery) ||
+        note.includes(trimmedQuery) ||
+        categoryLabel.includes(trimmedQuery) ||
+        formattedDate.includes(trimmedQuery)
+      );
     });
   }, [searchQuery, selectedEndDate, selectedStartDate]);
 
@@ -167,7 +186,7 @@ export default function ExpenseHistoryPage() {
       if (nextDropdown === "dateRange") {
         setDraftStartDate(selectedStartDate);
         setDraftEndDate(selectedEndDate);
-        setViewDate(toDate(selectedStartDate) ?? new Date());
+        setViewDate(toDate(selectedStartDate) ?? today);
         setActiveDateField("start");
       }
 
@@ -184,16 +203,18 @@ export default function ExpenseHistoryPage() {
   function handleSelectCalendarDate(date) {
     const nextDateValue = toDateString(date);
 
-    if (nextDateValue < minExpenseDate || nextDateValue > maxExpenseDate) {
-      return;
-    }
-
     if (activeDateField === "start") {
       setDraftStartDate(nextDateValue);
-      if (!draftEndDate) {
+      if (!draftEndDate || draftEndDate < nextDateValue) {
         setDraftEndDate(nextDateValue);
       }
       setActiveDateField("end");
+      return;
+    }
+
+    if (draftStartDate && nextDateValue < draftStartDate) {
+      setDraftStartDate(nextDateValue);
+      setDraftEndDate(nextDateValue);
       return;
     }
 
@@ -211,12 +232,12 @@ export default function ExpenseHistoryPage() {
   }
 
   function handleResetFilters() {
-    setSearchQuery("");
     setSelectedStartDate(defaultRange.startDate);
     setSelectedEndDate(defaultRange.endDate);
     setDraftStartDate(defaultRange.startDate);
     setDraftEndDate(defaultRange.endDate);
-    setViewDate(toDate(defaultRange.endDate || defaultRange.startDate) ?? new Date());
+    setSearchQuery("");
+    setViewDate(toDate(defaultRange.startDate) ?? today);
     setActiveDateField("start");
     setOpenDropdown(null);
   }
@@ -224,17 +245,17 @@ export default function ExpenseHistoryPage() {
   return (
     <AppShell pageLabel="Lịch sử chi tiêu">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold xl:text-4xl">Lịch sử chi tiêu</h1>
-        <p className="mt-2 text-slate-500">
+        <h1 className="text-3xl font-bold xl:text-4xl text-slate-950 dark:text-white">Lịch sử chi tiêu</h1>
+        <p className="mt-2 text-slate-500 dark:text-slate-400">
           Xem chi tiết các khoản chi, tìm kiếm nhanh và lọc theo khoảng thời gian.
         </p>
       </div>
 
       <section
         ref={sectionRef}
-        className="overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm"
+        className="overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
       >
-        <div className="border-b border-slate-100 p-5">
+        <div className="border-b border-slate-100 p-5 dark:border-slate-800">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative w-full xl:max-w-[420px]">
               <Search
@@ -246,7 +267,7 @@ export default function ExpenseHistoryPage() {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Tìm theo mô tả, ghi chú, danh mục..."
-                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500"
+                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
 
@@ -254,10 +275,10 @@ export default function ExpenseHistoryPage() {
               <button
                 type="button"
                 onClick={openDatePicker}
-                className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-slate-50 xl:min-w-[320px]"
+                className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-slate-50 xl:min-w-[320px] dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
-                <CalendarDays size={18} className="text-emerald-600" />
-                <span className="text-left text-slate-700">{dateRangeLabel}</span>
+                <CalendarDays size={18} className="text-emerald-600 dark:text-emerald-400" />
+                <span className="text-left text-slate-700 dark:text-slate-200">{dateRangeLabel}</span>
                 <ChevronDown
                   size={16}
                   className={`ml-auto transition-transform ${
@@ -274,15 +295,15 @@ export default function ExpenseHistoryPage() {
                     className="fixed inset-0 z-10 cursor-pointer bg-transparent"
                     onClick={() => setOpenDropdown(null)}
                   />
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[calc(100vw-2rem)] max-w-[340px] rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
-                    <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-1">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[calc(100vw-2rem)] max-w-[340px] rounded-3xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-1 dark:bg-slate-800">
                       <button
                         type="button"
                         onClick={() => setActiveDateField("start")}
                         className={`flex-1 rounded-2xl px-3 py-2 text-left text-sm font-medium transition-colors ${
                           activeDateField === "start"
-                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200/60"
-                            : "text-slate-500"
+                            ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                            : "text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         <span className="block text-[11px] uppercase tracking-wide text-slate-400">
@@ -298,8 +319,8 @@ export default function ExpenseHistoryPage() {
                         onClick={() => setActiveDateField("end")}
                         className={`flex-1 rounded-2xl px-3 py-2 text-left text-sm font-medium transition-colors ${
                           activeDateField === "end"
-                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200/60"
-                            : "text-slate-500"
+                            ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                            : "text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         <span className="block text-[11px] uppercase tracking-wide text-slate-400">
@@ -316,7 +337,7 @@ export default function ExpenseHistoryPage() {
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Chọn ngày
                         </p>
-                        <p className="mt-1 text-base font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900 dark:text-white">
                           {monthYearLabel}
                         </p>
                       </div>
@@ -325,14 +346,14 @@ export default function ExpenseHistoryPage() {
                         <button
                           type="button"
                           onClick={() => changeMonth(-1)}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
                         >
                           <ChevronLeft size={16} strokeWidth={2} />
                         </button>
                         <button
                           type="button"
                           onClick={() => changeMonth(1)}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
                         >
                           <ChevronRight size={16} strokeWidth={2} />
                         </button>
@@ -352,39 +373,32 @@ export default function ExpenseHistoryPage() {
 
                     <div className="mt-2 grid grid-cols-7 gap-1">
                       {calendarDays.map(({ date, isCurrentMonth }) => {
-                        const dateValue = toDateString(date);
-                        const isSelectedStart = draftStartDate === dateValue;
-                        const isSelectedEnd = draftEndDate === dateValue;
-                        const isWithinPreviewRange =
-                          normalizedDraftRange.startDate &&
-                          normalizedDraftRange.endDate &&
-                          dateValue >= normalizedDraftRange.startDate &&
-                          dateValue <= normalizedDraftRange.endDate;
-                        const isToday = isSameDay(date, new Date());
-                        const isOutOfBounds =
-                          dateValue < minExpenseDate || dateValue > maxExpenseDate;
+                        const dateString = toDateString(date);
+                        const isSelectedStart = dateString === draftStartDate;
+                        const isSelectedEnd = dateString === draftEndDate;
+                        const isInRange =
+                          draftStartDate &&
+                          draftEndDate &&
+                          dateString >= draftStartDate &&
+                          dateString <= draftEndDate;
+                        const isToday = isSameDay(date, today);
 
                         return (
                           <button
                             key={date.toISOString()}
                             type="button"
-                            disabled={isOutOfBounds}
                             onClick={() => handleSelectCalendarDate(date)}
                             className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-sm font-medium transition-all ${
                               isSelectedStart || isSelectedEnd
-                                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                                : isWithinPreviewRange
-                                  ? "bg-emerald-50 text-emerald-700"
+                                ? "bg-emerald-600 text-white shadow-sm"
+                                : isInRange
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
                                   : isCurrentMonth
-                                    ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                                    : "text-slate-300 hover:bg-slate-50"
+                                    ? "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                    : "text-slate-300 hover:bg-slate-50 dark:text-slate-600"
                             } ${
                               isToday && !isSelectedStart && !isSelectedEnd
-                                ? "ring-1 ring-emerald-200"
-                                : ""
-                            } ${
-                              isOutOfBounds
-                                ? "cursor-not-allowed opacity-35 hover:bg-transparent"
+                                ? "ring-1 ring-emerald-200 dark:ring-emerald-800"
                                 : ""
                             }`}
                           >
@@ -394,11 +408,11 @@ export default function ExpenseHistoryPage() {
                       })}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
                       <button
                         type="button"
                         onClick={handleResetFilters}
-                        className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+                        className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
                       >
                         Toàn bộ kỳ
                       </button>
@@ -407,7 +421,7 @@ export default function ExpenseHistoryPage() {
                         <button
                           type="button"
                           onClick={() => setOpenDropdown(null)}
-                          className="cursor-pointer text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+                          className="cursor-pointer text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400"
                         >
                           Đóng
                         </button>
@@ -427,14 +441,14 @@ export default function ExpenseHistoryPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Hiển thị {filteredExpenses.length} khoản chi
             </p>
 
             <button
               type="button"
               onClick={handleResetFilters}
-              className="cursor-pointer rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200"
+              className="cursor-pointer rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               Đặt lại bộ lọc
             </button>
@@ -443,7 +457,7 @@ export default function ExpenseHistoryPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-4">Ngày chi</th>
                 <th className="px-5 py-4">Danh mục</th>
@@ -457,30 +471,30 @@ export default function ExpenseHistoryPage() {
             <tbody>
               {filteredExpenses.length > 0 ? (
                 filteredExpenses.map((record) => (
-                  <tr key={record.id} className="border-t border-slate-100">
-                    <td className="px-5 py-4 font-medium text-slate-700">
+                  <tr key={record.id} className="border-t border-slate-100 dark:border-slate-800 dark:hover:bg-slate-800/40">
+                    <td className="px-5 py-4 font-medium text-slate-700 dark:text-slate-300">
                       {formatExpenseDate(record.expenseDate)}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         {expenseCategoryLabelMap[record.category] ?? record.category}
                       </span>
                     </td>
-                    <td className="px-5 py-4 font-semibold text-slate-900">
+                    <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">
                       {record.description}
                     </td>
-                    <td className="px-5 py-4 text-slate-500">{record.note}</td>
-                    <td className="px-5 py-4 font-bold text-slate-900">
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400">{record.note}</td>
+                    <td className="px-5 py-4 font-bold text-slate-900 dark:text-slate-100">
                       {formatMoney(record.amount)}
                     </td>
-                    <td className="px-5 py-4 text-slate-500">{record.currency}</td>
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400">{record.currency}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-5 py-12 text-center text-sm text-slate-500"
+                    className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400"
                   >
                     Không có khoản chi nào phù hợp với bộ lọc hiện tại.
                   </td>

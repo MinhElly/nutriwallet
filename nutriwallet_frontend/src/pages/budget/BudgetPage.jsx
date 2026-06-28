@@ -27,7 +27,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import Sidebar from "../../components/dashboard/Sidebar";
+import AppShell from "../../components/layout/AppShell";
 import { budgetData } from "../../data/mockBudgetDta";
 import {
   buildCalendarDays,
@@ -489,7 +489,7 @@ function BudgetPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900">
+    <AppShell pageLabel="Ngân sách">
       {isAddExpenseOpen && (
         <AddExpenseModal
           budget={budget}
@@ -503,57 +503,16 @@ function BudgetPage() {
         />
       )}
 
-      <div className="flex min-h-screen">
-        <Sidebar />
-
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-40 xl:hidden">
-            <button
-              type="button"
-              aria-label="Đóng menu"
-              className="absolute inset-0 cursor-pointer bg-slate-900/30 backdrop-blur-[1px]"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <div className="relative z-10 h-full w-fit">
-              <Sidebar mobile onClose={() => setIsMobileMenuOpen(false)} />
-            </div>
-          </div>
-        )}
-
-        <main className="min-w-0 flex-1 px-4 py-4 xl:px-6 xl:py-5">
-          <div className="mb-4 flex items-center justify-between xl:hidden">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-200/70">
-                <Leaf size={18} strokeWidth={1.9} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold tracking-tight text-slate-900 sm:text-[15px]">
-                  NutriWallet AI
-                </p>
-                <p className="text-xs text-slate-500">Ngân sách</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              aria-label="Mở menu"
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm shadow-slate-200/30 transition-colors hover:bg-slate-50"
-            >
-              <Menu size={18} strokeWidth={1.9} />
-            </button>
-          </div>
-
-          <div
-            ref={sectionRef}
-            className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between"
-          >
-            <div>
-              <h1 className="text-3xl font-bold xl:text-4xl">Tổng quan ngân sách</h1>
-              <p className="mt-2 text-slate-500">
-                Theo dõi ngân sách, khoản chi và xu hướng sử dụng tiền của bạn.
-              </p>
-            </div>
+      <div
+        ref={sectionRef}
+        className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between"
+      >
+        <div>
+          <h1 className="text-3xl font-bold xl:text-4xl text-slate-950 dark:text-white">Tổng quan ngân sách</h1>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
+            Theo dõi ngân sách, khoản chi và xu hướng sử dụng tiền của bạn.
+          </p>
+        </div>
 
             <div className="relative w-full sm:w-auto">
               <button
@@ -806,9 +765,7 @@ function BudgetPage() {
               Thêm khoản chi
             </button>
           </div>
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
@@ -959,25 +916,25 @@ function AddExpenseModal({
 
 function SummaryCard({ icon, title, value, subtitle, bg, progress, badge }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-start gap-3 sm:gap-4">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${bg} sm:h-12 sm:w-12`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${bg} sm:h-12 sm:w-12 dark:bg-slate-800 dark:text-emerald-400`}
         >
           {icon}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-slate-500 sm:text-sm">{title}</p>
-          <h2 className="mt-2 break-words text-2xl font-bold leading-tight sm:text-3xl">
+          <p className="text-xs font-semibold text-slate-500 sm:text-sm dark:text-slate-400">{title}</p>
+          <h2 className="mt-2 break-words text-2xl font-bold leading-tight sm:text-3xl dark:text-white">
             {value}
           </h2>
-          <p className="mt-3 text-xs leading-5 text-slate-500 sm:mt-4 sm:text-sm">
+          <p className="mt-3 text-xs leading-5 text-slate-500 sm:mt-4 sm:text-sm dark:text-slate-400">
             {subtitle}
           </p>
 
           {progress !== undefined && (
-            <div className="mt-3 h-2 rounded-full bg-slate-100">
+            <div className="mt-3 h-2 rounded-full bg-slate-100 dark:bg-slate-800">
               <div
                 className="h-2 rounded-full bg-blue-600"
                 style={{ width: `${progress}%` }}
@@ -986,7 +943,7 @@ function SummaryCard({ icon, title, value, subtitle, bg, progress, badge }) {
           )}
 
           {badge && (
-            <span className="mt-3 inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 sm:px-4 sm:text-sm">
+            <span className="mt-3 inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 sm:px-4 sm:text-sm dark:bg-emerald-950/60 dark:text-emerald-400">
               {badge}
             </span>
           )}
@@ -998,8 +955,8 @@ function SummaryCard({ icon, title, value, subtitle, bg, progress, badge }) {
 
 function ChartCard({ title, children }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-6 text-xl font-bold">{title}</h2>
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="mb-6 text-xl font-bold dark:text-white">{title}</h2>
       {children}
     </div>
   );
@@ -1007,7 +964,7 @@ function ChartCard({ title, children }) {
 
 function EmptyChartState({ message }) {
   return (
-    <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 px-6 text-center text-sm text-slate-500">
+    <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 px-6 text-center text-sm text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
       {message}
     </div>
   );
@@ -1021,11 +978,11 @@ function ChartTooltip({ active, payload, label, formatter = formatMoney }) {
   const displayLabel = label ?? payload[0]?.name ?? payload[0]?.payload?.name;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-lg shadow-slate-200/60">
+    <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
       {displayLabel && (
-        <p className="text-xs font-medium text-slate-500">{displayLabel}</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{displayLabel}</p>
       )}
-      <p className="mt-1 text-sm font-bold text-slate-900">
+      <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
         {formatter(payload[0].value)}
       </p>
     </div>
@@ -1098,9 +1055,9 @@ function CategoryChart({ totalSpent, categoryData }) {
       </div>
 
       <div className="w-full flex-1 space-y-4">
-        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-          <p className="text-sm text-slate-500">Tổng chi tiêu</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">
+        <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Tổng chi tiêu</p>
+          <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
             {formatMoney(totalSpent)}
           </p>
         </div>
@@ -1108,17 +1065,17 @@ function CategoryChart({ totalSpent, categoryData }) {
         {categoryData.map((item) => (
           <div
             key={item.key}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 px-4 py-3"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 px-4 py-3 dark:border-slate-800"
           >
             <div className="flex items-center gap-3">
               <span
                 className="h-3.5 w-3.5 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-sm font-medium text-slate-600">{item.name}</span>
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{item.name}</span>
             </div>
-            <span className="text-sm font-bold text-slate-900">{item.percent}%</span>
-            <span className="text-sm font-semibold text-slate-600">
+            <span className="text-sm font-bold text-slate-900 dark:text-white">{item.percent}%</span>
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               {formatMoney(item.amount)}
             </span>
           </div>
@@ -1130,21 +1087,21 @@ function CategoryChart({ totalSpent, categoryData }) {
 
 function RecentExpenses({ expenses, onViewAllExpenses }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-bold">Khoản chi gần đây</h2>
+        <h2 className="text-xl font-bold dark:text-white">Khoản chi gần đây</h2>
         <button
           type="button"
           onClick={onViewAllExpenses}
-          className="cursor-pointer rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+          className="cursor-pointer rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:hover:bg-emerald-900/60"
         >
           Xem tất cả khoản chi
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-100">
+      <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Ngày</th>
               <th className="px-4 py-3">Danh mục</th>
@@ -1158,24 +1115,24 @@ function RecentExpenses({ expenses, onViewAllExpenses }) {
           <tbody>
             {expenses.length > 0 ? (
               expenses.map((expense) => (
-                <tr key={expense.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3">{formatDate(expense.date)}</td>
-                  <td className="px-4 py-3 font-semibold">
+                <tr key={expense.id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{formatDate(expense.date)}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
                     {categoryLabelMap[expense.category] ?? expense.category}
                   </td>
-                  <td className="px-4 py-3">{expense.description}</td>
-                  <td className="px-4 py-3 font-bold">
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{expense.description}</td>
+                  <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">
                     {formatMoney(expense.amount)}
                   </td>
-                  <td className="px-4 py-3">{expense.currency}</td>
-                  <td className="px-4 py-3 text-slate-500">{expense.note}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{expense.currency}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{expense.note}</td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-10 text-center text-sm text-slate-500"
+                  className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
                   Không có khoản chi nào trong khoảng ngày đang chọn.
                 </td>

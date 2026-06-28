@@ -19,19 +19,18 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
 
   if (!result) {
     return (
-      <section className="flex min-h-[560px] items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm shadow-slate-200/50">
+      <section className="flex min-h-[560px] items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-400">
             <Sparkles size={30} />
           </div>
 
-          <h2 className="mt-5 text-lg font-semibold text-slate-950">
-            Chua co ket qua phan tich
+          <h2 className="mt-5 text-lg font-semibold text-slate-950 dark:text-white">
+            Chưa có kết quả phân tích
           </h2>
 
-          <p className="mt-2 max-w-sm text-sm text-slate-500">
-            Sau khi tai anh len, backend se tra ve ket qua AI va phan nay se
-            hien thi thong tin mon an.
+          <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+            Sau khi tải ảnh lên, AI sẽ phân tích và hiển thị thông tin dinh dưỡng tại đây.
           </p>
         </div>
       </section>
@@ -80,16 +79,16 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
   const displayResult = isEditing ? draftResult : result;
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Sparkles className="text-emerald-600" size={22} />
-          <h2 className="text-lg font-semibold text-slate-950">
-            Ket qua phan tich AI
+          <Sparkles className="text-emerald-600 dark:text-emerald-400" size={22} />
+          <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+            Kết quả phân tích AI
           </h2>
         </div>
 
-        <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-semibold text-emerald-700">
+        <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
           {displayResult.ai.status}
         </span>
       </div>
@@ -102,15 +101,15 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
 
       {isEditing ? (
         <div className="mt-5">
-          <label className="text-sm font-medium text-slate-600">Ten mon an</label>
+          <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Tên món ăn</label>
           <input
             value={draftResult.foodName}
             onChange={(event) => updateFoodName(event.target.value)}
-            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+            className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
           />
         </div>
       ) : (
-        <h3 className="mt-5 text-2xl font-bold text-slate-950">
+        <h3 className="mt-5 text-2xl font-bold text-slate-950 dark:text-white">
           {displayResult.foodName}
         </h3>
       )}
@@ -146,7 +145,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
           />
 
           <EditNumberField
-            label="Gia uoc tinh"
+            label="Giá ước tính"
             unit={draftResult.currency}
             value={draftResult.estimatedPrice}
             onChange={updateEstimatedPrice}
@@ -170,7 +169,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
               label="Protein"
               value={displayResult.nutrition.protein}
               unit="g"
-              color="text-emerald-600"
+              color="text-emerald-600 dark:text-emerald-400"
               compact
             />
 
@@ -195,44 +194,44 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
 
           <NutritionCard
             icon={Wallet}
-            label="Gia uoc tinh"
+            label="Giá ước tính"
             value={displayResult.estimatedPrice.toLocaleString("vi-VN")}
             unit={displayResult.currency}
-            color="text-emerald-600"
+            color="text-emerald-600 dark:text-emerald-400"
           />
         </div>
       )}
 
       <div className="mt-7">
-        <h4 className="mb-3 flex items-center gap-2 font-semibold text-slate-950">
-          <Leaf size={18} className="text-emerald-600" />
-          Chi tiet phan tich AI
+        <h4 className="mb-3 flex items-center gap-2 font-semibold text-slate-950 dark:text-white">
+          <Leaf size={18} className="text-emerald-600 dark:text-emerald-400" />
+          Chi tiết phân tích AI
         </h4>
 
-        <div className="divide-y divide-slate-100 text-sm">
+        <div className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
           <DetailRow label="Model" value={displayResult.ai.model} />
-          <DetailRow label="Loai dau vao" value={displayResult.ai.inputType} />
+          <DetailRow label="Loại đầu vào" value={displayResult.ai.inputType} />
 
           <div className="flex justify-between py-3">
-            <span className="text-slate-500">Trang thai</span>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="text-slate-500 dark:text-slate-400">Trạng thái</span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
               {displayResult.ai.status}
             </span>
           </div>
 
           <DetailRow
-            label="Do tin cay"
+            label="Độ tin cậy"
             value={`${displayResult.ai.confidence}%`}
           />
 
           <DetailRow
-            label="Gia uoc tinh"
+            label="Giá ước tính"
             value={`${displayResult.estimatedPrice.toLocaleString("vi-VN")} ${
               displayResult.currency
             }`}
           />
 
-          <DetailRow label="Thoi gian tao" value={displayResult.ai.createdAt} />
+          <DetailRow label="Thời gian tạo" value={displayResult.ai.createdAt} />
         </div>
       </div>
 
@@ -241,38 +240,38 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
           <button
             type="button"
             onClick={handleCancelEdit}
-            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98]"
+            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             <X size={18} />
-            Huy
+            Hủy
           </button>
 
           <button
             type="button"
             onClick={handleSaveEdit}
-            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-emerald-700 active:scale-[0.98]"
+            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-emerald-700 active:scale-[0.98] dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
             <Save size={18} />
-            Luu chinh sua
+            Lưu chỉnh sửa
           </button>
         </div>
       ) : (
         <div className="mt-6 space-y-3">
           <button
             type="button"
-            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98]"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
             <Save size={18} />
-            Luu bua an
+            Lưu bữa ăn
           </button>
 
           <button
             type="button"
             onClick={handleStartEdit}
-            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 active:scale-[0.98]"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 active:scale-[0.98] dark:border-emerald-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-emerald-950/40"
           >
             <Pencil size={18} />
-            Chinh sua ket qua
+            Chỉnh sửa kết quả
           </button>
         </div>
       )}
@@ -283,16 +282,16 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
 function EditNumberField({ label, unit, value, onChange, className = "" }) {
   return (
     <div className={className}>
-      <label className="text-sm font-medium text-slate-600">{label}</label>
-      <div className="mt-2 flex h-12 items-center rounded-xl border border-slate-200 bg-white px-3 transition focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100">
+      <label className="text-sm font-medium text-slate-600 dark:text-slate-400">{label}</label>
+      <div className="mt-2 flex h-12 items-center rounded-xl border border-slate-200 bg-white px-3 transition focus-within:border-emerald-500 dark:border-slate-800 dark:bg-slate-800">
         <input
           type="number"
           min="0"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none"
+          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none dark:text-white"
         />
-        <span className="text-xs font-semibold text-slate-500">{unit}</span>
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{unit}</span>
       </div>
     </div>
   );
@@ -301,8 +300,8 @@ function EditNumberField({ label, unit, value, onChange, className = "" }) {
 function DetailRow({ label, value }) {
   return (
     <div className="flex justify-between gap-4 py-3">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-right font-semibold text-slate-900">{value}</span>
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="text-right font-semibold text-slate-900 dark:text-slate-200">{value}</span>
     </div>
   );
 }
