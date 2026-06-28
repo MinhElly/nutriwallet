@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Beef,
   Droplet,
@@ -16,11 +16,6 @@ import NutritionCard from "./NutritionCard";
 export default function AnalysisResultCard({ result, onUpdateResult }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftResult, setDraftResult] = useState(result);
-
-  useEffect(() => {
-    setDraftResult(result);
-    setIsEditing(false);
-  }, [result]);
 
   if (!result) {
     return (
