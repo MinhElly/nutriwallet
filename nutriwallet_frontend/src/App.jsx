@@ -1,3 +1,4 @@
+
 import { Toaster } from "react-hot-toast";
 import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -19,3 +20,4 @@ function App() {
 }
 
 export default App;
+

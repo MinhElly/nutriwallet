@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import LandingPage from "../components/LandingPage/LandingPage";
 import BudgetPage from "../pages/budget/BudgetPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import ExpenseHistoryPage from "../pages/expense/ExpenseHistoryPage";
@@ -12,7 +13,7 @@ import SettingsPage from "../pages/settings/SettingsPage";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <LandingPage />,
   },
   {
     path: "/login",
@@ -52,6 +53,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/login" replace />,
+    element: <Navigate to="/" replace />,
   },
 ]);
