@@ -1,11 +1,12 @@
 
 import { Toaster } from "react-hot-toast";
 import { RouterProvider } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 import { router } from "./routes/router";
 
 function App() {
   return (
-    <>
+    <ThemeProvider>
       <RouterProvider router={router} />
       <Toaster
         position="top-right"
@@ -14,7 +15,7 @@ function App() {
           style: { fontSize: "14px" },
         }}
       />
-    </>
+    </ThemeProvider>
   );
 }
 
