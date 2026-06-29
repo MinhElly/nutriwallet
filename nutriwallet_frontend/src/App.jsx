@@ -1,3 +1,4 @@
+
 import { Toaster } from "react-hot-toast";
 import { RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
@@ -22,3 +23,4 @@ function App() {
 }
 
 export default App;
+

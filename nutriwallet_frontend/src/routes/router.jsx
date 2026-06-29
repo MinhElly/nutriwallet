@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import LandingPage from "../components/LandingPage/LandingPage";
 import BudgetPage from "../pages/budget/BudgetPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import ExpenseHistoryPage from "../pages/expense/ExpenseHistoryPage";
@@ -13,7 +14,7 @@ import { ProtectedRoute, PublicOnlyRoute } from "./route-guards";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <LandingPage />,
   },
 
   // Trang công khai — chỉ truy cập khi chưa đăng nhập
@@ -68,7 +69,7 @@ export const router = createBrowserRouter([
 
   {
     path: "*",
-    element: <Navigate to="/login" replace />,
+    element: <Navigate to="/" replace />,
   },
 ]);
 
