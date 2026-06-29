@@ -32,14 +32,23 @@ export function getCurrentGreeting() {
   const hour = new Date().getHours();
 
   if (hour < 12) {
-    return "Chào buổi sáng";
+    return {
+      text: "Chào buổi sáng",
+      icon: "🌅",
+    };
   }
 
   if (hour < 18) {
-    return "Chào buổi chiều";
+    return {
+      text: "Chào buổi chiều",
+      icon: "🌞",
+    };
   }
 
-  return "Chào buổi tối";
+  return {
+    text: "Chào buổi tối",
+    icon: "🌙",
+  };
 }
 
 export function getWeekdayLabels() {
