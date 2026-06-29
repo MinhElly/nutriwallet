@@ -7,10 +7,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "../../components/layout/AppShell";
-import {
-  expenseCategoryLabelMap,
-  expenseHistoryData,
-} from "../../data/accountData";
+import { useExpenseHistoryData } from "../../hooks/useExpenseHistoryData";
 import {
   buildCalendarDays,
   formatMonthYearLabel,
@@ -86,8 +83,8 @@ function normalizeDateRange(startDate, endDate) {
     : { startDate: endDate, endDate: startDate };
 }
 
-function getDefaultRange() {
-  const sortedDates = [...expenseHistoryData]
+function getDefaultRange(expenses = []) {
+  const sortedDates = [...expenses]
     .map((item) => item.expenseDate)
     .sort((firstDate, secondDate) => firstDate.localeCompare(secondDate));
 
@@ -98,8 +95,9 @@ function getDefaultRange() {
 }
 
 export default function ExpenseHistoryPage() {
+  const { expenses: expenseHistoryData, categoryLabelMap: expenseCategoryLabelMap } = useExpenseHistoryData();
   const today = useMemo(() => new Date(), []);
-  const defaultRange = useMemo(() => getDefaultRange(), []);
+  const defaultRange = useMemo(() => getDefaultRange(expenseHistoryData), [expenseHistoryData]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStartDate, setSelectedStartDate] = useState(defaultRange.startDate);
@@ -171,7 +169,7 @@ export default function ExpenseHistoryPage() {
         formattedDate.includes(trimmedQuery)
       );
     });
-  }, [searchQuery, selectedEndDate, selectedStartDate]);
+  }, [searchQuery, selectedEndDate, selectedStartDate, expenseHistoryData, expenseCategoryLabelMap]);
 
   function openDatePicker() {
     setOpenDropdown((current) => {

@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Search, User } from "lucide-react";
 import AppShell from "../../components/layout/AppShell";
 import MealHistoryTable from "../../components/meal/MealHistoryTable";
-import { userInfo } from "../../data/dashboardData";
+import { useAuth } from "../../hooks/useAuth";
 
 function MealHistoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { currentUser } = useAuth();
 
   return (
     <AppShell pageLabel="Lịch sử bữa ăn">
@@ -22,10 +23,10 @@ function MealHistoryPage() {
 
           <div className="shrink-0 xl:hidden">
             <button className="flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-emerald-700 shadow-sm shadow-emerald-100/80">
-              {userInfo.avatar ? (
+              {currentUser?.avatarUrl ? (
                 <img
-                  src={userInfo.avatar}
-                  alt={userInfo.name}
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.fullName}
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
@@ -49,10 +50,10 @@ function MealHistoryPage() {
 
           <div className="hidden items-center xl:flex">
             <button className="flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-emerald-700 shadow-sm shadow-emerald-100/80">
-              {userInfo.avatar ? (
+              {currentUser?.avatarUrl ? (
                 <img
-                  src={userInfo.avatar}
-                  alt={userInfo.name}
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.fullName}
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (

@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
 import { Wallet } from "lucide-react";
-import { getDashboardSnapshot } from "../../data/dashboardData";
+import { useDashboardData } from "../../hooks/useDashboardData";
 import AccountCard from "../../components/dashboard/AccountCard";
 import BudgetUsageCard from "../../components/dashboard/BudgetUsageCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
@@ -12,13 +11,13 @@ import RecommendationCard from "../../components/dashboard/RecommendationCard";
 import AppShell from "../../components/layout/AppShell";
 
 export default function DashboardPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedPeriod, setSelectedPeriod] = useState("1 tháng qua");
-
-  const dashboardSnapshot = useMemo(
-    () => getDashboardSnapshot(selectedDate, selectedPeriod),
-    [selectedDate, selectedPeriod],
-  );
+  const {
+    selectedDate,
+    setSelectedDate,
+    selectedPeriod,
+    setSelectedPeriod,
+    snapshot: dashboardSnapshot,
+  } = useDashboardData();
 
   const {
     budgetSummary,

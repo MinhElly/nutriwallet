@@ -8,50 +8,67 @@ import MealHistoryPage from "../pages/meal/MealHistoryPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 import ScanMealPage from "../pages/scanMeal/ScanMealPage";
 import SettingsPage from "../pages/settings/SettingsPage";
+import { ProtectedRoute, PublicOnlyRoute } from "./route-guards";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Navigate to="/login" replace />,
   },
+
+  // Trang công khai — chỉ truy cập khi chưa đăng nhập
   {
-    path: "/login",
-    element: <LoginPage />,
+    element: <PublicOnlyRoute />,
+    children: [
+      {
+        path: "/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/register",
+        element: <RegisterPage />,
+      },
+    ],
   },
+
+  // Trang bảo vệ — yêu cầu đăng nhập
   {
-    path: "/register",
-    element: <RegisterPage />,
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: "/dashboard",
+        element: <DashboardPage />,
+      },
+      {
+        path: "/meal-history",
+        element: <MealHistoryPage />,
+      },
+      {
+        path: "/scan-meal",
+        element: <ScanMealPage />,
+      },
+      {
+        path: "/budget",
+        element: <BudgetPage />,
+      },
+      {
+        path: "/expense-history",
+        element: <ExpenseHistoryPage />,
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />,
+      },
+      {
+        path: "/settings",
+        element: <SettingsPage />,
+      },
+    ],
   },
-  {
-    path: "/dashboard",
-    element: <DashboardPage />,
-  },
-  {
-    path: "/meal-history",
-    element: <MealHistoryPage />,
-  },
-  {
-    path: "/scan-meal",
-    element: <ScanMealPage />,
-  },
-  {
-    path: "/budget",
-    element: <BudgetPage />,
-  },
-  {
-    path: "/expense-history",
-    element: <ExpenseHistoryPage />,
-  },
-  {
-    path: "/profile",
-    element: <ProfilePage />,
-  },
-  {
-    path: "/settings",
-    element: <SettingsPage />,
-  },
+
   {
     path: "*",
     element: <Navigate to="/login" replace />,
   },
 ]);
+

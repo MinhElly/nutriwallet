@@ -12,13 +12,10 @@ import {
 import { useMemo, useState } from "react";
 import AppShell from "../../components/layout/AppShell";
 import { useTheme } from "../../hooks/useTheme";
-import {
-  applySettingsState,
-  profileData,
-  settingsData,
-} from "../../data/accountData";
+import { useSettingsData } from "../../hooks/useSettingsData";
+import { useProfileData } from "../../hooks/useProfileData";
 
-function getInitialSettingsMap() {
+function getInitialSettingsMap(settingsData) {
   const settingsMap = settingsData.sections.reduce((result, section) => {
     section.items.forEach((item) => {
       if (item.key === "default_model" || item.key === "warning_threshold_percent") {
@@ -49,7 +46,9 @@ function formatSavedTime(date) {
 }
 
 export default function SettingsPage() {
-  const initialSettings = useMemo(() => getInitialSettingsMap(), []);
+  const { settingsData, saveSettings } = useSettingsData();
+  const { profileData } = useProfileData();
+  const initialSettings = useMemo(() => getInitialSettingsMap(settingsData), [settingsData]);
   const [settingsState, setSettingsState] = useState(initialSettings);
   const [savedSettingsState, setSavedSettingsState] = useState(initialSettings);
   const [lastSavedAt, setLastSavedAt] = useState(new Date());
@@ -66,7 +65,7 @@ export default function SettingsPage() {
   }
 
   function handleSaveSettings() {
-    applySettingsState(settingsState);
+    saveSettings(settingsState);
     setSavedSettingsState(settingsState);
     setLastSavedAt(new Date());
   }
