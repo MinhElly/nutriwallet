@@ -353,6 +353,12 @@ export function applyProfileDataUpdates(updates) {
     profileResponse.data.user.email = updates.email;
     userInfo.email = updates.email;
   }
+
+  if (updates.avatarUrl !== undefined) {
+    profileData.user.avatarUrl = updates.avatarUrl;
+    profileResponse.data.user.avatar_url = updates.avatarUrl;
+    userInfo.avatar = updates.avatarUrl;
+  }
 }
 
 export function applySettingsState(settingsState) {
