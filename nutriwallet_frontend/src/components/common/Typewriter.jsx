@@ -26,14 +26,16 @@ function Typewriter({
 
         if (isDeleting) {
             if (displayText === "") {
-                setIsDeleting(false);
+                timeout = setTimeout(() => {
+                    setIsDeleting(false);
 
-                if (currentTextIndex === texts.length - 1 && !loop) {
-                    return;
-                }
+                    if (currentTextIndex === texts.length - 1 && !loop) {
+                        return;
+                    }
 
-                setCurrentTextIndex((prev) => (prev + 1) % texts.length);
-                setCurrentIndex(0);
+                    setCurrentTextIndex((prev) => (prev + 1) % texts.length);
+                    setCurrentIndex(0);
+                }, 10);
             } else {
                 timeout = setTimeout(() => {
                     setDisplayText((prev) => prev.slice(0, -1));

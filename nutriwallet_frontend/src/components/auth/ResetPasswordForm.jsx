@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Mail,
   Lock,
   Eye,
   EyeOff,
@@ -11,7 +10,6 @@ import {
   PersonStanding,
   Sprout,
   CheckCircle2,
-  ArrowLeft,
 } from "lucide-react";
 
 import LoginFloatingCard from "./LoginFloatingCard";
