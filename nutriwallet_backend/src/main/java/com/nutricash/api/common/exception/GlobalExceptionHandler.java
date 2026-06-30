@@ -56,14 +56,20 @@ public class GlobalExceptionHandler {
 
     private HttpStatus statusFor(ErrorCode errorCode) {
         return switch (errorCode) {
-            case VALIDATION_ERROR -> HttpStatus.BAD_REQUEST;
+            case VALIDATION_ERROR, FILE_EMPTY, FILE_TOO_LARGE, FILE_TYPE_NOT_ALLOWED -> HttpStatus.BAD_REQUEST;
             case UNAUTHORIZED, INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case RESOURCE_NOT_FOUND, USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case CONFLICT, EMAIL_ALREADY_EXISTS, TOKEN_ALREADY_USED -> HttpStatus.CONFLICT;
             case INVALID_TOKEN, TOKEN_EXPIRED -> HttpStatus.BAD_REQUEST;
-            case EMAIL_SEND_FAILED -> HttpStatus.BAD_GATEWAY;
+            case EMAIL_SEND_FAILED, AI_PROVIDER_UNAVAILABLE, AI_INVALID_RESPONSE,
+                    FILE_UPLOAD_FAILED, FILE_DELETE_FAILED -> HttpStatus.BAD_GATEWAY;
+            case AI_NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
+            case AI_AUTH_FAILED -> HttpStatus.UNAUTHORIZED;
+            case AI_RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
+            case AI_BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }
 }
+

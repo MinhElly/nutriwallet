@@ -3,6 +3,8 @@ package com.nutricash.api.security;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -52,6 +54,15 @@ public class JwtService {
 
     public String extractEmail(String token) {
         return parsePayload(token).get("sub").toString();
+    }
+
+    public String tokenHash(String token) {
+        try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8))); }
+        catch (Exception e) { throw new IllegalStateException("Could not hash token", e); }
+    }
+
+    public Instant extractExpiration(String token) {
+        return Instant.ofEpochSecond(((Number) parsePayload(token).get("exp")).longValue());
     }
 
     public boolean isTokenValid(String token, SecurityUser user) {
@@ -117,4 +128,6 @@ public class JwtService {
         }
     }
 }
+
+
 

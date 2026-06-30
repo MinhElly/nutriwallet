@@ -54,6 +54,10 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
+    @JsonIgnore
+    @Column(name = "session_token_hash", length = 64)
+    private String sessionTokenHash;
+
     @Column(name = "avatar_url", length = 1024)
     private String avatarUrl;
 

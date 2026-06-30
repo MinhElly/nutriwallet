@@ -1,8 +1,11 @@
 package com.nutricash.api.storage.dto;
 
-/**
- * Skeleton type for the storage module.
- */
-public record UploadFileResponse() {
+public record UploadFileResponse(
+        String publicId,
+        String url,
+        String format,
+        long bytes,
+        int width,
+        int height
+) {
 }
-

@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/ai")
@@ -26,10 +29,16 @@ public class AiAnalysisController {
 
     @Operation(summary = "Analyze meal", description = "Accept text and/or image URL of a meal, stores an AI analysis log, and returns estimated calories and macros.")
     @PostMapping("/analyze-meal")
-    public ApiResponse<AiAnalyzeMealResponse> analyzeMeal(
+    public ResponseEntity<ApiResponse<AiAnalyzeMealResponse>> analyzeMeal(
             @AuthenticationPrincipal SecurityUser currentUser,
-            @RequestBody AiAnalyzeMealRequest request
-    ) {
-        return ApiResponse.success(aiAnalysisService.analyzeMeal(currentUser, request));
+            @RequestBody AiAnalyzeMealRequest request) {
+        AiAnalyzeMealResponse result = aiAnalysisService.analyzeMeal(currentUser, request);
+        return ResponseEntity.status(202).body(ApiResponse.success(result.message(), result));
+    }
+
+    @GetMapping("/analyses/{id}")
+    public ApiResponse<AiAnalyzeMealResponse> getAnalysis(@AuthenticationPrincipal SecurityUser currentUser,
+            @PathVariable Long id) {
+        return ApiResponse.success(aiAnalysisService.getAnalysis(currentUser, id));
     }
 }

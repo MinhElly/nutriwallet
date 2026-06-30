@@ -7,6 +7,18 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND("RESOURCE_NOT_FOUND","resource not found"),
     CONFLICT("CONFLICT", "conflict"),
     INTERNAL_ERROR("INTERNAL_ERROR", "Internet can not load"),
+    AI_NOT_CONFIGURED("AI_NOT_CONFIGURED", "AI provider is not configured"),
+    AI_AUTH_FAILED("AI_AUTH_FAILED", "AI API key is invalid or unauthorized"),
+    AI_RATE_LIMITED("AI_RATE_LIMITED", "AI quota or rate limit exceeded"),
+    AI_BAD_REQUEST("AI_BAD_REQUEST", "AI model or request is invalid"),
+    AI_PROVIDER_UNAVAILABLE("AI_PROVIDER_UNAVAILABLE", "AI provider is temporarily unavailable"),
+    AI_INVALID_RESPONSE("AI_INVALID_RESPONSE", "AI provider returned an invalid response"),
+
+    FILE_EMPTY("FILE_EMPTY", "File is empty"),
+    FILE_TOO_LARGE("FILE_TOO_LARGE", "File exceeds the 10 MB limit"),
+    FILE_TYPE_NOT_ALLOWED("FILE_TYPE_NOT_ALLOWED", "Only JPEG, PNG, WebP and HEIC images are allowed"),
+    FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "Could not upload image"),
+    FILE_DELETE_FAILED("FILE_DELETE_FAILED", "Could not delete image"),
 
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
     EMAIL_ALREADY_EXISTS("EMAIL_ALREADY_EXISTS", "Email already exists"),
@@ -33,4 +45,5 @@ public enum ErrorCode {
         return message;
     }
 }
+
 
