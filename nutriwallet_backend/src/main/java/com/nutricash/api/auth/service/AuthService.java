@@ -106,7 +106,7 @@ public class AuthService {
         verificationToken.setVerifiedAt(Instant.now());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmailIgnoreCase(request.email().trim())
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
@@ -122,7 +122,16 @@ public class AuthService {
         }
 
         SecurityUser securityUser = new SecurityUser(user);
-        return AuthResponse.bearer(jwtService.generateToken(securityUser), userMapper.toResponse(user));
+        String token = jwtService.generateToken(securityUser);
+        user.setSessionTokenHash(jwtService.tokenHash(token));
+        return AuthResponse.bearer(token, userMapper.toResponse(user));
+    }
+
+    @Transactional
+    public void logout(SecurityUser currentUser) {
+        if (currentUser == null) throw new AppException(ErrorCode.UNAUTHORIZED);
+        User user = userRepository.findById(currentUser.getId()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setSessionTokenHash(null);
     }
 
     @Transactional(readOnly = true)
@@ -141,3 +150,5 @@ public class AuthService {
         return TOKEN_ENCODER.encodeToString(bytes);
     }
 }
+
+
