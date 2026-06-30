@@ -1,7 +1,10 @@
 package com.nutricash.api.security;
 
+import com.nutricash.api.auth.service.RevokedTokenService;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -17,10 +20,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final RevokedTokenService revokedTokenService;
 
-    public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService userDetailsService, RevokedTokenService revokedTokenService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.revokedTokenService = revokedTokenService;
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        if (request.getCookies() != null) for (Cookie cookie : request.getCookies())
+            if ("access_token".equals(cookie.getName())) return cookie.getValue();
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && authorization.startsWith("Bearer ")) return authorization.substring(7);
+        return null;
     }
 
     @Override
@@ -29,18 +42,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String authorization = request.getHeader("Authorization");
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
+        String token = resolveToken(request);
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = authorization.substring(7);
         try {
+            if (revokedTokenService.isRevoked(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String email = jwtService.extractEmail(token);
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                if (userDetails instanceof SecurityUser securityUser && jwtService.isTokenValid(token, securityUser)) {
+                if (userDetails instanceof SecurityUser securityUser && jwtService.isTokenValid(token, securityUser)
+                        && jwtService.tokenHash(token).equals(securityUser.getUser().getSessionTokenHash())) {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -57,3 +73,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+
+
+
