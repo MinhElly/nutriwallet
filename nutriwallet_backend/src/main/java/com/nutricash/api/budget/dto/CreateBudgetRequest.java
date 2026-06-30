@@ -1,8 +1,15 @@
 package com.nutricash.api.budget.dto;
 
-/**
- * Skeleton type for the budget module.
- */
-public record CreateBudgetRequest() {
-}
+import com.nutricash.api.common.enums.BudgetPeriodType;
+import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
+public record CreateBudgetRequest(
+        @NotNull BigDecimal amount,
+        @NotNull BudgetPeriodType period,
+        LocalDate startDate,
+        LocalDate endDate,
+        Integer warningThresholdPercent
+) {
+}

@@ -1,8 +1,13 @@
 package com.nutricash.api.ai.dto;
 
-/**
- * Skeleton type for the ai module.
- */
-public record AiAnalyzeMealRequest() {
-}
+import java.math.BigDecimal;
 
+public record AiAnalyzeMealRequest(
+        String text,
+        String imageUrl,
+        BigDecimal estimatedCalories,
+        BigDecimal estimatedProteinGram,
+        BigDecimal estimatedCarbGram,
+        BigDecimal estimatedFatGram
+) {
+}

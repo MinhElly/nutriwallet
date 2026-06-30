@@ -1,8 +1,19 @@
 package com.nutricash.api.meal.dto;
 
-/**
- * Skeleton type for the meal module.
- */
-public record CreateMealRequest() {
-}
+import jakarta.validation.constraints.NotBlank;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
+public record CreateMealRequest(
+        @NotBlank String mealName,
+        String description,
+        String imageUrl,
+        LocalDateTime mealTime,
+        BigDecimal totalCalories,
+        BigDecimal proteinGram,
+        BigDecimal carbGram,
+        BigDecimal fatGram,
+        Boolean aiEstimated,
+        Boolean confirmedByUser
+) {
+}

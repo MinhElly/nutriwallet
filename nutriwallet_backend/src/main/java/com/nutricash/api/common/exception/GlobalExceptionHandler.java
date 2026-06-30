@@ -1,17 +1,24 @@
 package com.nutricash.api.common.exception;
 
 import com.nutricash.api.common.dto.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.Instant;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException exception) {
+        log.warn("Application error: {}", exception.getErrorCode().name(), exception);
         ErrorResponse response = new ErrorResponse(
                 exception.getErrorCode().name(),
                 exception.getMessage(),
@@ -20,8 +27,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(statusFor(exception.getErrorCode())).body(response);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException exception) {
+        String message = exception.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+
+        ErrorResponse response = new ErrorResponse(
+                ErrorCode.VALIDATION_ERROR.name(),
+                message,
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception exception) {
+        log.error("Unexpected error", exception);
         ErrorResponse response = new ErrorResponse(
                 ErrorCode.INTERNAL_ERROR.name(),
                 "An unexpected error occurred",
@@ -32,11 +56,18 @@ public class GlobalExceptionHandler {
 
     private HttpStatus statusFor(ErrorCode errorCode) {
         return switch (errorCode) {
-            case VALIDATION_ERROR -> HttpStatus.BAD_REQUEST;
-            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            case VALIDATION_ERROR, FILE_EMPTY, FILE_TOO_LARGE, FILE_TYPE_NOT_ALLOWED -> HttpStatus.BAD_REQUEST;
+            case UNAUTHORIZED, INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
-            case RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case CONFLICT -> HttpStatus.CONFLICT;
+            case RESOURCE_NOT_FOUND, USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case CONFLICT, EMAIL_ALREADY_EXISTS, TOKEN_ALREADY_USED -> HttpStatus.CONFLICT;
+            case INVALID_TOKEN, TOKEN_EXPIRED -> HttpStatus.BAD_REQUEST;
+            case EMAIL_SEND_FAILED, AI_PROVIDER_UNAVAILABLE, AI_INVALID_RESPONSE,
+                    FILE_UPLOAD_FAILED, FILE_DELETE_FAILED -> HttpStatus.BAD_GATEWAY;
+            case AI_NOT_CONFIGURED -> HttpStatus.SERVICE_UNAVAILABLE;
+            case AI_AUTH_FAILED -> HttpStatus.UNAUTHORIZED;
+            case AI_RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
+            case AI_BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }

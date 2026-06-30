@@ -2,8 +2,10 @@ package com.nutricash.api.ai.entity;
 
 import com.nutricash.api.common.enums.AiAnalysisStatus;
 import com.nutricash.api.common.enums.AiInputType;
+import com.nutricash.api.common.enums.AiAnalysisSource;
 import com.nutricash.api.meal.entity.MealRecord;
 import com.nutricash.api.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -79,6 +81,26 @@ public class AiAnalysisLog {
     @Column(name = "model_name", length = 100)
     private String modelName;
 
+    @Column(name = "food_name", length = 255)
+    private String foodName;
+
+    @Column(name = "retry_count", nullable = false)
+    @Builder.Default
+    private int retryCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", length = 20)
+    private AiAnalysisSource source;
+
+    @Column(name = "cache_key", length = 64)
+    private String cacheKey;
+
+    @Column(name = "started_at")
+    private Instant startedAt;
+
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AiAnalysisStatus status;
@@ -91,7 +113,7 @@ public class AiAnalysisLog {
     private Instant createdAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "aiAnalysisLog", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "aiAnalysisLog", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AiErrorReport> errorReports = new ArrayList<>();
 
     @PrePersist
@@ -101,4 +123,3 @@ public class AiAnalysisLog {
         }
     }
 }
-

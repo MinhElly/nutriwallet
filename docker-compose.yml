@@ -41,6 +41,26 @@ services:
     networks:
       - nutriwallet-network
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: nutriwallet-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-nutriwallet}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-nutriwallet_dev_password}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nutriwallet-network
+
   backend:
     image: nutriwallet/backend:local
     build:
@@ -57,16 +77,32 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8082/api}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
       AI_PROVIDER: ${AI_PROVIDER:-GEMINI}
       AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gemini-2.5-flash-lite}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-nutriwallet}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-nutriwallet_dev_password}
+      AI_JOBS_PER_SECOND: ${AI_JOBS_PER_SECOND:-3}
+      AI_RETRY_MAX_ATTEMPTS: ${AI_RETRY_MAX_ATTEMPTS:-3}
+      AI_CACHE_TTL_DAYS: ${AI_CACHE_TTL_DAYS:-30}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
       JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
       TZ: Asia/Ho_Chi_Minh
     depends_on:
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     ports:
       - "${BACKEND_PORT:-8082}:8080"
@@ -92,6 +128,8 @@ services:
 volumes:
   mysql-data:
     name: nutriwallet-mysql-data
+  rabbitmq-data:
+    name: nutriwallet-rabbitmq-data
 
 networks:
   nutriwallet-network:
