@@ -7,6 +7,11 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND("RESOURCE_NOT_FOUND","resource not found"),
     CONFLICT("CONFLICT", "conflict"),
     INTERNAL_ERROR("INTERNAL_ERROR", "Internet can not load"),
+    FILE_EMPTY("FILE_EMPTY", "File is empty"),
+    FILE_TOO_LARGE("FILE_TOO_LARGE", "File exceeds the 10 MB limit"),
+    FILE_TYPE_NOT_ALLOWED("FILE_TYPE_NOT_ALLOWED", "Only JPEG, PNG, WebP and HEIC images are allowed"),
+    FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "Could not upload image"),
+    FILE_DELETE_FAILED("FILE_DELETE_FAILED", "Could not delete image"),
 
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
     EMAIL_ALREADY_EXISTS("EMAIL_ALREADY_EXISTS", "Email already exists"),
