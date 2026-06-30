@@ -1,6 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Psionic";
+  src: url("/fonts/Psionic.ttf") format("truetype");
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {

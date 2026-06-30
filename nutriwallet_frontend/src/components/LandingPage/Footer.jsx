@@ -8,7 +8,7 @@ const Footer = () => {
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">NW</div>
-              <span className="font-bold text-sm text-white tracking-tight">NutriWallet AI</span>
+              <span className="font-bold text-xs text-white tracking-tight" style={{ fontFamily: "Psionic" }}>NutriWallet AI</span>
             </div>
             <p className="max-w-xs leading-relaxed">
               AI-powered nutrition and expense tracking for a healthier, wealthier life. Made with ❤️ in Vietnam.

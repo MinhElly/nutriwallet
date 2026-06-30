@@ -1,4 +1,6 @@
 
+import { Link } from "react-router-dom";
+
 const Hero = () => {
   return (
     <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 bg-gradient-to-b from-green-50/50 to-white">
@@ -16,13 +18,13 @@ const Hero = () => {
               AI phân tích món ăn, calories và chi tiêu chỉ trong vài giây. Theo dõi dinh dưỡng và ngân sách trong một ứng dụng duy nhất.
             </p>
             <div className="flex flex-wrap items-center gap-4 mb-6">
-              <button className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3.5 rounded-xl flex items-center gap-2 transition shadow-lg shadow-green-200">
+              <Link to="/register" className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3.5 rounded-xl flex items-center gap-2 transition shadow-lg shadow-green-200">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0110 5.653h4a2.31 2.31 0 013.173.522l.144.195a.3.3 0 00.417.065A4.122 4.122 0 0121.75 10.5v6A4.125 4.125 0 0117.625 20.75h-11.25A4.125 4.125 0 012.25 16.5v-6a4.122 4.122 0 013.361-4.062.3.3 0 00.417-.065l.144-.195z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15.75a3 3 0 100-6 3 3 0 000 6z" />
                 </svg>
                 Scan Meal ngay
-              </button>
+              </Link>
               <button className="group flex items-center gap-2 text-gray-700 hover:text-green-600 font-semibold px-5 py-3.5 transition">
                 <span className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-gray-600 group-hover:text-green-600">
