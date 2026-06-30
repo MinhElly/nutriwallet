@@ -41,6 +41,13 @@ spring:
           writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
           starttls:
             enable: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:nutriwallet}
+    password: ${RABBITMQ_PASSWORD:nutriwallet_dev_password}
+    publisher-confirm-type: correlated
+    publisher-returns: true
   flyway:
     enabled: ${FLYWAY_ENABLED:true}
     baseline-on-migrate: true
@@ -79,11 +86,17 @@ app:
     from: ${MAIL_FROM:${MAIL_USERNAME:}}
   ai:
     provider: ${AI_PROVIDER:GEMINI}
-    api-key: ${AI_API_KEY:}
-    model: ${AI_MODEL:gemini-2.5-flash-lite}
+    api-key: ${AI_API_KEY}
+    model: ${AI_MODEL}
     base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com}
+    retry:
+      max-attempts: ${AI_RETRY_MAX_ATTEMPTS:3}
+    cache:
+      ttl-days: ${AI_CACHE_TTL_DAYS:30}
+    worker:
+      jobs-per-second: ${AI_JOBS_PER_SECOND:3}
+      prefetch: 1
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME:}
     api-key: ${CLOUDINARY_API_KEY:}
     api-secret: ${CLOUDINARY_API_SECRET:}
-
