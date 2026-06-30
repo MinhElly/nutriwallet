@@ -9,7 +9,7 @@ const Hero = () => {
           <div className="lg:col-span-7 max-w-2xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-6">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-              AI-Powered · Miễn phí 14 ngày
+              AI-Powered
             </span>
             <h1 className="text-4xl sm:text-6xl font-black text-gray-900 tracking-tight leading-[1.15] mb-6">
               Chụp một bức ảnh. Hiểu cả <span className="text-green-500">sức khỏe</span> và <span className="text-green-500">ví tiền.</span>
@@ -25,19 +25,7 @@ const Hero = () => {
                 </svg>
                 Scan Meal ngay
               </Link>
-              <button className="group flex items-center gap-2 text-gray-700 hover:text-green-600 font-semibold px-5 py-3.5 transition">
-                <span className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-gray-600 group-hover:text-green-600">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </span>
-                Watch Demo
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
-              <span className="flex items-center gap-1">✓ Free 14-day trial</span>
-              <span className="flex items-center gap-1">✓ Không cần thẻ tín dụng</span>
-              <span className="flex items-center gap-1">✓ Hủy bất kỳ lúc nào</span>
+
             </div>
           </div>
 

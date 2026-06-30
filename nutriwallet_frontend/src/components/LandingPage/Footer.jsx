@@ -18,7 +18,6 @@ const Footer = () => {
             <h5 className="font-semibold text-white uppercase tracking-wider mb-3 text-[10px]">Product</h5>
             <ul className="space-y-2">
               <li><a href="#features" className="hover:text-white transition">Features</a></li>
-              <li><a href="#pricing" className="hover:text-white transition">Pricing</a></li>
               <li><a href="#" className="hover:text-white transition">Changelog</a></li>
               <li><a href="#" className="hover:text-white transition">Roadmap</a></li>
             </ul>

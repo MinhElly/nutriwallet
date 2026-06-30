@@ -10,7 +10,7 @@ import Footer from './Footer';
 
 const LandingPage = () => {
   return (
-    <div className="font-sans text-gray-900 bg-white selection:bg-green-500 selection:text-white">
+    <div className="text-gray-900 bg-white selection:bg-green-500 selection:text-white" style={{ fontFamily: '"Geist", sans-serif' }}>
       <Navbar />
       <Hero />
       <Problem />
