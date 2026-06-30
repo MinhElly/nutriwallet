@@ -26,7 +26,7 @@ import {
   YAxis,
 } from "recharts";
 import AppShell from "../../components/layout/AppShell";
-import { budgetData } from "../../data/mockBudgetDta";
+import { useBudgetData } from "../../hooks/useBudgetData";
 import {
   buildCalendarDays,
   formatMonthYearLabel,
@@ -155,7 +155,7 @@ function BudgetPage() {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [activeDateField, setActiveDateField] = useState("start");
-  const { budget, expenses } = budgetData;
+  const { budget, expenses } = useBudgetData();
   const sectionRef = useRef(null);
   const [allExpenses, setAllExpenses] = useState(expenses);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);

@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { userInfo } from "../../data/dashboardData";
+import { useAuth } from "../../hooks/useAuth";
 
 function SidebarItem({ icon: Icon, label, to, active, onClick }) {
   return (
@@ -38,6 +38,7 @@ function SidebarItem({ icon: Icon, label, to, active, onClick }) {
 export default function Sidebar({ mobile = false, onClose }) {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { currentUser } = useAuth();
 
   const wrapperClass = mobile
     ? "relative flex h-full w-[248px] flex-col bg-[#111827] px-3 py-4 text-white"
@@ -136,22 +137,28 @@ export default function Sidebar({ mobile = false, onClose }) {
 
       <div className="relative mt-auto rounded-3xl border border-white/10 bg-white/5 p-3.5 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <img
-            src={userInfo.avatar}
-            alt={userInfo.name}
-            className="h-10 w-10 rounded-full object-cover"
-          />
+          {currentUser?.avatarUrl ? (
+            <img
+              src={currentUser.avatarUrl}
+              alt={currentUser.fullName}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white">
+              <User size={18} />
+            </div>
+          )}
 
           <div className="min-w-0">
             <h4 className="truncate text-[13px] font-semibold text-white">
-              {userInfo.name}
+              {currentUser?.fullName ?? ""}
             </h4>
 
-            <p className="text-xs text-slate-400">{userInfo.role}</p>
+            <p className="text-xs text-slate-400">{currentUser?.role ?? ""}</p>
 
             <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-400">
               <CheckCircle size={12} strokeWidth={2} />
-              {userInfo.emailVerified
+              {currentUser?.emailVerified
                 ? "Email đã xác minh"
                 : "Email chưa xác minh"}
             </p>
@@ -164,7 +171,7 @@ export default function Sidebar({ mobile = false, onClose }) {
             strokeWidth={1.9}
             className="text-blue-400"
           />
-          <span>{userInfo.messengerPlatform} đã kết nối</span>
+          <span>{currentUser?.messengerPlatform ?? "Messenger"} đã kết nối</span>
         </div>
       </div>
     </aside>

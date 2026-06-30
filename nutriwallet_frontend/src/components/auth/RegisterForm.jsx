@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -13,12 +13,20 @@ import {
   User,
   Sprout,
 } from "lucide-react";
+import { register } from "../../services/auth.service";
 
 function RegisterForm() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [healthScore, setHealthScore] = useState(0);
   const [growthScore, setGrowthScore] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const duration = 1200;
@@ -46,6 +54,31 @@ function RegisterForm() {
 
     return () => clearInterval(timer);
   }, []);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      setError("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      register({ fullName: fullName.trim(), email: email.trim(), password });
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err?.message ?? "Lỗi đăng ký. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <main
@@ -172,20 +205,27 @@ function RegisterForm() {
 
             <form
               className="mt-5 space-y-3"
-              onSubmit={(event) => event.preventDefault()}
+              onSubmit={handleSubmit}
             >
               <Input
                 label="Họ và tên"
                 icon={<User size={18} />}
                 placeholder="Nhập họ và tên"
                 rightIcon={<CheckCircle2 size={18} />}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
               />
 
               <Input
                 label="Email"
                 icon={<Mail size={18} />}
                 placeholder="Nhập email của bạn"
+                type="email"
                 rightIcon={<CheckCircle2 size={18} />}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
 
               <div>
@@ -194,6 +234,9 @@ function RegisterForm() {
                   icon={<Lock size={18} />}
                   placeholder="Nhập mật khẩu"
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   rightIcon={
                     <button
                       type="button"
@@ -217,6 +260,9 @@ function RegisterForm() {
                 icon={<Lock size={18} />}
                 placeholder="Nhập lại mật khẩu"
                 type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
                 rightIcon={
                   <button
                     type="button"
@@ -232,9 +278,14 @@ function RegisterForm() {
                 }
               />
 
+              {error && (
+                <p className="text-[12px] text-red-500">{error}</p>
+              )}
+
               <button
                 type="submit"
-                className="btn-gradient flex h-[42px] w-full items-center justify-center gap-2.5 rounded-[14px] text-[13px] font-bold text-white shadow-[0_16px_36px_-18px_rgba(34,197,94,0.7)]"
+                disabled={isSubmitting}
+                className="btn-gradient flex h-[42px] w-full items-center justify-center gap-2.5 rounded-[14px] text-[13px] font-bold text-white shadow-[0_16px_36px_-18px_rgba(34,197,94,0.7)] disabled:opacity-70"
               >
                 Đăng ký
                 <ArrowRight size={18} />
@@ -257,7 +308,7 @@ function RegisterForm() {
   );
 }
 
-function Input({ label, icon, placeholder, rightIcon, type = "text" }) {
+function Input({ label, icon, placeholder, rightIcon, type = "text", value, onChange, autoComplete }) {
   return (
     <div>
       <label className="mb-1.5 block text-[12px] font-semibold text-[#0F172A]">
@@ -272,6 +323,9 @@ function Input({ label, icon, placeholder, rightIcon, type = "text" }) {
         <input
           type={type}
           placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
           className="input-transition h-[40px] w-full rounded-[14px] border border-[#E5E7EB] bg-white pl-11 pr-11 text-[13px] text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:outline-none focus:ring-4 focus:ring-[#DCFCE7]"
         />
 

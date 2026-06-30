@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -13,9 +13,36 @@ import {
 } from "lucide-react";
 
 import LoginFloatingCard from "./LoginFloatingCard";
+import { useAuth } from "../../hooks/useAuth";
 
 function LoginForm() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Vui lòng nhập đầy đủ email và mật khẩu.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      login({ email: email.trim(), password });
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err?.message ?? "Lỗi đăng nhập. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <main
@@ -140,7 +167,7 @@ function LoginForm() {
 
           <form
             className="mt-7 space-y-3.5"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={handleSubmit}
           >
             <div className="relative">
               <Mail
@@ -150,6 +177,9 @@ function LoginForm() {
               <input
                 type="email"
                 placeholder="Email của bạn"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="h-[50px] w-full rounded-2xl border border-[#E2E8F0] bg-white/70 pl-14 pr-5 text-[14px] outline-none placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:ring-4 focus:ring-[#DCFCE7]"
               />
             </div>
@@ -162,6 +192,9 @@ function LoginForm() {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Mật khẩu của bạn"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 className="h-[50px] w-full rounded-2xl border border-[#E2E8F0] bg-white/70 pl-14 pr-14 text-[14px] outline-none placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:ring-4 focus:ring-[#DCFCE7]"
               />
 
@@ -180,9 +213,14 @@ function LoginForm() {
               </a>
             </div>
 
+            {error && (
+              <p className="text-[13px] text-red-500">{error}</p>
+            )}
+
             <button
               type="submit"
-              className="btn-gradient flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl text-[15px] font-bold text-white"
+              disabled={isSubmitting}
+              className="btn-gradient flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl text-[15px] font-bold text-white disabled:opacity-70"
             >
               Đăng nhập
               <ArrowRight size={18} />

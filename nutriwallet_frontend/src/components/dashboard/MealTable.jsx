@@ -5,7 +5,7 @@ export default function MealTable({ meals }) {
   const recentMeals = meals.slice(0, 3);
 
   return (
-    <SectionCard title="Các bữa ăn gần đây" icon={Utensils}>
+    <SectionCard title="Các bữa ăn gần đây" icon={Utensils} viewAllTo="/meal-history">
       <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
         <table className="w-full text-sm">
           <thead className="bg-slate-50/80 dark:bg-slate-800/50">

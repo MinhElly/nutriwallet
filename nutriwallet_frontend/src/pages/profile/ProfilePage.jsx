@@ -1,7 +1,7 @@
 import { BadgeCheck, CalendarClock, Pencil, Share2, Wallet, X } from "lucide-react";
 import { useState } from "react";
 import AppShell from "../../components/layout/AppShell";
-import { applyProfileDataUpdates, profileData } from "../../data/accountData";
+import { useProfileData } from "../../hooks/useProfileData";
 
 function formatDateTime(dateValue) {
   return new Date(dateValue).toLocaleString("vi-VN", {
@@ -25,6 +25,7 @@ function formatJoinedDate(dateValue) {
 }
 
 export default function ProfilePage() {
+  const { profileData, updateProfile } = useProfileData();
   const { user, stats } = profileData;
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [shareLabel, setShareLabel] = useState("Chia sẻ");
@@ -77,7 +78,7 @@ export default function ProfilePage() {
 
   function handleSaveProfile(event) {
     event.preventDefault();
-    applyProfileDataUpdates({
+    updateProfile({
       fullName: profileForm.fullName,
       email: profileForm.email,
     });
