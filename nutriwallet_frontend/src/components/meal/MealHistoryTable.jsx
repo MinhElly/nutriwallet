@@ -17,7 +17,7 @@ import {
   getWeekdayLabels,
   isSameDay,
 } from "../../utils/date";
-import { mealHistoryData } from "../../data/mockMealHistoryData";
+import { useMealHistoryData } from "../../hooks/useMealHistoryData";
 const mealTypeConfig = {
   all: {
     label: "Tất cả bữa ăn",
@@ -47,11 +47,11 @@ const vietnameseDateFormatter = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-const sortedMealDates = [...mealHistoryData]
-  .map((meal) => meal.mealDate)
-  .sort((firstDate, secondDate) => firstDate.localeCompare(secondDate));
-
-const minMealDate = sortedMealDates[0] ?? "";
+function getSortedMealDates(meals) {
+  return [...meals]
+    .map((meal) => meal.mealDate)
+    .sort((firstDate, secondDate) => firstDate.localeCompare(secondDate));
+}
 
 function getTodayDateString() {
   const today = new Date();
@@ -144,6 +144,11 @@ function escapeCsvValue(value) {
 }
 
 export default function MealHistoryTable({ searchQuery = "" }) {
+  const { meals: mealHistoryData } = useMealHistoryData();
+  const minMealDate = useMemo(() => {
+    const sortedDates = getSortedMealDates(mealHistoryData);
+    return sortedDates[0] ?? "";
+  }, [mealHistoryData]);
   const [liveTodayDate, setLiveTodayDate] = useState(getTodayDateString);
   const [isUsingLiveToday, setIsUsingLiveToday] = useState(true);
   const [selectedMealType, setSelectedMealType] = useState("all");

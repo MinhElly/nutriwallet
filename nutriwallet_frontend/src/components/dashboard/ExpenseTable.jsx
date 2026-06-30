@@ -29,7 +29,7 @@ export default function ExpenseTable({ expenses }) {
   const recentExpenses = expenses.slice(0, 3);
 
   return (
-    <SectionCard title="Các khoản chi gần đây" icon={ReceiptText}>
+    <SectionCard title="Các khoản chi gần đây" icon={ReceiptText} viewAllTo="/expense-history">
       <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
         <table className="w-full text-sm">
           <thead className="bg-slate-50/80 dark:bg-slate-800/50">

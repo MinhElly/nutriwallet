@@ -1,7 +1,8 @@
 import { CheckCircle, MailCheck, MessageCircle, User } from "lucide-react";
-import { userInfo } from "../../data/dashboardData";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function AccountCard() {
+  const { currentUser } = useAuth();
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm xl:p-5 dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-4 flex items-center gap-2.5">
@@ -22,12 +23,12 @@ export default function AccountCard() {
           <div className="min-w-0 flex-1">
             <p className="text-sm text-slate-500 dark:text-slate-400">Email</p>
             <b className="mt-0.5 block truncate font-medium text-slate-900 dark:text-slate-200">
-              {userInfo.email}
+              {currentUser?.email ?? ""}
             </b>
 
             <p className="mt-2.5 text-sm text-slate-500 dark:text-slate-400">Xác minh email lúc</p>
             <b className="mt-0.5 block font-medium text-slate-900 dark:text-slate-200">
-              {userInfo.emailVerifiedAt}
+              {currentUser?.emailVerifiedAt ?? ""}
             </b>
           </div>
         </div>
@@ -40,12 +41,12 @@ export default function AccountCard() {
           <div className="min-w-0 flex-1">
             <p className="text-sm text-slate-500 dark:text-slate-400">Nền tảng nhắn tin</p>
             <b className="mt-0.5 block font-medium text-slate-900 dark:text-slate-200">
-              {userInfo.messengerPlatform}
+              {currentUser?.messengerPlatform ?? "Messenger"}
             </b>
 
             <p className="mt-2.5 text-sm text-slate-500 dark:text-slate-400">Liên kết lúc</p>
             <b className="mt-0.5 block font-medium text-slate-900 dark:text-slate-200">
-              {userInfo.messengerLinkedAt}
+              {currentUser?.messengerLinkedAt ?? ""}
             </b>
           </div>
         </div>
@@ -58,7 +59,7 @@ export default function AccountCard() {
           <div className="min-w-0 flex-1">
             <p className="text-sm text-slate-500 dark:text-slate-400">Vai trò</p>
             <b className="mt-0.5 block font-medium text-slate-900 dark:text-slate-200">
-              {userInfo.role}
+              {currentUser?.role ?? ""}
             </b>
           </div>
         </div>

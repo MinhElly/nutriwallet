@@ -4,7 +4,7 @@ import {
   Salad,
   WalletCards,
 } from "lucide-react";
-import { aiRecommendations } from "../../data/dashboardData";
+import { useDashboardData } from "../../hooks/useDashboardData";
 import SectionCard from "./SectionCard";
 
 const toneClasses = {
@@ -34,8 +34,9 @@ const iconMap = {
 };
 
 export default function RecommendationCard() {
+  const { aiRecommendations } = useDashboardData();
   return (
-    <SectionCard title="Gợi ý AI" icon={Brain} compact>
+    <SectionCard title="Gợi ý AI" icon={Brain} compact hideViewAll>
       <div className="flex h-full flex-col gap-2.5">
         {aiRecommendations.map((item) => {
           const tone = toneClasses[item.tone] ?? toneClasses.info;
