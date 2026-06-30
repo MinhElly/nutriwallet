@@ -237,7 +237,7 @@ export default function MealHistoryTable({ searchQuery = "" }) {
 
       return matchesDate && matchesMealType && matchesSearch;
     });
-  }, [searchQuery, selectedEndDate, selectedMealType, selectedStartDate]);
+  }, [searchQuery, selectedEndDate, selectedMealType, selectedStartDate, mealHistoryData]);
 
   const totalPages = Math.max(1, Math.ceil(filteredMeals.length / rowsPerPage));
 

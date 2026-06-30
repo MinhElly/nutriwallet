@@ -2,6 +2,7 @@ import { BadgeCheck, CalendarClock, Pencil, Share2, Wallet, X } from "lucide-rea
 import { useState } from "react";
 import AppShell from "../../components/layout/AppShell";
 import { useProfileData } from "../../hooks/useProfileData";
+import { useAuth } from "../../hooks/useAuth";
 
 function formatDateTime(dateValue) {
   return new Date(dateValue).toLocaleString("vi-VN", {
@@ -26,6 +27,7 @@ function formatJoinedDate(dateValue) {
 
 export default function ProfilePage() {
   const { profileData, updateProfile } = useProfileData();
+  const { replaceUser, currentUser } = useAuth();
   const { user, stats } = profileData;
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [shareLabel, setShareLabel] = useState("Chia sẻ");
@@ -36,6 +38,7 @@ export default function ProfilePage() {
     interestOne: "Kiểm soát chi tiêu",
     interestTwo: "Ăn uống khoa học",
     interestThree: "Đã liên kết Messenger",
+    avatarUrl: user.avatarUrl,
   });
 
   const tags = [
@@ -76,11 +79,25 @@ export default function ProfilePage() {
     }));
   }
 
+  function handleAvatarChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setProfileForm((current) => ({ ...current, avatarUrl: objectUrl }));
+  }
+
   function handleSaveProfile(event) {
     event.preventDefault();
     updateProfile({
       fullName: profileForm.fullName,
       email: profileForm.email,
+      avatarUrl: profileForm.avatarUrl,
+    });
+    replaceUser({
+      ...currentUser,
+      fullName: profileForm.fullName,
+      email: profileForm.email,
+      avatarUrl: profileForm.avatarUrl,
     });
     setIsEditOpen(false);
   }
@@ -91,6 +108,7 @@ export default function ProfilePage() {
         <EditProfileModal
           profileForm={profileForm}
           onChange={handleProfileFieldChange}
+          onAvatarChange={handleAvatarChange}
           onClose={() => setIsEditOpen(false)}
           onSubmit={handleSaveProfile}
         />
@@ -105,7 +123,7 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="overflow-hidden rounded-[1.6rem] bg-emerald-100 shadow-lg dark:bg-emerald-950">
               <img
-                src={user.avatarUrl}
+                src={profileForm.avatarUrl || user.avatarUrl}
                 alt={profileForm.fullName}
                 className="h-24 w-24 object-cover sm:h-28 sm:w-28"
               />
@@ -188,7 +206,7 @@ export default function ProfilePage() {
   );
 }
 
-function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
+function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 p-0 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4 dark:bg-slate-950/60">
       <button
@@ -212,6 +230,36 @@ function EditProfileModal({ profileForm, onChange, onClose, onSubmit }) {
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
+          {/* Avatar picker */}
+          <div className="flex flex-col items-center gap-3 pb-2">
+            <div className="relative">
+              <div className="h-20 w-20 overflow-hidden rounded-[1.4rem] bg-emerald-100 shadow-md dark:bg-emerald-950">
+                <img
+                  src={profileForm.avatarUrl}
+                  alt="Avatar"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <label
+                htmlFor="avatar-upload"
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg transition-colors hover:bg-emerald-700"
+                title="Đổi ảnh đại diện"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onAvatarChange}
+              />
+            </div>
+          </div>
+
           <Field label="Tên hiển thị">
             <input
               type="text"

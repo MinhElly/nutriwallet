@@ -113,7 +113,7 @@ function LoginForm() {
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#16A34A] text-xs font-extrabold text-white shadow-lg">
           NW
         </div>
-        <span className="text-lg font-extrabold">NutriWallet AI</span>
+        <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "Psionic" }}>NutriWallet AI</span>
       </header>
 
       <section className="relative z-10 flex h-[calc(100vh-80px)] items-center justify-center px-4 pb-8">
@@ -208,9 +208,9 @@ function LoginForm() {
             </div>
 
             <div className="flex justify-end">
-              <a href="#" className="text-sm font-semibold text-[#16A34A]">
+              <Link to="/forgot-password" className="text-sm font-semibold text-[#16A34A] hover:underline">
                 Quên mật khẩu?
-              </a>
+              </Link>
             </div>
 
             {error && (

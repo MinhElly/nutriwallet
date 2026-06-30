@@ -53,7 +53,7 @@ export default function Sidebar({ mobile = false, onClose }) {
           </div>
 
           <div>
-            <h1 className="text-[17px] font-semibold tracking-tight text-white">
+            <h1 className="text-[14px] font-semibold tracking-tight text-white whitespace-nowrap" style={{ fontFamily: "Psionic" }}>
               NutriWallet AI
             </h1>
             <p className="mt-0.5 text-xs leading-5 text-slate-400">

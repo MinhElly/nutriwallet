@@ -1,3 +1,4 @@
+import Typewriter from "../common/Typewriter";
 import { useMemo, useState } from "react";
 import {
   CalendarDays,
@@ -79,8 +80,26 @@ export default function DashboardHeader({
   return (
     <header className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div>
-        <h2 className="overflow-hidden text-ellipsis whitespace-nowrap text-[1.35rem] font-bold tracking-tight text-slate-900 sm:text-[2.3rem] xl:text-[2.75rem] dark:text-white">
-          {greeting}, {userInfo.name}
+        <h2 className="overflow-hidden whitespace-nowrap text-[1.1rem] font-bold tracking-tight sm:text-[1.75rem] xl:text-[2rem]">
+          <span className="text-slate-900 dark:text-white">
+            <Typewriter
+              text={`${greeting.icon} ${greeting.text}, `}
+              speed={55}
+              loop={false}
+              showCursor={false}
+            />
+          </span>
+
+          <span className="text-emerald-600 dark:text-emerald-400">
+            <Typewriter
+              text={userInfo.name}
+              speed={55}
+              initialDelay={800}
+              loop={false}
+              cursorChar="_"
+              cursorClassName="ml-1 text-emerald-500"
+            />
+          </span>
         </h2>
 
         <p className="mt-1.5 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
@@ -161,13 +180,12 @@ export default function DashboardHeader({
                           setViewDate(date);
                           setIsDatePickerOpen(false);
                         }}
-                        className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-sm font-medium transition-all ${
-                          isSelected
+                        className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-sm font-medium transition-all ${isSelected
                             ? "bg-emerald-600 text-white shadow-sm"
                             : isCurrentMonth
                               ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400"
                               : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800"
-                        } ${isToday && !isSelected ? "ring-1 ring-emerald-200 dark:ring-emerald-800" : ""}`}
+                          } ${isToday && !isSelected ? "ring-1 ring-emerald-200 dark:ring-emerald-800" : ""}`}
                       >
                         {date.getDate()}
                       </button>
@@ -238,11 +256,10 @@ export default function DashboardHeader({
                         setPeriod(option);
                         setIsPeriodMenuOpen(false);
                       }}
-                      className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${
-                        isActive
+                      className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${isActive
                           ? "bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
                           : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                      }`}
+                        }`}
                     >
                       <span>{option}</span>
                       {isActive && <Check size={15} strokeWidth={2} />}

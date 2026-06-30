@@ -27,6 +27,7 @@ export function useProfileData() {
         ...prev.user,
         ...(updates.fullName !== undefined && { fullName: updates.fullName }),
         ...(updates.email !== undefined && { email: updates.email }),
+        ...(updates.avatarUrl !== undefined && { avatarUrl: updates.avatarUrl }),
       },
     }));
   }, []);

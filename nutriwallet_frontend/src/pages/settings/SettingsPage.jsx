@@ -14,6 +14,7 @@ import AppShell from "../../components/layout/AppShell";
 import { useTheme } from "../../hooks/useTheme";
 import { useSettingsData } from "../../hooks/useSettingsData";
 import { useProfileData } from "../../hooks/useProfileData";
+import { useAuth } from "../../hooks/useAuth";
 
 function getInitialSettingsMap(settingsData) {
   const settingsMap = settingsData.sections.reduce((result, section) => {
@@ -48,6 +49,7 @@ function formatSavedTime(date) {
 export default function SettingsPage() {
   const { settingsData, saveSettings } = useSettingsData();
   const { profileData } = useProfileData();
+  const { currentUser } = useAuth();
   const initialSettings = useMemo(() => getInitialSettingsMap(settingsData), [settingsData]);
   const [settingsState, setSettingsState] = useState(initialSettings);
   const [savedSettingsState, setSavedSettingsState] = useState(initialSettings);
@@ -74,20 +76,6 @@ export default function SettingsPage() {
     {
       key: "display_name",
       label: "Tên hiển thị",
-      type: "text",
-    },
-    {
-      key: "language",
-      label: "Ngôn ngữ",
-      type: "select",
-      options: [
-        { label: "Tiếng Việt", value: "vi" },
-        { label: "English", value: "en" },
-      ],
-    },
-    {
-      key: "currency",
-      label: "Tiền tệ",
       type: "text",
     },
   ];
@@ -144,8 +132,8 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <img
-              src={profileData.user.avatarUrl}
-              alt={profileData.user.fullName}
+              src={currentUser?.avatarUrl || profileData.user.avatarUrl}
+              alt={currentUser?.fullName || profileData.user.fullName}
               className="h-20 w-20 rounded-[1.5rem] object-cover shadow-sm"
             />
 

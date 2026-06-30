@@ -34,7 +34,7 @@ export default function AppShell({ pageLabel, children }) {
                 <Leaf size={18} strokeWidth={1.9} />
               </div>
               <div>
-                <p className="text-[15px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                <p className="text-[15px] font-semibold tracking-tight text-slate-900 dark:text-slate-100" style={{ fontFamily: "Psionic" }}>
                   NutriWallet AI
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{pageLabel}</p>
