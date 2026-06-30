@@ -208,9 +208,9 @@ function LoginForm() {
             </div>
 
             <div className="flex justify-end">
-              <a href="#" className="text-sm font-semibold text-[#16A34A]">
+              <Link to="/forgot-password" className="text-sm font-semibold text-[#16A34A] hover:underline">
                 Quên mật khẩu?
-              </a>
+              </Link>
             </div>
 
             {error && (

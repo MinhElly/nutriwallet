@@ -106,3 +106,42 @@ export function register(data) {
 export function logout() {
   clearSession();
 }
+
+/**
+ * Yêu cầu đặt lại mật khẩu (Gửi email khôi phục).
+ *
+ * @param {string} email
+ * @returns {Promise<boolean>}
+ */
+export async function requestPasswordReset(email) {
+  if (!email) {
+    throw new Error("Email không hợp lệ.");
+  }
+
+  // Simulate network request
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(true);
+    }, 1200);
+  });
+}
+
+/**
+ * Đặt lại mật khẩu mới bằng token.
+ *
+ * @param {string} token
+ * @param {string} newPassword
+ * @returns {Promise<boolean>}
+ */
+export async function resetPassword(token, newPassword) {
+  if (!token || !newPassword) {
+    throw new Error("Token và mật khẩu không hợp lệ.");
+  }
+
+  // Simulate network request
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(true);
+    }, 1200);
+  });
+}
