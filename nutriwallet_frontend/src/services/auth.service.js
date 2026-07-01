@@ -4,11 +4,8 @@
  * Tầng service xử lý authentication.
  * Hiện tại dùng mock session — không gọi API thật.
  *
- * Sau này chỉ cần thay phần implementation:
- *   import axios from "axios";
- *   import { API_BASE_URL } from "../../config/env";
- *   const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
- */
+import axios from "axios";
+import { API_BASE_URL } from "../config/env";
 
 const SESSION_KEY = "nw_session";
 
@@ -144,4 +141,52 @@ export async function resetPassword(token, newPassword) {
       resolve(true);
     }, 1200);
   });
+}
+
+/**
+ * Đăng nhập qua Google (Client-Verification Flow)
+ * @param {string} idToken
+ * @returns {Promise<{ user: MockUser, token: string }>}
+ */
+export async function loginWithGoogle(idToken) {
+  const url = `${API_BASE_URL}/auth/google`;
+  const response = await axios.post(url, { idToken });
+  const authResponse = response.data.data;
+  const mappedUser = {
+    id: authResponse.user.id,
+    fullName: authResponse.user.fullName,
+    email: authResponse.user.email,
+    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
+    role: authResponse.user.role === "ADMIN" ? "Admin" : "Người dùng",
+    emailVerified: authResponse.user.status === "ACTIVE",
+    emailVerifiedAt: new Date().toLocaleString(),
+    messengerPlatform: null,
+    messengerLinkedAt: null,
+  };
+  persistSession(mappedUser, authResponse.accessToken);
+  return { user: mappedUser, token: authResponse.accessToken };
+}
+
+/**
+ * Đăng nhập qua Facebook (Client-Verification Flow)
+ * @param {string} accessToken
+ * @returns {Promise<{ user: MockUser, token: string }>}
+ */
+export async function loginWithFacebook(accessToken) {
+  const url = `${API_BASE_URL}/auth/facebook`;
+  const response = await axios.post(url, { accessToken });
+  const authResponse = response.data.data;
+  const mappedUser = {
+    id: authResponse.user.id,
+    fullName: authResponse.user.fullName,
+    email: authResponse.user.email,
+    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
+    role: authResponse.user.role === "ADMIN" ? "Admin" : "Người dùng",
+    emailVerified: authResponse.user.status === "ACTIVE",
+    emailVerifiedAt: new Date().toLocaleString(),
+    messengerPlatform: null,
+    messengerLinkedAt: null,
+  };
+  persistSession(mappedUser, authResponse.accessToken);
+  return { user: mappedUser, token: authResponse.accessToken };
 }

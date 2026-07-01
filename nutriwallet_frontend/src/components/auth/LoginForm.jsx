@@ -1,11 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
   HeartPulse,
   Wallet,
   PersonStanding,
@@ -17,33 +13,79 @@ import { useAuth } from "../../hooks/useAuth";
 
 function LoginForm() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { loginWithGoogle, loginWithFacebook } = useAuth();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    setError("");
+  const triggerGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsSubmitting(true);
+      setError("");
+      try {
+        await loginWithGoogle(tokenResponse.access_token);
+        navigate("/dashboard", { replace: true });
+      } catch (err) {
+        setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Google.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    onError: () => {
+      setError("Đăng nhập bằng Google thất bại.");
+    },
+  });
 
-    if (!email.trim() || !password.trim()) {
-      setError("Vui lòng nhập đầy đủ email và mật khẩu.");
-      return;
-    }
+  const loadFacebookSDK = () => {
+    return new Promise((resolve) => {
+      if (window.FB) {
+        resolve(window.FB);
+        return;
+      }
+      window.fbAsyncInit = function() {
+        window.FB.init({
+          appId: import.meta.env.VITE_FACEBOOK_APP_ID || 'mock-fb-app-id',
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'
+        });
+        resolve(window.FB);
+      };
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    });
+  };
 
+  const handleFacebookLogin = async () => {
     setIsSubmitting(true);
+    setError("");
     try {
-      login({ email: email.trim(), password });
-      navigate("/dashboard", { replace: true });
+      const FB = await loadFacebookSDK();
+      FB.login((response) => {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken;
+          loginWithFacebook(accessToken)
+            .then(() => {
+              navigate("/dashboard", { replace: true });
+            })
+            .catch((err) => {
+              setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Facebook.");
+              setIsSubmitting(false);
+            });
+        } else {
+          setError("Người dùng đã hủy đăng nhập hoặc không cấp quyền.");
+          setIsSubmitting(false);
+        }
+      }, { scope: 'email,public_profile' });
     } catch (err) {
-      setError(err?.message ?? "Lỗi đăng nhập. Vui lòng thử lại.");
-    } finally {
+      setError("Không thể khởi tạo SDK Facebook.");
       setIsSubmitting(false);
     }
-  }
-
+  };
   return (
     <main
       className="relative h-screen overflow-hidden bg-[#F0FDF4] text-[#0F172A]"
@@ -165,90 +207,31 @@ function LoginForm() {
             </p>
           </div>
 
-          <form
-            className="mt-7 space-y-3.5"
-            onSubmit={handleSubmit}
-          >
-            <div className="relative">
-              <Mail
-                size={18}
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-              />
-              <input
-                type="email"
-                placeholder="Email của bạn"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                className="h-[50px] w-full rounded-2xl border border-[#E2E8F0] bg-white/70 pl-14 pr-5 text-[14px] outline-none placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:ring-4 focus:ring-[#DCFCE7]"
-              />
-            </div>
+          {error && (
+            <p className="mt-5 text-[13px] text-red-500 text-center">{error}</p>
+          )}
 
-            <div className="relative">
-              <Lock
-                size={18}
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-              />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Mật khẩu của bạn"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                className="h-[50px] w-full rounded-2xl border border-[#E2E8F0] bg-white/70 pl-14 pr-14 text-[14px] outline-none placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:ring-4 focus:ring-[#DCFCE7]"
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#16A34A]"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-
-            <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm font-semibold text-[#16A34A] hover:underline">
-                Quên mật khẩu?
-              </Link>
-            </div>
-
-            {error && (
-              <p className="text-[13px] text-red-500">{error}</p>
-            )}
+          <div className="mt-8 space-y-3">
+            <button
+              type="button"
+              onClick={() => triggerGoogleLogin()}
+              disabled={isSubmitting}
+              className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white/80 text-[14px] font-semibold text-[#0F172A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#22C55E] hover:bg-white hover:shadow-lg disabled:opacity-50"
+            >
+              <GoogleIcon />
+              Tiếp tục với Google
+            </button>
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleFacebookLogin}
               disabled={isSubmitting}
-              className="btn-gradient flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl text-[15px] font-bold text-white disabled:opacity-70"
+              className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-[#1877F2] text-[14px] font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#166FE5] hover:shadow-lg disabled:opacity-50"
             >
-              Đăng nhập
-              <ArrowRight size={18} />
+              <FacebookIcon />
+              Tiếp tục với Facebook
             </button>
-          </form>
-
-          <div className="my-5 flex items-center gap-4">
-            <div className="h-px flex-1 bg-[#E2E8F0]" />
-            <span className="whitespace-nowrap text-sm text-[#64748B]">
-              Hoặc đăng nhập với
-            </span>
-            <div className="h-px flex-1 bg-[#E2E8F0]" />
           </div>
-
-          <button
-            type="button"
-            className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white/80 text-[14px] font-semibold text-[#0F172A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#22C55E] hover:bg-white hover:shadow-lg"
-          >
-            <GoogleIcon />
-            Tiếp tục với Google
-          </button>
-
-          <p className="mt-6 text-center text-[14px] text-[#64748B]">
-            Chưa có tài khoản?{" "}
-            <Link to="/register" className="font-bold text-[#16A34A]">
-              Đăng ký ngay
-            </Link>
-          </p>
         </div>
       </section>
     </main>
@@ -274,6 +257,14 @@ function GoogleIcon() {
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         fill="#EA4335"
       />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
     </svg>
   );
 }
