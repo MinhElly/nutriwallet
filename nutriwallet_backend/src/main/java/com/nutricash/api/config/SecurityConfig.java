@@ -65,6 +65,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         java.util.List<String> allowedOrigins = new java.util.ArrayList<>(List.of(
+                "https://nutriwallet.vercel.app",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "http://localhost:5174",
