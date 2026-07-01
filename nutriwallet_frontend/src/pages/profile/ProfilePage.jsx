@@ -1,6 +1,5 @@
 import {
   BadgeCheck,
-  CalendarClock,
   Pencil,
   Share2,
   Wallet,

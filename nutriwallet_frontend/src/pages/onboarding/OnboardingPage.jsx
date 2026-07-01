@@ -125,7 +125,7 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("nw_onboarding_draft");
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try { return JSON.parse(saved); } catch { /* ignore */ }
     }
     return {
       selectedGoals: [],
@@ -144,21 +144,25 @@ export default function OnboardingPage() {
   // Lưu nháp tự động
   useEffect(() => {
     localStorage.setItem("nw_onboarding_draft", JSON.stringify(formData));
-    setFieldErrors({}); // Reset error when user types
-    setError(null);
   }, [formData]);
 
   useEffect(() => {
     localStorage.setItem("nw_onboarding_step", step);
+  }, [step]);
+
+  const goToStep = (newStep) => {
+    setStep(newStep);
     setMaxStep(prev => {
-      const newMax = Math.max(prev, step);
+      const newMax = Math.max(prev, newStep);
       localStorage.setItem("nw_onboarding_maxStep", newMax);
       return newMax;
     });
-  }, [step]);
+  };
 
   const updateForm = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setFieldErrors({}); // Reset error when user types
+    setError(null);
   };
 
   const handleCustomBudgetChange = (e) => {
@@ -191,19 +195,19 @@ export default function OnboardingPage() {
     if (!ageNum || ageNum <= 0 || ageNum > 120) {
       errors.age = true;
       setError("Vui lòng nhập độ tuổi hợp lệ (1-120).");
-      setStep(2);
+      goToStep(2);
     } else if (!heightNum || heightNum < 50 || heightNum > 250) {
       errors.height = true;
       setError("Vui lòng nhập chiều cao hợp lệ (50-250cm).");
-      setStep(2);
+      goToStep(2);
     } else if (!weightNum || weightNum < 20 || weightNum > 300) {
       errors.weight = true;
       setError("Vui lòng nhập cân nặng hợp lệ (20-300kg).");
-      setStep(2);
+      goToStep(2);
     } else if (formData.budget === "custom" && !formData.customBudgetRaw) {
       errors.customBudgetRaw = true;
       setError("Vui lòng nhập ngân sách tùy chỉnh.");
-      setStep(3);
+      goToStep(3);
     }
 
     if (Object.keys(errors).length > 0) {
@@ -232,7 +236,7 @@ export default function OnboardingPage() {
       localStorage.removeItem("nw_onboarding_step");
       localStorage.removeItem("nw_onboarding_maxStep");
       navigate("/dashboard");
-    } catch (err) {
+    } catch {
       setError("Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.");
     } finally {
       setIsSubmitting(false);
@@ -240,11 +244,15 @@ export default function OnboardingPage() {
   };
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+    if (step < 3) {
+      goToStep(step + 1);
+    }
   };
 
   const prevStep = () => {
-    if (step > 1) setStep(step - 1);
+    if (step > 1) {
+      goToStep(step - 1);
+    }
   };
 
   const toggleGoal = (id) => {
@@ -299,7 +307,7 @@ export default function OnboardingPage() {
               <button
                 key={i}
                 disabled={i > maxStep}
-                onClick={() => setStep(i)}
+                onClick={() => goToStep(i)}
                 className={`flex-1 rounded-full transition-colors duration-500 ${
                   i <= step ? "bg-emerald-500" : "bg-slate-200"
                 } ${i <= maxStep ? "cursor-pointer hover:bg-emerald-400" : "opacity-50"}`}
