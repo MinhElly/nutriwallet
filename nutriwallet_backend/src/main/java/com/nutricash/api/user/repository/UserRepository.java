@@ -9,6 +9,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmailIgnoreCase(String email);
 
+    Optional<User> findByProviderAndProviderId(com.nutricash.api.common.enums.AuthProvider provider, String providerId);
+
     Optional<User> findByIdAndDeletedAtIsNull(Long id);
 
     List<User> findAllByDeletedAtIsNull();
