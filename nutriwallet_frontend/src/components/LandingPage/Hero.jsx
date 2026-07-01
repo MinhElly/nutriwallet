@@ -1,10 +1,5 @@
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-
-const fadeUpVariant = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
+import Reveal from "../common/Reveal";
 
 const Hero = () => {
   return (
@@ -25,70 +20,62 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
 
           {/* Left — copy */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: {
-                transition: {
-                  staggerChildren: 0.1,
-                },
-              },
-            }}
-            className="max-w-xl"
-          >
+          <div className="max-w-xl">
             {/* Eyebrow badge */}
-            <motion.div variants={fadeUpVariant} transition={{ duration: 0.5, ease: "easeOut" }} className="inline-flex items-center gap-2 border border-green-200 bg-green-50 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 tracking-wide">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              AI-Powered · Nhận diện món ăn tức thì
-            </motion.div>
+            <Reveal delay={0}>
+              <div className="inline-flex items-center gap-2 border border-green-200 bg-green-50 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 tracking-wide">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                AI-Powered · Nhận diện món ăn tức thì
+              </div>
+            </Reveal>
 
             {/* Headline */}
-            <motion.h1 variants={fadeUpVariant} transition={{ duration: 0.5, ease: "easeOut" }} className="text-5xl sm:text-6xl font-bold tracking-[-0.03em] leading-[1.08] text-gray-950 mb-6">
-              <span className="whitespace-nowrap">Chụp ảnh.{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400">
-                Hiểu ngay
-              </span></span>
-              <br />
-              sức khỏe & ví tiền.
-            </motion.h1>
+            <Reveal delay={0.1}>
+              <h1 className="text-5xl sm:text-6xl font-bold tracking-[-0.03em] leading-[1.08] text-gray-950 mb-6">
+                <span className="whitespace-nowrap">Chụp ảnh.{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400">
+                  Hiểu ngay
+                </span></span>
+                <br />
+                sức khỏe & ví tiền.
+              </h1>
+            </Reveal>
 
             {/* Sub-copy */}
-            <motion.p variants={fadeUpVariant} transition={{ duration: 0.5, ease: "easeOut" }} className="text-[17px] text-gray-500 leading-[1.7] mb-10">
-              AI phân tích món ăn, calories và chi tiêu chỉ trong vài giây.
-              Một ứng dụng duy nhất cho cả dinh dưỡng lẫn ngân sách.
-            </motion.p>
+            <Reveal delay={0.2}>
+              <p className="text-[17px] text-gray-500 leading-[1.7] mb-10">
+                AI phân tích món ăn, calories và chi tiêu chỉ trong vài giây.
+                Một ứng dụng duy nhất cho cả dinh dưỡng lẫn ngân sách.
+              </p>
+            </Reveal>
 
             {/* CTA row */}
-            <motion.div variants={fadeUpVariant} transition={{ duration: 0.5, ease: "easeOut" }} className="flex flex-wrap items-center gap-3">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all duration-200 shadow-md shadow-green-200"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Bắt đầu ngay
-              </Link>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-green-600 transition-colors duration-150 px-1"
-              >
-                Đăng nhập
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </Link>
-            </motion.div>
-          </motion.div>
+            <Reveal delay={0.3}>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all duration-200 shadow-md shadow-green-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Bắt đầu ngay
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-green-600 transition-colors duration-150 px-1"
+                >
+                  Đăng nhập
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </Link>
+              </div>
+            </Reveal>
+          </div>
 
           {/* Right — Phone mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-            className="flex justify-center lg:justify-end relative"
-          >
+          <Reveal delay={0.4} className="flex justify-center lg:justify-end relative">
             {/* Glow behind phone */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-green-400/20 rounded-full blur-3xl" />
 
@@ -165,7 +152,7 @@ const Hero = () => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </Reveal>
 
         </div>
       </div>

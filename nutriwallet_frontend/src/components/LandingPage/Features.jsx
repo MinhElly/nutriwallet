@@ -1,3 +1,5 @@
+import Reveal from "../common/Reveal";
+
 const featureList = [
   {
     title: "Nhận diện món ăn bằng AI",
@@ -75,37 +77,44 @@ const Features = () => {
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold tracking-widest uppercase text-green-500 mb-4">Tính năng</p>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] text-gray-950 leading-[1.1] mb-4">
-            Mọi thứ bạn cần
-          </h2>
-          <p className="text-gray-500 text-[16px] leading-relaxed max-w-md mx-auto">
-            Được xây dựng cho người trẻ bận rộn — thông minh, nhanh và không cần ghi chép.
-          </p>
+          <Reveal delay={0}>
+            <p className="text-xs font-semibold tracking-widest uppercase text-green-500 mb-4">Tính năng</p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] text-gray-950 leading-[1.1] mb-4">
+              Mọi thứ bạn cần
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="text-gray-500 text-[16px] leading-relaxed max-w-md mx-auto">
+              Được xây dựng cho người trẻ bận rộn — thông minh, nhanh và không cần ghi chép.
+            </p>
+          </Reveal>
         </div>
 
         {/* 3×2 grid */}
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {featureList.map((feat, idx) => (
-            <div
-              key={idx}
-              className={`relative ${feat.bg} border ${feat.border} rounded-3xl p-6 overflow-hidden group cursor-default transition-all duration-300 hover:shadow-lg ${feat.hover}`}
-            >
-              <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${feat.gradient} opacity-10 rounded-full blur-xl group-hover:opacity-20 transition-opacity duration-500`} />
+            <Reveal key={idx} delay={0.3 + idx * 0.1}>
+              <div
+                className={`h-full relative ${feat.bg} border ${feat.border} rounded-3xl p-6 overflow-hidden group cursor-default transition-all duration-300 hover:shadow-lg ${feat.hover}`}
+              >
+                <div className={`absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br ${feat.gradient} opacity-10 rounded-full blur-xl group-hover:opacity-20 transition-opacity duration-500`} />
 
-              <div className="relative z-10">
-                {feat.badge && (
-                  <span className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${feat.badgeColor} mb-3`}>
-                    {feat.badge}
-                  </span>
-                )}
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${feat.gradient} flex items-center justify-center text-xl shadow-md mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  {feat.emoji}
+                <div className="relative z-10">
+                  {feat.badge && (
+                    <span className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${feat.badgeColor} mb-3`}>
+                      {feat.badge}
+                    </span>
+                  )}
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${feat.gradient} flex items-center justify-center text-xl shadow-md mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    {feat.emoji}
+                  </div>
+                  <h3 className="text-[15px] font-bold text-gray-900 mb-2">{feat.title}</h3>
+                  <p className="text-[13px] text-gray-500 leading-relaxed">{feat.desc}</p>
                 </div>
-                <h3 className="text-[15px] font-bold text-gray-900 mb-2">{feat.title}</h3>
-                <p className="text-[13px] text-gray-500 leading-relaxed">{feat.desc}</p>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
 
