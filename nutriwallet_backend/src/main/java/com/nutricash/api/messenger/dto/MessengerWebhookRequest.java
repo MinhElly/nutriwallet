@@ -1,8 +1,8 @@
 package com.nutricash.api.messenger.dto;
 
-/**
- * Skeleton type for the messenger module.
- */
-public record MessengerWebhookRequest() {
-}
+import java.util.List;
 
+public record MessengerWebhookRequest(
+    String object,
+    List<MessengerEntry> entry
+) {}
