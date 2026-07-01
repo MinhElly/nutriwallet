@@ -78,15 +78,15 @@ const Features = () => {
         {/* Header */}
         <div className="text-center mb-14">
           <Reveal delay={0}>
-            <p className="text-xs font-semibold tracking-widest uppercase text-green-500 mb-4">Tính năng</p>
+            <p className="text-[10px] font-medium tracking-widest uppercase text-green-500 mb-4">Tính năng</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] text-gray-950 leading-[1.1] mb-4">
+            <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[0.95] mb-4">
               Mọi thứ bạn cần
             </h2>
           </Reveal>
           <Reveal delay={0.2}>
-            <p className="text-gray-500 text-[16px] leading-relaxed max-w-md mx-auto">
+            <p className="text-gray-500 font-light text-[16px] leading-relaxed max-w-md mx-auto">
               Được xây dựng cho người trẻ bận rộn — thông minh, nhanh và không cần ghi chép.
             </p>
           </Reveal>
@@ -110,8 +110,8 @@ const Features = () => {
                   <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${feat.gradient} flex items-center justify-center text-xl shadow-md mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     {feat.emoji}
                   </div>
-                  <h3 className="text-[15px] font-bold text-gray-900 mb-2">{feat.title}</h3>
-                  <p className="text-[13px] text-gray-500 leading-relaxed">{feat.desc}</p>
+                  <h3 className="text-[15px] font-medium tracking-[-0.02em] text-gray-900 mb-2">{feat.title}</h3>
+                  <p className="text-[13px] font-light text-gray-500 leading-relaxed">{feat.desc}</p>
                 </div>
               </div>
             </Reveal>

@@ -12,14 +12,14 @@ const CTA = () => {
       <div className="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
         {/* Label */}
         <Reveal delay={0}>
-          <div className="inline-flex items-center gap-2 border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-medium px-3 py-1.5 rounded-full mb-8 tracking-wide">
+          <div className="inline-flex items-center gap-2 border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-medium px-3 py-1.5 rounded-full mb-8 tracking-widest uppercase">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
             Sẵn sàng để bắt đầu
           </div>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] text-white leading-[1.1] mb-5">
+          <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-white leading-[0.95] mb-5">
             Bắt đầu ngay{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">
               hôm nay.
@@ -28,7 +28,7 @@ const CTA = () => {
         </Reveal>
 
         <Reveal delay={0.2}>
-          <p className="text-gray-400 text-[16px] leading-relaxed mb-10 max-w-lg mx-auto">
+          <p className="text-gray-400 font-light text-[16px] leading-relaxed mb-10 max-w-lg mx-auto">
             Tham gia cùng 50,000+ người dùng đang dùng NutriWallet AI để sống khỏe hơn và tiết kiệm hơn mỗi ngày.
           </p>
         </Reveal>
@@ -36,7 +36,7 @@ const CTA = () => {
         <Reveal delay={0.3}>
           <Link
             to="/register"
-            className="inline-flex items-center gap-2.5 bg-green-500 hover:bg-green-400 text-white font-semibold text-[15px] px-7 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 hover:shadow-green-400/30"
+            className="inline-flex items-center gap-2.5 bg-green-500 hover:bg-green-400 text-white font-medium text-[15px] px-7 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 hover:shadow-green-400/30"
           >
             Tạo tài khoản
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">

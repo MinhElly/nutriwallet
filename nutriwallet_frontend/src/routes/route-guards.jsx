@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 /**
@@ -12,7 +12,8 @@ import { useAuth } from "../hooks/useAuth";
  *   { element: <ProtectedRoute />, children: [...] }
  */
 export function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, currentUser } = useAuth();
+  const { pathname } = useLocation();
 
   if (isLoading) {
     return null;
@@ -20,6 +21,16 @@ export function ProtectedRoute() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  const hasCompletedOnboarding = currentUser?.onboardingCompleted ?? localStorage.getItem("nw_onboarding_completed") === "true";
+  
+  if (!hasCompletedOnboarding && pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (hasCompletedOnboarding && pathname === "/onboarding") {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;
@@ -32,14 +43,15 @@ export function ProtectedRoute() {
  * Dùng cho các trang login, register.
  */
 export function PublicOnlyRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, currentUser } = useAuth();
 
   if (isLoading) {
     return null;
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    const hasCompletedOnboarding = currentUser?.onboardingCompleted ?? localStorage.getItem("nw_onboarding_completed") === "true";
+    return <Navigate to={hasCompletedOnboarding ? "/dashboard" : "/onboarding"} replace />;
   }
 
   return <Outlet />;

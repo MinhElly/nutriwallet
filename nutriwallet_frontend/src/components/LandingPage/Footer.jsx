@@ -46,7 +46,7 @@ const Footer = () => {
 
           {/* Product */}
           <div>
-            <h5 className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-4">Sản phẩm</h5>
+            <h5 className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-4">Sản phẩm</h5>
             <ul className="space-y-3">
               {productLinks.map((item) => (
                 <li key={item.label}>
@@ -60,7 +60,7 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h5 className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-4">Công ty</h5>
+            <h5 className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-4">Công ty</h5>
             <ul className="space-y-3">
               {companyLinks.map((item) => (
                 <li key={item.label}>
@@ -74,7 +74,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h5 className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-4">Pháp lý</h5>
+            <h5 className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-4">Pháp lý</h5>
             <ul className="space-y-3">
               {legalLinks.map((item) => (
                 <li key={item.label}>

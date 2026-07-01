@@ -55,15 +55,15 @@ const HowItWorks = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <Reveal delay={0}>
-            <p className="text-xs font-semibold tracking-widest uppercase text-green-500 mb-4">Cách hoạt động</p>
+            <p className="text-[10px] font-medium tracking-widest uppercase text-green-500 mb-4">Cách hoạt động</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] text-gray-950 leading-[1.1] mb-4">
+            <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[0.95] mb-4">
               5 bước, hoàn toàn tự động
             </h2>
           </Reveal>
           <Reveal delay={0.2}>
-            <p className="text-gray-500 text-[16px] max-w-lg mx-auto">
+            <p className="text-gray-500 font-light text-[16px] max-w-lg mx-auto">
               Từ lúc chụp ảnh đến khi có báo cáo — tất cả xảy ra trong dưới 5 giây.
             </p>
           </Reveal>
@@ -88,18 +88,18 @@ const HowItWorks = () => {
               >
                 {step.emoji}
                 {/* Step number badge */}
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-white border-2 border-gray-100 text-gray-700 text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-white border-2 border-gray-100 text-gray-700 text-[10px] font-medium rounded-full flex items-center justify-center shadow-sm">
                   {idx + 1}
                 </span>
               </div>
 
               {/* Time tag */}
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${step.light} text-gray-500 mb-2`}>
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${step.light} text-gray-500 mb-2`}>
                 {step.tag}
               </span>
 
-              <h4 className="text-[13px] font-bold text-gray-900 mb-1.5 leading-tight">{step.title}</h4>
-              <p className="text-[11.5px] text-gray-400 leading-relaxed max-w-[130px]">{step.desc}</p>
+              <h4 className="text-[13px] font-medium tracking-[-0.02em] text-gray-900 mb-1.5 leading-tight">{step.title}</h4>
+              <p className="text-[11.5px] font-light text-gray-400 leading-relaxed max-w-[130px]">{step.desc}</p>
             </Reveal>
           ))}
         </div>

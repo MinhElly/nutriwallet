@@ -23,15 +23,15 @@ const Hero = () => {
           <div className="max-w-xl">
             {/* Eyebrow badge */}
             <Reveal delay={0}>
-              <div className="inline-flex items-center gap-2 border border-green-200 bg-green-50 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 tracking-wide">
+              <div className="inline-flex items-center gap-2 border border-green-200 bg-green-50 text-green-700 text-[10px] font-medium px-3 py-1.5 rounded-full mb-8 tracking-widest uppercase">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                AI-Powered · Nhận diện món ăn tức thì
+                AI-Powered · Nhận diện món ăn
               </div>
             </Reveal>
 
             {/* Headline */}
             <Reveal delay={0.1}>
-              <h1 className="text-5xl sm:text-6xl font-bold tracking-[-0.03em] leading-[1.08] text-gray-950 mb-6">
+              <h1 className="text-5xl sm:text-[64px] font-normal tracking-[-0.04em] leading-[0.95] text-gray-950 mb-6">
                 <span className="whitespace-nowrap">Chụp ảnh.{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400">
                   Hiểu ngay
@@ -43,7 +43,7 @@ const Hero = () => {
 
             {/* Sub-copy */}
             <Reveal delay={0.2}>
-              <p className="text-[17px] text-gray-500 leading-[1.7] mb-10">
+              <p className="text-[17px] text-gray-500 leading-[1.7] mb-10 font-light">
                 AI phân tích món ăn, calories và chi tiêu chỉ trong vài giây.
                 Một ứng dụng duy nhất cho cả dinh dưỡng lẫn ngân sách.
               </p>
@@ -54,7 +54,7 @@ const Hero = () => {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all duration-200 shadow-md shadow-green-200"
+                  className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-5 py-3 rounded-xl transition-all duration-200 shadow-md shadow-green-200"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -96,7 +96,7 @@ const Hero = () => {
                 </div>
 
                 {/* AI SCAN RESULT header */}
-                <div className="text-center text-[11px] font-bold tracking-[0.15em] text-green-500 uppercase mb-4">
+                <div className="text-center text-[10px] font-medium tracking-widest text-green-500 uppercase mb-4">
                   AI SCAN RESULT
                 </div>
 
@@ -107,8 +107,8 @@ const Hero = () => {
                     🍜
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900 text-[13px] leading-tight">Phở bò đặc biệt</div>
-                    <div className="text-green-500 text-[11px] font-semibold mt-0.5">✓ 99.2% confidence</div>
+                    <div className="font-medium tracking-tight text-gray-900 text-[13px] leading-tight">Phở bò đặc biệt</div>
+                    <div className="text-green-500 text-[11px] font-medium mt-0.5">✓ 99.2% confidence</div>
                   </div>
                 </div>
 
@@ -122,8 +122,8 @@ const Hero = () => {
                   ].map((s) => (
                     <div key={s.label} className="bg-white rounded-2xl p-3 text-center shadow-sm">
                       <div className="text-xl mb-1">{s.icon}</div>
-                      <div className="font-bold text-gray-900 text-[13px] leading-none">{s.val}</div>
-                      <div className="text-[10px] text-gray-400 mt-1">{s.label}</div>
+                      <div className="font-medium tracking-tight text-gray-900 text-[13px] leading-none">{s.val}</div>
+                      <div className="text-[10px] font-medium text-gray-400 mt-1">{s.label}</div>
                     </div>
                   ))}
                 </div>
