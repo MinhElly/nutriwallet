@@ -1,22 +1,41 @@
-import { useMemo } from "react";
-import { getExpenseHistory } from "../services/expense.service";
+import { useEffect, useState } from "react";
+import {
+  fetchExpenseHistory,
+  getExpenseHistory,
+} from "../services/expense.service";
 
-/**
- * useExpenseHistoryData — hook lấy dữ liệu lịch sử chi tiêu.
- *
- * Page không import mock trực tiếp.
- * Sau này service gọi API, hook không cần thay đổi.
- *
- * @returns {{
- *   expenses: ReturnType<typeof getExpenseHistory>["expenses"],
- *   categoryLabelMap: ReturnType<typeof getExpenseHistory>["categoryLabelMap"],
- * }}
- */
 export function useExpenseHistoryData() {
-  const { expenses, categoryLabelMap } = useMemo(
-    () => getExpenseHistory(),
-    [],
+  const fallback = getExpenseHistory();
+  const [expenses, setExpenses] = useState(() => fallback.expenses);
+  const [categoryLabelMap, setCategoryLabelMap] = useState(
+    () => fallback.categoryLabelMap,
   );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  return { expenses, categoryLabelMap };
+  useEffect(() => {
+    let ignore = false;
+
+    fetchExpenseHistory()
+      .then((result) => {
+        if (ignore) {
+          return;
+        }
+
+        setExpenses(result.data.expenses);
+        setCategoryLabelMap(result.data.categoryLabelMap);
+        setError(result.error ?? "");
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  return { expenses, categoryLabelMap, loading, error };
 }

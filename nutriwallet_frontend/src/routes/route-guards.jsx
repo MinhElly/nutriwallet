@@ -12,7 +12,11 @@ import { useAuth } from "../hooks/useAuth";
  *   { element: <ProtectedRoute />, children: [...] }
  */
 export function ProtectedRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -28,7 +32,11 @@ export function ProtectedRoute() {
  * Dùng cho các trang login, register.
  */
 export function PublicOnlyRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;

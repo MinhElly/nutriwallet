@@ -1,16 +1,49 @@
-import { useMemo } from "react";
-import { getBudgetData } from "../services/budget.service";
+import { useCallback, useEffect, useState } from "react";
+import { fetchBudgetData, getBudgetData } from "../services/budget.service";
+import { createExpense } from "../services/expense.service";
 
-/**
- * useBudgetData — hook lấy dữ liệu ngân sách.
- *
- * Page không import mock trực tiếp.
- * Sau này service gọi API, hook không cần thay đổi.
- *
- * @returns {{ budget: ReturnType<typeof getBudgetData>["budget"], expenses: ReturnType<typeof getBudgetData>["expenses"] }}
- */
 export function useBudgetData() {
-  const { budget, expenses } = useMemo(() => getBudgetData(), []);
+  const fallback = getBudgetData();
+  const [budget, setBudget] = useState(() => fallback.budget);
+  const [expenses, setExpenses] = useState(() => fallback.expenses);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  return { budget, expenses };
+  useEffect(() => {
+    let ignore = false;
+
+    fetchBudgetData()
+      .then((result) => {
+        if (ignore) {
+          return;
+        }
+
+        setBudget(result.data.budget);
+        setExpenses(result.data.expenses);
+        setError(result.error ?? "");
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const addExpense = useCallback(async (payload) => {
+    const nextExpense = await createExpense(payload);
+
+    setExpenses((current) =>
+      [...current, nextExpense].sort((firstItem, secondItem) =>
+        secondItem.expenseDate.localeCompare(firstItem.expenseDate),
+      ),
+    );
+
+    return nextExpense;
+  }, []);
+
+  return { budget, expenses, loading, error, addExpense };
 }

@@ -144,7 +144,11 @@ function escapeCsvValue(value) {
 }
 
 export default function MealHistoryTable({ searchQuery = "" }) {
-  const { meals: mealHistoryData } = useMealHistoryData();
+  const {
+    meals: mealHistoryData,
+    loading,
+    error,
+  } = useMealHistoryData();
   const minMealDate = useMemo(() => {
     const sortedDates = getSortedMealDates(mealHistoryData);
     return sortedDates[0] ?? "";
@@ -648,6 +652,12 @@ export default function MealHistoryTable({ searchQuery = "" }) {
           Xuất file
         </button>
       </div>
+
+      {(loading || error) && (
+        <div className="border-b border-slate-100 px-5 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          {loading ? "Đang tải lịch sử bữa ăn..." : error}
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[980px] text-left">
