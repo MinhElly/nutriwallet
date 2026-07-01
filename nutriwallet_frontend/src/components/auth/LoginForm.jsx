@@ -1,31 +1,64 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import {
+  Eye,
+  EyeOff,
   HeartPulse,
-  Wallet,
+  Lock,
+  Mail,
   PersonStanding,
   Sprout,
+  Wallet,
 } from "lucide-react";
-
 import LoginFloatingCard from "./LoginFloatingCard";
 import { useAuth } from "../../hooks/useAuth";
 
 function LoginForm() {
   const navigate = useNavigate();
-  const { loginWithGoogle, loginWithFacebook } = useAuth();
+  const { login, loginWithGoogle, loginWithFacebook } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    if (!email.trim() || !password) {
+      setError("Vui lòng nhập email và mật khẩu.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await login({
+        email: email.trim(),
+        password,
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err?.message || "Không thể đăng nhập.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   const triggerGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setIsSubmitting(true);
       setError("");
+
       try {
         await loginWithGoogle(tokenResponse.access_token);
         navigate("/dashboard", { replace: true });
       } catch (err) {
-        setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Google.");
+        setError(
+          err?.response?.data?.message || err?.message || "Lỗi đăng nhập Google.",
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -35,58 +68,72 @@ function LoginForm() {
     },
   });
 
-  const loadFacebookSDK = () => {
-    return new Promise((resolve) => {
+  const loadFacebookSDK = () =>
+    new Promise((resolve) => {
       if (window.FB) {
         resolve(window.FB);
         return;
       }
-      window.fbAsyncInit = function() {
+
+      window.fbAsyncInit = function initializeFacebook() {
         window.FB.init({
-          appId: import.meta.env.VITE_FACEBOOK_APP_ID || 'mock-fb-app-id',
+          appId: import.meta.env.VITE_FACEBOOK_APP_ID || "mock-fb-app-id",
           cookie: true,
           xfbml: true,
-          version: 'v18.0'
+          version: "v18.0",
         });
         resolve(window.FB);
       };
-      (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = "https://connect.facebook.net/en_US/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-      }(document, 'script', 'facebook-jssdk'));
+
+      (function injectFacebookScript(documentRef, scriptTagName, scriptId) {
+        let scriptNode;
+        const firstScript = documentRef.getElementsByTagName(scriptTagName)[0];
+
+        if (documentRef.getElementById(scriptId)) {
+          return;
+        }
+
+        scriptNode = documentRef.createElement(scriptTagName);
+        scriptNode.id = scriptId;
+        scriptNode.src = "https://connect.facebook.net/en_US/sdk.js";
+        firstScript.parentNode.insertBefore(scriptNode, firstScript);
+      }(document, "script", "facebook-jssdk"));
     });
-  };
 
   const handleFacebookLogin = async () => {
     setIsSubmitting(true);
     setError("");
+
     try {
-      const FB = await loadFacebookSDK();
-      FB.login((response) => {
+      const facebookSdk = await loadFacebookSDK();
+
+      facebookSdk.login((response) => {
         if (response.authResponse) {
-          const accessToken = response.authResponse.accessToken;
-          loginWithFacebook(accessToken)
+          loginWithFacebook(response.authResponse.accessToken)
             .then(() => {
               navigate("/dashboard", { replace: true });
             })
             .catch((err) => {
-              setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Facebook.");
+              setError(
+                err?.response?.data?.message ||
+                  err?.message ||
+                  "Lỗi đăng nhập Facebook.",
+              );
               setIsSubmitting(false);
             });
-        } else {
-          setError("Người dùng đã hủy đăng nhập hoặc không cấp quyền.");
-          setIsSubmitting(false);
+          return;
         }
-      }, { scope: 'email,public_profile' });
+
+        setError("Người dùng đã hủy đăng nhập hoặc không cấp quyền.");
+        setIsSubmitting(false);
+      }, { scope: "email,public_profile" });
     } catch (err) {
       console.error("Failed to initialize Facebook SDK login:", err);
       setError("Không thể khởi tạo SDK Facebook.");
       setIsSubmitting(false);
     }
   };
+
   return (
     <main
       className="relative h-screen overflow-hidden bg-[#F0FDF4] text-[#0F172A]"
@@ -156,7 +203,12 @@ function LoginForm() {
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#16A34A] text-xs font-extrabold text-white shadow-lg">
           NW
         </div>
-        <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "Psionic" }}>NutriWallet AI</span>
+        <span
+          className="text-lg font-extrabold tracking-tight"
+          style={{ fontFamily: "Psionic" }}
+        >
+          NutriWallet AI
+        </span>
       </header>
 
       <section className="relative z-10 flex h-[calc(100vh-80px)] items-center justify-center px-4 pb-8">
@@ -209,10 +261,70 @@ function LoginForm() {
           </div>
 
           {error && (
-            <p className="mt-5 text-[13px] text-red-500 text-center">{error}</p>
+            <p className="mt-5 text-center text-[13px] text-red-500">{error}</p>
           )}
 
-          <div className="mt-8 space-y-3">
+          <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
+            <div className="relative">
+              <Mail
+                size={18}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+              />
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Email"
+                autoComplete="email"
+                className="h-[50px] w-full rounded-2xl border border-[#E5E7EB] bg-white/80 pl-11 pr-4 text-[14px] text-[#0F172A] outline-none transition-colors focus:border-[#22C55E]"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock
+                size={18}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+              />
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Mật khẩu"
+                autoComplete="current-password"
+                className="h-[50px] w-full rounded-2xl border border-[#E5E7EB] bg-white/80 pl-11 pr-12 text-[14px] text-[#0F172A] outline-none transition-colors focus:border-[#22C55E]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-[#94A3B8] transition-colors hover:text-[#16A34A]"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-gradient flex h-[50px] w-full cursor-pointer items-center justify-center rounded-2xl text-[14px] font-semibold text-white shadow-sm disabled:opacity-50"
+            >
+              Đăng nhập
+            </button>
+          </form>
+
+          <p className="mt-4 text-center text-[13px] text-[#64748B]">
+            Chưa có tài khoản?{" "}
+            <Link to="/register" className="font-semibold text-[#16A34A]">
+              Đăng ký
+            </Link>
+          </p>
+
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#E5E7EB]" />
+            <span className="text-[12px] text-[#94A3B8]">hoặc</span>
+            <div className="h-px flex-1 bg-[#E5E7EB]" />
+          </div>
+
+          <div className="mt-4 space-y-3">
             <button
               type="button"
               onClick={() => triggerGoogleLogin()}

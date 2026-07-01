@@ -17,6 +17,9 @@ export default function DashboardPage() {
     selectedPeriod,
     setSelectedPeriod,
     snapshot: dashboardSnapshot,
+    aiRecommendations,
+    loading,
+    error,
   } = useDashboardData();
 
   const {
@@ -38,6 +41,12 @@ export default function DashboardPage() {
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
       />
+
+      {(loading || error) && (
+        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
+          {loading ? "Đang tải dữ liệu dashboard..." : error}
+        </p>
+      )}
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="group flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 xl:p-5 dark:border-slate-800 dark:bg-slate-900">
@@ -119,7 +128,7 @@ export default function DashboardPage() {
       </section>
 
       <div className="mt-3">
-        <RecommendationCard />
+        <RecommendationCard items={aiRecommendations} />
       </div>
 
       <div className="mt-3">

@@ -1,5 +1,6 @@
 import Typewriter from "../common/Typewriter";
 import { useMemo, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 import {
   CalendarDays,
   Check,
@@ -32,6 +33,7 @@ export default function DashboardHeader({
   selectedPeriod,
   onPeriodChange,
 }) {
+  const { currentUser } = useAuth();
   const today = new Date();
   const greeting = getCurrentGreeting();
   const weekdayLabels = getWeekdayLabels();
@@ -92,7 +94,7 @@ export default function DashboardHeader({
 
           <span className="text-emerald-600 dark:text-emerald-400">
             <Typewriter
-              text={userInfo.name}
+              text={currentUser?.fullName ?? userInfo.name}
               speed={55}
               initialDelay={800}
               loop={false}
