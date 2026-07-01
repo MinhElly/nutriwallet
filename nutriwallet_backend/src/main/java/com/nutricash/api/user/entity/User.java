@@ -76,6 +76,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private AuthProvider provider = AuthProvider.LOCAL;
 
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 

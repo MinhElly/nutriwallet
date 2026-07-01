@@ -47,9 +47,9 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login",
-                                "/api/auth/verify-email",
+                                "/api/auth/google",
+                                "/api/auth/facebook",
+                                "/api/auth/facebook/data-deletion/**",
                                 "/api",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

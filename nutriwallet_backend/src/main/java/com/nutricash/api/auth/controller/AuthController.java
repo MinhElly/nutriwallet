@@ -1,8 +1,8 @@
 package com.nutricash.api.auth.controller;
 
 import com.nutricash.api.auth.dto.AuthResponse;
-import com.nutricash.api.auth.dto.LoginRequest;
-import com.nutricash.api.auth.dto.RegisterRequest;
+import com.nutricash.api.auth.dto.GoogleLoginRequest;
+import com.nutricash.api.auth.dto.FacebookLoginRequest;
 import com.nutricash.api.auth.service.AuthService;
 import com.nutricash.api.auth.service.RevokedTokenService;
 import com.nutricash.api.common.dto.ApiResponse;
@@ -40,32 +40,23 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "Register a new account",
-            description = "Creates a local user account with PENDING_VERIFICATION status, generates an email verification token, and sends a verification email. The account must be verified before login."
+            summary = "Login with Google",
+            description = "Verifies the Google ID token and returns a JWT access token for NutriWallet."
     )
-    @PostMapping("/register")
-    public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
-        authService.register(request);
-        return ApiResponse.success("Registration successful. Please check your email to verify your account.", null);
+    @PostMapping("/google")
+    public ApiResponse<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request, HttpServletResponse response) {
+        AuthResponse auth = authService.loginWithGoogle(request);
+        response.addHeader(HttpHeaders.SET_COOKIE, sessionCookie(auth.accessToken(), 86400).toString());
+        return ApiResponse.success(auth);
     }
 
     @Operation(
-            summary = "Verify account email",
-            description = "Verifies a user account by the token sent to email. If the token is valid and not expired, the user status changes to ACTIVE."
+            summary = "Login with Facebook",
+            description = "Verifies the Facebook access token and returns a JWT access token for NutriWallet."
     )
-    @GetMapping("/verify-email")
-    public ApiResponse<Void> verifyEmail(@RequestParam String token) {
-        authService.verifyEmail(token);
-        return ApiResponse.success("Email verified successfully.", null);
-    }
-
-    @Operation(
-            summary = "Login with email and password",
-            description = "Authenticates an ACTIVE local user. Returns a Bearer JWT access token and the logged-in user's profile."
-    )
-    @PostMapping("/login")
-    public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        AuthResponse auth = authService.login(request);
+    @PostMapping("/facebook")
+    public ApiResponse<AuthResponse> loginWithFacebook(@Valid @RequestBody FacebookLoginRequest request, HttpServletResponse response) {
+        AuthResponse auth = authService.loginWithFacebook(request);
         response.addHeader(HttpHeaders.SET_COOKIE, sessionCookie(auth.accessToken(), 86400).toString());
         return ApiResponse.success(auth);
     }
