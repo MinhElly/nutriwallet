@@ -50,6 +50,7 @@ public class SecurityConfig {
                                 "/api/auth/google",
                                 "/api/auth/facebook",
                                 "/api/auth/facebook/data-deletion/**",
+                                "/api/messenger/webhook",
                                 "/api",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
