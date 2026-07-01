@@ -17,14 +17,45 @@ function isExpenseWithinBudget(expense, budget) {
   );
 }
 
-function mapBudgetRecord(budget, expenses) {
-  const relatedExpenses = expenses.filter((expense) =>
-    isExpenseWithinBudget(expense, {
-      startDate: String(budget.startDate).slice(0, 10),
-      endDate: String(budget.endDate).slice(0, 10),
-    }),
-  );
-  const amount = Number(budget.amount ?? 0);
+function mapBudgetRecord(apiPayload, expenses) {
+  const rawBudget = apiPayload?.budget || apiPayload;
+
+  if (!rawBudget) {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return {
+      id: 0,
+      amount: 0,
+      spentAmount: 0,
+      remainingAmount: 0,
+      usagePercent: 0,
+      period: "MONTH",
+      startDate: startOfMonth.toISOString().slice(0, 10),
+      endDate: endOfMonth.toISOString().slice(0, 10),
+      warningThresholdPercent: 80,
+      currency: "VND",
+      active: false,
+    };
+  }
+
+  const startDateRaw = rawBudget.startDate ?? rawBudget.start_date;
+  const endDateRaw = rawBudget.endDate ?? rawBudget.end_date;
+  const amountRaw = rawBudget.amount;
+  const warningRaw = rawBudget.warningThresholdPercent ?? rawBudget.warning_threshold_percent;
+
+  const startDateStr = startDateRaw ? String(startDateRaw).slice(0, 10) : "";
+  const endDateStr = endDateRaw ? String(endDateRaw).slice(0, 10) : "";
+
+  const relatedExpenses = expenses.filter((expense) => {
+    if (!startDateStr || !endDateStr) return true;
+    return isExpenseWithinBudget(expense, {
+      startDate: startDateStr,
+      endDate: endDateStr,
+    });
+  });
+
+  const amount = Number(amountRaw ?? 0);
   const spentAmount = relatedExpenses.reduce(
     (sum, expense) => sum + Number(expense.amount ?? 0),
     0,
@@ -33,17 +64,17 @@ function mapBudgetRecord(budget, expenses) {
   const usagePercent = amount > 0 ? Math.round((spentAmount / amount) * 100) : 0;
 
   return {
-    id: budget.id,
+    id: rawBudget.id ?? 0,
     amount,
     spentAmount,
     remainingAmount,
     usagePercent,
-    period: budget.period,
-    startDate: String(budget.startDate).slice(0, 10),
-    endDate: String(budget.endDate).slice(0, 10),
-    warningThresholdPercent: budget.warningThresholdPercent ?? 80,
-    currency: relatedExpenses[0]?.currency ?? "VND",
-    active: budget.active ?? true,
+    period: rawBudget.period ?? "MONTH",
+    startDate: startDateStr,
+    endDate: endDateStr,
+    warningThresholdPercent: warningRaw ?? 80,
+    currency: rawBudget.currency ?? relatedExpenses[0]?.currency ?? "VND",
+    active: rawBudget.active ?? true,
   };
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Leaf } from "lucide-react";
 
 const navLinks = [
   { id: "features", label: "Tính năng" },
@@ -42,12 +43,7 @@ const Navbar = () => {
         {/* LEFT: Logo & Brand */}
         <div className={`flex items-center flex-shrink-0 z-10 ${trans} ${isScrolled ? "gap-0" : "gap-3.5"}`}>
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-            <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M7 2C4.24 2 2 4.24 2 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm.75 7.5h-1.5v-4h1.5v4zm0-5.5h-1.5V2.5h1.5V4z"
-                fill="white"
-              />
-            </svg>
+            <Leaf size={18} strokeWidth={2} className="text-white" />
           </div>
           <div
             className={`whitespace-nowrap overflow-hidden ${trans} ${

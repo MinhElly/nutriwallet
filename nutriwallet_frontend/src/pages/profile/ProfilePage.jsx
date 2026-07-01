@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import AppShell from "../../components/layout/AppShell";
 import { useProfileData } from "../../hooks/useProfileData";
 import { useAuth } from "../../hooks/useAuth";
+import { useBudgetData } from "../../hooks/useBudgetData";
 
 const PROFILE_META_STORAGE_KEY = "nw_profile_meta";
 const defaultProfileMeta = {
@@ -106,6 +107,7 @@ function formatJoinedDate(dateValue) {
 
 export default function ProfilePage() {
   const { profileData, updateProfile, loading, error } = useProfileData();
+  const { budget } = useBudgetData();
   const { replaceUser, currentUser } = useAuth();
   const { user, stats } = profileData;
   const avatarPreviewUrlRef = useRef("");
@@ -312,16 +314,11 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:max-w-xs">
           <MiniInfoCard
             icon={<Wallet size={18} />}
             label="Ngân sách hiện tại"
-            value={formatMoney(stats.currentBudget)}
-          />
-          <MiniInfoCard
-            icon={<CalendarClock size={18} />}
-            label="Ngày tham gia"
-            value={stats.memberSince}
+            value={formatMoney(budget?.amount ?? stats.currentBudget)}
           />
         </div>
       </section>

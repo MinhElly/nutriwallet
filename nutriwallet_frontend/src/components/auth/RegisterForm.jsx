@@ -6,6 +6,7 @@ import {
   HeartPulse,
   ChartColumnBig,
   Sprout,
+  Leaf,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -154,7 +155,9 @@ function RegisterForm() {
       <div className="flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] relative">
         <div className="absolute top-4 left-4 z-10">
           <h2 className="text-[14px] font-extrabold tracking-[-0.02em] text-[#16A34A] flex items-center gap-1.5" style={{ fontFamily: "Psionic" }}>
-            <Sprout size={18} strokeWidth={2.5} className="text-[#16A34A]" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#16A34A] text-white shadow-sm">
+              <Leaf size={14} strokeWidth={2} />
+            </div>
             NutriWallet AI
           </h2>
         </div>

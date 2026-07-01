@@ -6,6 +6,7 @@ import {
   Wallet,
   PersonStanding,
   Sprout,
+  Leaf,
 } from "lucide-react";
 
 import LoginFloatingCard from "./LoginFloatingCard";
@@ -153,8 +154,8 @@ function LoginForm() {
       <div className="orbit orbit-2 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
 
       <header className="relative z-10 flex items-center gap-3 px-8 py-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#16A34A] text-xs font-extrabold text-white shadow-lg">
-          NW
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#16A34A] text-white shadow-lg">
+          <Leaf size={18} strokeWidth={2.5} />
         </div>
         <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "Psionic" }}>NutriWallet AI</span>
       </header>
