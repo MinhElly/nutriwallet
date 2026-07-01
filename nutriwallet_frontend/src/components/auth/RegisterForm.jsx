@@ -1,30 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
   ShieldCheck,
   HeartPulse,
   ChartColumnBig,
-  CheckCircle2,
-  User,
   Sprout,
+  Leaf,
 } from "lucide-react";
-import { register } from "../../services/auth.service";
+import { useAuth } from "../../hooks/useAuth";
 
 function RegisterForm() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { loginWithGoogle, loginWithFacebook } = useAuth();
   const [healthScore, setHealthScore] = useState(0);
   const [growthScore, setGrowthScore] = useState(0);
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,30 +45,76 @@ function RegisterForm() {
     return () => clearInterval(timer);
   }, []);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    setError("");
+  const triggerGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsSubmitting(true);
+      setError("");
+      try {
+        await loginWithGoogle(tokenResponse.access_token);
+        navigate("/dashboard", { replace: true });
+      } catch (err) {
+        setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Google.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    onError: () => {
+      setError("Đăng ký bằng Google thất bại.");
+    },
+  });
 
-    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
-      setError("Vui lòng điền đầy đủ thông tin.");
-      return;
-    }
+  const loadFacebookSDK = () => {
+    return new Promise((resolve) => {
+      if (window.FB) {
+        resolve(window.FB);
+        return;
+      }
+      window.fbAsyncInit = function() {
+        window.FB.init({
+          appId: import.meta.env.VITE_FACEBOOK_APP_ID || 'mock-fb-app-id',
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'
+        });
+        resolve(window.FB);
+      };
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    });
+  };
 
-    if (password !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp.");
-      return;
-    }
-
+  const handleFacebookLogin = async () => {
     setIsSubmitting(true);
+    setError("");
     try {
-      register({ fullName: fullName.trim(), email: email.trim(), password });
-      navigate("/dashboard", { replace: true });
+      const FB = await loadFacebookSDK();
+      FB.login((response) => {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken;
+          loginWithFacebook(accessToken)
+            .then(() => {
+              navigate("/dashboard", { replace: true });
+            })
+            .catch((err) => {
+              setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Facebook.");
+              setIsSubmitting(false);
+            });
+        } else {
+          setError("Người dùng đã hủy đăng ký hoặc không cấp quyền.");
+          setIsSubmitting(false);
+        }
+      }, { scope: 'email,public_profile' });
     } catch (err) {
-      setError(err?.message ?? "Lỗi đăng ký. Vui lòng thử lại.");
-    } finally {
+      console.error("Failed to initialize Facebook SDK login:", err);
+      setError("Không thể khởi tạo SDK Facebook.");
       setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <main
@@ -114,16 +150,14 @@ function RegisterForm() {
           transform: translateY(-2px);
           box-shadow: 0 18px 36px -18px rgba(34, 197, 94, 0.6);
         }
-
-        .input-transition {
-          transition: 0.25s ease;
-        }
       `}</style>
 
       <div className="flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] relative">
         <div className="absolute top-4 left-4 z-10">
           <h2 className="text-[14px] font-extrabold tracking-[-0.02em] text-[#16A34A] flex items-center gap-1.5" style={{ fontFamily: "Psionic" }}>
-            <Sprout size={18} strokeWidth={2.5} className="text-[#16A34A]" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#16A34A] text-white shadow-sm">
+              <Leaf size={14} strokeWidth={2} />
+            </div>
             NutriWallet AI
           </h2>
         </div>
@@ -203,137 +237,36 @@ function RegisterForm() {
               Tạo tài khoản để bắt đầu quản lý sức khỏe và tài chính của bạn
             </p>
 
-            <form
-              className="mt-5 space-y-3"
-              onSubmit={handleSubmit}
-            >
-              <Input
-                label="Họ và tên"
-                icon={<User size={18} />}
-                placeholder="Nhập họ và tên"
-                rightIcon={<CheckCircle2 size={18} />}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                autoComplete="name"
-              />
+            {error && (
+              <p className="mt-5 text-[13px] text-red-500">{error}</p>
+            )}
 
-              <Input
-                label="Email"
-                icon={<Mail size={18} />}
-                placeholder="Nhập email của bạn"
-                type="email"
-                rightIcon={<CheckCircle2 size={18} />}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-              />
-
-              <div>
-                <Input
-                  label="Mật khẩu"
-                  icon={<Lock size={18} />}
-                  placeholder="Nhập mật khẩu"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  rightIcon={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="flex items-center justify-center text-[#64748B] hover:text-[#16A34A]"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  }
-                />
-
-                <div className="mt-1.5 space-y-0.5 text-[11px] font-medium text-[#16A34A]">
-                  <p>✓ Ít nhất 8 ký tự</p>
-                  <p>✓ Bao gồm số hoặc ký hiệu</p>
-                  <p>✓ Bao gồm chữ hoa và chữ thường</p>
-                </div>
-              </div>
-
-              <Input
-                label="Nhập lại mật khẩu"
-                icon={<Lock size={18} />}
-                placeholder="Nhập lại mật khẩu"
-                type={showConfirmPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="flex items-center justify-center text-[#64748B] hover:text-[#16A34A]"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
-                  </button>
-                }
-              />
-
-              {error && (
-                <p className="text-[12px] text-red-500">{error}</p>
-              )}
+            <div className="mt-8 space-y-3">
+              <button
+                type="button"
+                onClick={() => triggerGoogleLogin()}
+                disabled={isSubmitting}
+                className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white text-[14px] font-semibold text-[#0F172A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#22C55E] hover:bg-[#F8FAFC] hover:shadow-lg disabled:opacity-50"
+              >
+                <GoogleIcon />
+                Tiếp tục với Google
+              </button>
 
               <button
-                type="submit"
+                type="button"
+                onClick={handleFacebookLogin}
                 disabled={isSubmitting}
-                className="btn-gradient flex h-[42px] w-full items-center justify-center gap-2.5 rounded-[14px] text-[13px] font-bold text-white shadow-[0_16px_36px_-18px_rgba(34,197,94,0.7)] disabled:opacity-70"
+                className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-[#1877F2] text-[14px] font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#166FE5] hover:shadow-lg disabled:opacity-50"
               >
-                Đăng ký
-                <ArrowRight size={18} />
+                <FacebookIcon />
+                Tiếp tục với Facebook
               </button>
-            </form>
-
-            <div className="mt-5 mb-4 flex items-center gap-3">
-              <div className="h-px flex-1 bg-[#E5E7EB]" />
-              <span className="whitespace-nowrap text-[11px] text-[#94A3B8]">
-                Hoặc tiếp tục với
-              </span>
-              <div className="h-px flex-1 bg-[#E5E7EB]" />
             </div>
 
-            <SocialGoogle />
           </div>
         </section>
       </div>
     </main>
-  );
-}
-
-function Input({ label, icon, placeholder, rightIcon, type = "text", value, onChange, autoComplete }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-[12px] font-semibold text-[#0F172A]">
-        {label}
-      </label>
-
-      <div className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]">
-          {icon}
-        </div>
-
-        <input
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          autoComplete={autoComplete}
-          className="input-transition h-[40px] w-full rounded-[14px] border border-[#E5E7EB] bg-white pl-11 pr-11 text-[13px] text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#16A34A] focus:outline-none focus:ring-4 focus:ring-[#DCFCE7]"
-        />
-
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#16A34A]">
-          {rightIcon}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -383,21 +316,9 @@ function Feature({ icon, title, desc }) {
   );
 }
 
-function SocialGoogle() {
-  return (
-    <button
-      type="button"
-      className="flex h-[42px] w-full cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border border-[#E5E7EB] bg-white text-[13px] font-semibold text-[#0F172A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#22C55E] hover:bg-[#F8FAFC] hover:shadow-md"
-    >
-      <GoogleIcon />
-      <span>Tiếp tục với Google</span>
-    </button>
-  );
-}
-
 function GoogleIcon() {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
         fill="#4285F4"
@@ -414,6 +335,14 @@ function GoogleIcon() {
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         fill="#EA4335"
       />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
     </svg>
   );
 }

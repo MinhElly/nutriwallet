@@ -1,3 +1,5 @@
+import { Leaf } from "lucide-react";
+
 const Footer = () => {
   const year = new Date().getFullYear();
 
@@ -28,9 +30,7 @@ const Footer = () => {
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center">
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 2C4.24 2 2 4.24 2 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm.75 7.5h-1.5v-4h1.5v4zm0-5.5h-1.5V2.5h1.5V4z" fill="white"/>
-                </svg>
+                <Leaf size={14} strokeWidth={2} className="text-white" />
               </div>
               <span
                 className="font-bold text-sm text-white tracking-tight"
@@ -46,7 +46,7 @@ const Footer = () => {
 
           {/* Product */}
           <div>
-            <h5 className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-4">Sản phẩm</h5>
+            <h5 className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-4">Sản phẩm</h5>
             <ul className="space-y-3">
               {productLinks.map((item) => (
                 <li key={item.label}>
@@ -60,7 +60,7 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h5 className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-4">Công ty</h5>
+            <h5 className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-4">Công ty</h5>
             <ul className="space-y-3">
               {companyLinks.map((item) => (
                 <li key={item.label}>
@@ -74,7 +74,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h5 className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-4">Pháp lý</h5>
+            <h5 className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-4">Pháp lý</h5>
             <ul className="space-y-3">
               {legalLinks.map((item) => (
                 <li key={item.label}>

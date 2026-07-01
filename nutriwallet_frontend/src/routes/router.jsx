@@ -9,6 +9,7 @@ import MealHistoryPage from "../pages/meal/MealHistoryPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 import ScanMealPage from "../pages/scanMeal/ScanMealPage";
 import SettingsPage from "../pages/settings/SettingsPage";
+import OnboardingPage from "../pages/onboarding/OnboardingPage";
 import { ProtectedRoute, PublicOnlyRoute } from "./route-guards";
 
 export const router = createBrowserRouter([
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: <DashboardPage />,
+      },
+      {
+        path: "/onboarding",
+        element: <OnboardingPage />,
       },
       {
         path: "/meal-history",
