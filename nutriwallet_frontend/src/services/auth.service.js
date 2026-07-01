@@ -2,36 +2,15 @@
  * auth.service.js
  *
  * Tầng service xử lý authentication.
- * Hiện tại dùng mock session — không gọi API thật.
- *
- * Sau này chỉ cần thay phần implementation:
- *   import axios from "axios";
- *   import { API_BASE_URL } from "../../config/env";
- *   const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
  */
+
+import api from "../lib/axios";
 
 const SESSION_KEY = "nw_session";
 
-/** @typedef {{ id: number, fullName: string, email: string, avatarUrl: string, role: string, emailVerified: boolean, messengerPlatform: string, messengerLinkedAt: string, emailVerifiedAt: string }} MockUser */
-
-/** @type {MockUser} */
-const MOCK_USER = {
-  id: 1,
-  fullName: "Alex Nguyen",
-  email: "alex.nguyen@email.com",
-  avatarUrl: "https://i.pravatar.cc/100?img=12",
-  role: "Người dùng",
-  emailVerified: true,
-  emailVerifiedAt: "10/02/2024 10:22 AM",
-  messengerPlatform: "Messenger",
-  messengerLinkedAt: "10/02/2024 10:25 AM",
-};
-
-const MOCK_ACCESS_TOKEN = "mock-jwt-token-nutriwallet-2026";
-
 /**
  * Lưu session vào sessionStorage.
- * @param {MockUser} user
+ * @param {object} user
  * @param {string} token
  */
 function persistSession(user, token) {
@@ -50,7 +29,7 @@ function clearSession() {
 
 /**
  * Đọc session hiện tại từ sessionStorage.
- * @returns {{ user: MockUser, token: string } | null}
+ * @returns {{ user: object, token: string } | null}
  */
 export function readSession() {
   try {
@@ -63,85 +42,88 @@ export function readSession() {
 }
 
 /**
- * Đăng nhập với mock credentials.
- * Bất kỳ email/password không rỗng đều thành công.
- *
- * @param {{ email: string, password: string }} credentials
- * @returns {{ user: MockUser, token: string }}
+ * Đăng nhập bằng email/password (Đã bị vô hiệu hóa).
  */
-export function login(credentials) {
-  const { email, password } = credentials;
-
-  if (!email || !password) {
-    throw new Error("Email và mật khẩu không được để trống.");
-  }
-
-  const session = { user: { ...MOCK_USER, email }, token: MOCK_ACCESS_TOKEN };
-  persistSession(session.user, session.token);
-  return session;
+export function login() {
+  throw new Error("Đăng nhập bằng tài khoản nội bộ đã bị vô hiệu hóa. Vui lòng đăng nhập qua Google hoặc Facebook.");
 }
 
 /**
- * Đăng ký tài khoản mới với mock data.
- *
- * @param {{ fullName: string, email: string, password: string }} data
- * @returns {{ user: MockUser, token: string }}
+ * Đăng ký tài khoản bằng email/password (Đã bị vô hiệu hóa).
  */
-export function register(data) {
-  const { fullName, email, password } = data;
-
-  if (!fullName || !email || !password) {
-    throw new Error("Vui lòng điền đầy đủ thông tin.");
-  }
-
-  const newUser = { ...MOCK_USER, fullName, email };
-  const session = { user: newUser, token: MOCK_ACCESS_TOKEN };
-  persistSession(session.user, session.token);
-  return session;
+export function register() {
+  throw new Error("Đăng ký tài khoản nội bộ đã bị vô hiệu hóa. Vui lòng đăng ký qua Google hoặc Facebook.");
 }
 
 /**
  * Đăng xuất — xóa session hiện tại.
  */
-export function logout() {
-  clearSession();
+export async function logout() {
+  try {
+    await api.post("/auth/logout");
+  } catch (err) {
+    console.error("Backend logout failed:", err);
+  } finally {
+    clearSession();
+  }
 }
 
 /**
- * Yêu cầu đặt lại mật khẩu (Gửi email khôi phục).
- *
- * @param {string} email
- * @returns {Promise<boolean>}
+ * Yêu cầu đặt lại mật khẩu (Đã bị vô hiệu hóa).
  */
-export async function requestPasswordReset(email) {
-  if (!email) {
-    throw new Error("Email không hợp lệ.");
-  }
-
-  // Simulate network request
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(true);
-    }, 1200);
-  });
+export async function requestPasswordReset() {
+  throw new Error("Khôi phục mật khẩu nội bộ đã bị vô hiệu hóa.");
 }
 
 /**
- * Đặt lại mật khẩu mới bằng token.
- *
- * @param {string} token
- * @param {string} newPassword
- * @returns {Promise<boolean>}
+ * Đặt lại mật khẩu mới (Đã bị vô hiệu hóa).
  */
-export async function resetPassword(token, newPassword) {
-  if (!token || !newPassword) {
-    throw new Error("Token và mật khẩu không hợp lệ.");
-  }
+export async function resetPassword() {
+  throw new Error("Khôi phục mật khẩu nội bộ đã bị vô hiệu hóa.");
+}
 
-  // Simulate network request
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(true);
-    }, 1200);
-  });
+/**
+ * Đăng nhập qua Google (Client-Verification Flow)
+ * @param {string} idToken
+ * @returns {Promise<{ user: MockUser, token: string }>}
+ */
+export async function loginWithGoogle(idToken) {
+  const response = await api.post("/auth/google", { idToken });
+  const authResponse = response.data.data;
+  const mappedUser = {
+    id: authResponse.user.id,
+    fullName: authResponse.user.fullName,
+    email: authResponse.user.email,
+    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
+    role: authResponse.user.role === "ADMIN" ? "Admin" : "Người dùng",
+    emailVerified: authResponse.user.status === "ACTIVE",
+    emailVerifiedAt: new Date().toLocaleString(),
+    messengerPlatform: null,
+    messengerLinkedAt: null,
+  };
+  persistSession(mappedUser, authResponse.accessToken);
+  return { user: mappedUser, token: authResponse.accessToken };
+}
+
+/**
+ * Đăng nhập qua Facebook (Client-Verification Flow)
+ * @param {string} accessToken
+ * @returns {Promise<{ user: MockUser, token: string }>}
+ */
+export async function loginWithFacebook(accessToken) {
+  const response = await api.post("/auth/facebook", { accessToken });
+  const authResponse = response.data.data;
+  const mappedUser = {
+    id: authResponse.user.id,
+    fullName: authResponse.user.fullName,
+    email: authResponse.user.email,
+    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
+    role: authResponse.user.role === "ADMIN" ? "Admin" : "Người dùng",
+    emailVerified: authResponse.user.status === "ACTIVE",
+    emailVerifiedAt: new Date().toLocaleString(),
+    messengerPlatform: null,
+    messengerLinkedAt: null,
+  };
+  persistSession(mappedUser, authResponse.accessToken);
+  return { user: mappedUser, token: authResponse.accessToken };
 }

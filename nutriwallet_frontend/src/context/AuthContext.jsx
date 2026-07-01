@@ -5,6 +5,8 @@ import {
   register as authRegister,
   logout as authLogout,
   readSession,
+  loginWithGoogle as authLoginWithGoogle,
+  loginWithFacebook as authLoginWithFacebook,
 } from "../services/auth.service";
 
 /**
@@ -48,6 +50,30 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async (idToken) => {
+    setIsLoading(true);
+    try {
+      const result = await authLoginWithGoogle(idToken);
+      setCurrentUser(result.user);
+      setAccessToken(result.token);
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loginWithFacebook = useCallback(async (accessToken) => {
+    setIsLoading(true);
+    try {
+      const result = await authLoginWithFacebook(accessToken);
+      setCurrentUser(result.user);
+      setAccessToken(result.token);
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const register = useCallback((data) => {
     setIsLoading(true);
     try {
@@ -81,6 +107,8 @@ export function AuthProvider({ children }) {
         register,
         logout,
         replaceUser,
+        loginWithGoogle,
+        loginWithFacebook,
       }}
     >
       {children}

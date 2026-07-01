@@ -15,3 +15,9 @@ spring:
 springdoc:
   api-docs:
     enabled: false
+
+app:
+  backend-url: http://localhost:8081
+
+facebook:
+  app-secret: mock-facebook-app-secret-for-testing
