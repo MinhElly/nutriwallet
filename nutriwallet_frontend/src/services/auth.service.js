@@ -44,14 +44,14 @@ export function readSession() {
 /**
  * Đăng nhập bằng email/password (Đã bị vô hiệu hóa).
  */
-export function login(credentials) {
+export function login() {
   throw new Error("Đăng nhập bằng tài khoản nội bộ đã bị vô hiệu hóa. Vui lòng đăng nhập qua Google hoặc Facebook.");
 }
 
 /**
  * Đăng ký tài khoản bằng email/password (Đã bị vô hiệu hóa).
  */
-export function register(data) {
+export function register() {
   throw new Error("Đăng ký tài khoản nội bộ đã bị vô hiệu hóa. Vui lòng đăng ký qua Google hoặc Facebook.");
 }
 
@@ -71,14 +71,14 @@ export async function logout() {
 /**
  * Yêu cầu đặt lại mật khẩu (Đã bị vô hiệu hóa).
  */
-export async function requestPasswordReset(email) {
+export async function requestPasswordReset() {
   throw new Error("Khôi phục mật khẩu nội bộ đã bị vô hiệu hóa.");
 }
 
 /**
  * Đặt lại mật khẩu mới (Đã bị vô hiệu hóa).
  */
-export async function resetPassword(token, newPassword) {
+export async function resetPassword() {
   throw new Error("Khôi phục mật khẩu nội bộ đã bị vô hiệu hóa.");
 }
 

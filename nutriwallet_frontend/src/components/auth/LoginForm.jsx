@@ -82,6 +82,7 @@ function LoginForm() {
         }
       }, { scope: 'email,public_profile' });
     } catch (err) {
+      console.error("Failed to initialize Facebook SDK login:", err);
       setError("Không thể khởi tạo SDK Facebook.");
       setIsSubmitting(false);
     }
