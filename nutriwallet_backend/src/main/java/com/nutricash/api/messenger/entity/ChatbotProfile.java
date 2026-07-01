@@ -59,5 +59,9 @@ public class ChatbotProfile extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "chatbotProfile", fetch = FetchType.LAZY)
     private List<MealRecord> mealRecords = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "chatbotProfile", fetch = FetchType.LAZY, cascade = jakarta.persistence.CascadeType.ALL)
+    private List<ChatbotMessage> messages = new ArrayList<>();
 }
 
