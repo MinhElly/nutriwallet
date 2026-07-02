@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping("/api/messenger/webhook")
 @RequiredArgsConstructor
@@ -41,7 +43,13 @@ public class MessengerWebhookController {
     @Operation(summary = "Handle Messenger Webhook Event", description = "Receives messaging events from Facebook Messenger.")
     public ResponseEntity<Void> handleWebhookEvent(@RequestBody MessengerWebhookRequest payload) {
         log.info("Received webhook event payload");
-        webhookService.processWebhookRequest(payload);
+        CompletableFuture.runAsync(() -> {
+            try {
+                webhookService.processWebhookRequest(payload);
+            } catch (Exception e) {
+                log.error("Error processing webhook request in background", e);
+            }
+        });
         return ResponseEntity.ok().build();
     }
 }
