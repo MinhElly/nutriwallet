@@ -37,7 +37,11 @@ export function useDashboardData() {
     };
   }, [selectedDate, selectedPeriod]);
 
-  const aiRecommendations = useMemo(() => getAiRecommendations(), []);
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+
+  useEffect(() => {
+    getAiRecommendations().then((recs) => setAiRecommendations(recs));
+  }, []);
 
   function updateSelectedDate(nextDate) {
     setLoading(true);

@@ -14,6 +14,7 @@ public record MealResponse(
         BigDecimal carbGram,
         BigDecimal fatGram,
         boolean aiEstimated,
-        boolean confirmedByUser
+        boolean confirmedByUser,
+        String source
 ) {
 }

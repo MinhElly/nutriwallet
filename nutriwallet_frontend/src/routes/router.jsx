@@ -10,7 +10,8 @@ import ProfilePage from "../pages/profile/ProfilePage";
 import ScanMealPage from "../pages/scanMeal/ScanMealPage";
 import SettingsPage from "../pages/settings/SettingsPage";
 import OnboardingPage from "../pages/onboarding/OnboardingPage";
-import { ProtectedRoute, PublicOnlyRoute } from "./route-guards";
+import { ProtectedRoute, PublicOnlyRoute, AdminRoute } from "./route-guards";
+import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +77,17 @@ export const router = createBrowserRouter([
       {
         path: "/settings",
         element: <SettingsPage />,
+      },
+    ],
+  },
+
+  // Trang admin — yêu cầu quyền ADMIN
+  {
+    element: <AdminRoute />,
+    children: [
+      {
+        path: "/admin/dashboard",
+        element: <AdminDashboardPage />,
       },
     ],
   },

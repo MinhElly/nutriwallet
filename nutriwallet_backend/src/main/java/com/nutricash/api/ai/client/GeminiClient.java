@@ -6,6 +6,8 @@ import com.nutricash.api.common.exception.AppException;
 import com.nutricash.api.common.exception.ErrorCode;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +42,41 @@ public class GeminiClient implements LlmClient {
     @Override
     public String generate(String systemPrompt, String userPrompt) {
         if (key == null || key.isBlank()) throw new AppException(ErrorCode.AI_NOT_CONFIGURED);
+
+        byte[] imageBytes = null;
+        String mimeType = "image/jpeg";
+        if (userPrompt.contains("Image URL: ")) {
+            int urlIdx = userPrompt.indexOf("Image URL: ");
+            String imageUrl = userPrompt.substring(urlIdx + 11).trim();
+            if (!imageUrl.equalsIgnoreCase("null") && !imageUrl.isBlank()) {
+                try {
+                    imageBytes = RestClient.create().get().uri(imageUrl).retrieve().body(byte[].class);
+                    if (imageUrl.toLowerCase().endsWith(".png")) {
+                        mimeType = "image/png";
+                    } else if (imageUrl.toLowerCase().endsWith(".webp")) {
+                        mimeType = "image/webp";
+                    } else if (imageUrl.toLowerCase().endsWith(".gif")) {
+                        mimeType = "image/gif";
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to download image from URL: " + imageUrl, e);
+                }
+            }
+        }
+
+        List<Map<String, Object>> parts = new ArrayList<>();
+        parts.add(Map.of("text", userPrompt));
+        if (imageBytes != null) {
+            String base64Data = Base64.getEncoder().encodeToString(imageBytes);
+            parts.add(Map.of("inline_data", Map.of(
+                    "mime_type", mimeType,
+                    "data", base64Data
+            )));
+        }
+
         Map<String, Object> body = Map.of(
                 "system_instruction", Map.of("parts", List.of(Map.of("text", systemPrompt))),
-                "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt)))),
+                "contents", List.of(Map.of("role", "user", "parts", parts)),
                 "generationConfig", Map.of("temperature", 0.25));
         try {
             String raw = http.post().uri("/v1beta/models/{model}:generateContent?key={key}", model, key)

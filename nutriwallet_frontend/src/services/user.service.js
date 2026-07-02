@@ -53,6 +53,11 @@ function getFallbackProfileData() {
 
 function mergeProfileData(apiUser, fallback = getFallbackProfileData()) {
   const user = fallback.user ?? {};
+  
+  const memberSince = apiUser?.createdAt ? new Date(apiUser.createdAt).toLocaleDateString("vi-VN", {
+    month: "2-digit",
+    year: "numeric"
+  }) : (fallback.stats?.memberSince || "02/2026");
 
   return {
     ...fallback,
@@ -68,6 +73,17 @@ function mergeProfileData(apiUser, fallback = getFallbackProfileData()) {
       createdAt: apiUser?.createdAt ?? user.createdAt,
       updatedAt: apiUser?.updatedAt ?? user.updatedAt,
     },
+    chatbotProfile: apiUser?.chatbotProfile ? {
+      id: apiUser.chatbotProfile.id,
+      psid: apiUser.chatbotProfile.psid,
+      platform: apiUser.chatbotProfile.platform,
+      linkedAt: apiUser.chatbotProfile.linkedAt,
+      guestSessionCode: apiUser.chatbotProfile.guestSessionCode,
+    } : null,
+    stats: {
+      ...fallback.stats,
+      memberSince: memberSince,
+    }
   };
 }
 
@@ -152,4 +168,53 @@ export async function updateCurrentUser(
 
 export async function getCurrentUser() {
   return unwrapApiData(await api.get("/api/users/me"));
+}
+
+const fallbackUsersList = [
+  {
+    id: 1,
+    fullName: "Nguyễn Văn A",
+    email: "vana@gmail.com",
+    avatarUrl: "https://i.pravatar.cc/150?img=33",
+    role: "Người dùng",
+    rawRole: "USER",
+    status: "ACTIVE",
+    createdAt: "2026-06-01T09:00:00Z"
+  },
+  {
+    id: 2,
+    fullName: "Trần Thị B",
+    email: "thib@gmail.com",
+    avatarUrl: "https://i.pravatar.cc/150?img=47",
+    role: "Người dùng",
+    rawRole: "USER",
+    status: "ACTIVE",
+    createdAt: "2026-06-15T14:30:00Z"
+  },
+  {
+    id: 3,
+    fullName: "Lê Văn Admin",
+    email: "admin@nutriwallet.com",
+    avatarUrl: "https://i.pravatar.cc/150?img=12",
+    role: "Admin",
+    rawRole: "ADMIN",
+    status: "ACTIVE",
+    createdAt: "2026-05-20T08:00:00Z"
+  }
+];
+
+export async function fetchAllUsers() {
+  try {
+    const users = unwrapApiData(await api.get("/api/users"));
+    return {
+      data: users.map((u) => mapCurrentUser(u)),
+      error: null,
+    };
+  } catch (error) {
+    console.warn("API fetchAllUsers failed, using fallback mock data.", error);
+    return {
+      data: fallbackUsersList,
+      error: null,
+    };
+  }
 }

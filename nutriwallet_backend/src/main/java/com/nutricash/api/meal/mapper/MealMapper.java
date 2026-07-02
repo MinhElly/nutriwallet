@@ -18,7 +18,8 @@ public class MealMapper {
                 meal.getCarbGram(),
                 meal.getFatGram(),
                 meal.isAiEstimated(),
-                meal.isConfirmedByUser()
+                meal.isConfirmedByUser(),
+                meal.getChatbotProfile() != null ? "MESSENGER" : "WEB"
         );
     }
 }
