@@ -8,6 +8,7 @@ import ExpenseTable from "../../components/dashboard/ExpenseTable";
 import MealSummaryCard from "../../components/dashboard/MealSummaryCard";
 import MealTable from "../../components/dashboard/MealTable";
 import RecommendationCard from "../../components/dashboard/RecommendationCard";
+import FirstTimeWelcomeGuide from "../../components/dashboard/welcomeGuide/FirstTimeWelcomeGuide";
 import AppShell from "../../components/layout/AppShell";
 
 export default function DashboardPage() {
@@ -134,6 +135,8 @@ export default function DashboardPage() {
       <div className="mt-3">
         <AccountCard />
       </div>
+
+      <FirstTimeWelcomeGuide />
     </AppShell>
   );
 }

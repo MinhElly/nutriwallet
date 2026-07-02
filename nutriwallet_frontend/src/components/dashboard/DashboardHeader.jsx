@@ -273,7 +273,7 @@ export default function DashboardHeader({
           )}
         </div>
 
-        <div className="flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 shadow-sm sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+        <div className="flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           {periodRangeLabel}
         </div>
       </div>

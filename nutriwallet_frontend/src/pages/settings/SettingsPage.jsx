@@ -13,6 +13,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import AppShell from "../../components/layout/AppShell";
 import { useTheme } from "../../hooks/useTheme";
 import { useSettingsData } from "../../hooks/useSettingsData";
@@ -27,6 +28,7 @@ function formatSavedTime(date) {
 }
 
 export default function SettingsPage() {
+  const location = useLocation();
   const { settings, loading, error, saveSettings } = useSettingsData();
   const { profileData, refetchProfile, linkAccount, unlinkAccount } = useProfileData();
   const { currentUser } = useAuth();
@@ -80,6 +82,19 @@ export default function SettingsPage() {
       return () => clearTimeout(timer);
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (location.hash !== "#messenger-chatbot" || !settingsState) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("messenger-chatbot");
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [location.hash, settingsState]);
 
   const hasUnsavedChanges =
     settingsState &&
@@ -380,7 +395,7 @@ export default function SettingsPage() {
                 </div>
               </SettingsCard>
 
-              <SettingsCard title="Bảo mật và kết nối" icon={<Lock size={18} />}>
+              <SettingsCard id="messenger-chatbot" title="Bảo mật và kết nối" icon={<Lock size={18} />}>
                 <div className="space-y-3">
                   <ReadOnlyRow label="Email" value={profileData?.user?.email} />
                   <ReadOnlyRow
@@ -468,9 +483,9 @@ function ProfilePill({ text }) {
   );
 }
 
-function SettingsCard({ title, icon, children }) {
+function SettingsCard({ id, title, icon, children }) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div id={id} className="scroll-mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-5 flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100">
           {icon}
