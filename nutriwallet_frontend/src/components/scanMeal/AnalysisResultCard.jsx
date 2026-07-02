@@ -211,7 +211,7 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
         </div>
       ) : (
         <div className="mt-5 space-y-3">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <NutritionCard
               icon={Flame}
               label="Calories"
@@ -253,7 +253,7 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
             <NutritionCard
               icon={Wallet}
               label="Giá ước tính"
-              value={displayResult.estimatedPrice.toLocaleString("vi-VN")}
+              value={(displayResult.estimatedPrice ?? 0).toLocaleString("vi-VN")}
               unit={displayResult.currency}
               color="text-emerald-600 dark:text-emerald-400"
             />
@@ -266,6 +266,7 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
               color="text-sky-600 dark:text-sky-400"
             />
           </div>
+
         </div>
       )}
 
@@ -288,7 +289,7 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
 
           <DetailRow
             label="Độ tin cậy"
-            value={`${displayResult.ai.confidence}%`}
+            value={`${displayResult.ai.confidence ?? 0}%`}
           />
 
           <DetailRow
@@ -298,7 +299,7 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
 
           <DetailRow
             label="Giá ước tính"
-            value={`${displayResult.estimatedPrice.toLocaleString("vi-VN")} ${
+            value={`${(displayResult.estimatedPrice ?? 0).toLocaleString("vi-VN")} ${
               displayResult.currency
             }`}
           />

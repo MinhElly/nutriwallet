@@ -82,7 +82,7 @@ export default function DashboardHeader({
   return (
     <header className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div>
-        <h2 className="whitespace-nowrap text-3xl font-normal tracking-[-0.04em] sm:text-4xl xl:text-[40px]">
+        <h2 className="text-2xl font-normal tracking-[-0.04em] sm:text-3xl md:text-4xl xl:text-[40px] leading-tight">
           <span className="text-slate-900 dark:text-white">
             <Typewriter
               text={`${greeting.icon} ${greeting.text}, `}
@@ -273,7 +273,7 @@ export default function DashboardHeader({
           )}
         </div>
 
-        <div className="flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 shadow-sm sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+        <div className="flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           {periodRangeLabel}
         </div>
       </div>

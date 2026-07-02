@@ -754,7 +754,7 @@ function BudgetPage() {
             </div>
           </div>
 
-          <section className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
+          <section className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
             <SummaryCard
               icon={<Wallet />}
               title="Ngân sách trong khoảng chọn"

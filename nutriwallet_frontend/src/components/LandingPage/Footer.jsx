@@ -25,7 +25,7 @@ const Footer = () => {
   return (
     <footer className="border-t border-white/5" style={{ background: "linear-gradient(160deg, #162032 0%, #1a2744 100%)" }}>
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-y-8 gap-x-4 md:gap-10 mb-12">
           {/* Brand */}
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">

@@ -1,9 +1,4 @@
 import api, { createApiError, extractApiMessage, unwrapApiData } from "./api";
-import { mealHistoryData } from "../data/mockMealHistoryData";
-
-function getFallbackMeals() {
-  return [...mealHistoryData];
-}
 
 function formatMealDate(value) {
   if (!value) {
@@ -84,26 +79,21 @@ export function mapMealRecord(meal) {
 }
 
 export function getMealHistory() {
-  return getFallbackMeals();
+  return [];
 }
 
 export async function fetchMealHistory() {
-  const fallback = getMealHistory();
-
   try {
     const meals = unwrapApiData(await api.get("/api/meals"));
 
     return {
-      data: Array.isArray(meals) ? meals.map(mapMealRecord) : fallback,
+      data: Array.isArray(meals) ? meals.map(mapMealRecord) : [],
       error: null,
     };
   } catch (error) {
     return {
-      data: fallback,
-      error: extractApiMessage(
-        error,
-        "Không thể tải lịch sử bữa ăn. Đang dùng dữ liệu mẫu.",
-      ),
+      data: [],
+      error: extractApiMessage(error, "Không thể tải lịch sử bữa ăn."),
     };
   }
 }

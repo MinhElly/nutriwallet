@@ -39,7 +39,7 @@ const Problem = () => {
             </p>
           </Reveal>
           <Reveal delay={0.1}>
-            <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[0.95] mb-5">
+            <h2 className="text-3xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[1.1] sm:leading-[0.95] mb-5">
               Bạn đang gặp vấn đề này?
             </h2>
           </Reveal>

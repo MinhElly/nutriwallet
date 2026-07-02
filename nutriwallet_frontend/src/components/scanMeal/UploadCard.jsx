@@ -63,7 +63,7 @@ export default function UploadCard({ onAnalyzeSuccess }) {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/jpg,image/heic"
+        accept="image/png,image/jpeg,image/jpg,image/gif,image/heic"
         onChange={handleFileChange}
         className="hidden"
       />
@@ -100,12 +100,12 @@ export default function UploadCard({ onAnalyzeSuccess }) {
               {fileName}
             </p>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-4">
+            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3 w-full max-w-sm mx-auto">
               <button
                 type="button"
                 onClick={handleChooseFile}
                 disabled={isAnalyzing}
-                className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-8 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="flex h-12 items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 w-full sm:w-auto dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <FileImage size={18} />
                 Đổi ảnh
@@ -115,7 +115,7 @@ export default function UploadCard({ onAnalyzeSuccess }) {
                 type="button"
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
-                className="flex h-12 items-center gap-3 rounded-xl bg-emerald-600 px-8 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                className="flex h-12 items-center justify-center gap-3 rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 w-full sm:w-auto dark:bg-emerald-600 dark:hover:bg-emerald-500"
               >
                 {isAnalyzing ? (
                   <>
@@ -139,14 +139,14 @@ export default function UploadCard({ onAnalyzeSuccess }) {
             </h2>
 
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              Hỗ trợ JPG, PNG, HEIC. Dung lượng tối đa 10MB.
+              Hỗ trợ JPG, PNG, GIF, HEIC. Dung lượng tối đa 10MB.
             </p>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3 w-full max-w-sm">
               <button
                 type="button"
                 onClick={handleChooseFile}
-                className="flex h-12 items-center gap-3 rounded-xl bg-emerald-600 px-8 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                className="flex h-12 items-center justify-center gap-3 rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] w-full sm:w-auto dark:bg-emerald-600 dark:hover:bg-emerald-500"
               >
                 <FileImage size={18} />
                 Chọn ảnh
@@ -155,7 +155,7 @@ export default function UploadCard({ onAnalyzeSuccess }) {
               <button
                 type="button"
                 onClick={handleOpenCamera}
-                className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-8 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="flex h-12 items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 active:scale-[0.98] w-full sm:w-auto dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <Camera size={18} />
                 Camera
