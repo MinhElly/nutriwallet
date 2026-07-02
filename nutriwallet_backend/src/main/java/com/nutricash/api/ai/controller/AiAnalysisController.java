@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.nutricash.api.ai.dto.AiAnalysisErrorResponse;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
@@ -40,5 +44,11 @@ public class AiAnalysisController {
     public ApiResponse<AiAnalyzeMealResponse> getAnalysis(@AuthenticationPrincipal SecurityUser currentUser,
             @PathVariable Long id) {
         return ApiResponse.success(aiAnalysisService.getAnalysis(currentUser, id));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/logs/errors")
+    public ApiResponse<List<AiAnalysisErrorResponse>> getFailedLogs() {
+        return ApiResponse.success(aiAnalysisService.findFailedLogs());
     }
 }
