@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
+import RegisterPage from "../pages/auth/RegisterPage";
 import LandingPage from "../components/LandingPage/LandingPage";
 import BudgetPage from "../pages/budget/BudgetPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
@@ -8,7 +9,9 @@ import MealHistoryPage from "../pages/meal/MealHistoryPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 import ScanMealPage from "../pages/scanMeal/ScanMealPage";
 import SettingsPage from "../pages/settings/SettingsPage";
-import { ProtectedRoute, PublicOnlyRoute } from "./route-guards";
+import OnboardingPage from "../pages/onboarding/OnboardingPage";
+import { ProtectedRoute, PublicOnlyRoute, AdminRoute } from "./route-guards";
+import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 
 export const router = createBrowserRouter([
   {
@@ -26,7 +29,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/register",
-        element: <Navigate to="/login" replace />,
+        element: <RegisterPage />,
       },
       {
         path: "/forgot-password",
@@ -46,6 +49,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: <DashboardPage />,
+      },
+      {
+        path: "/onboarding",
+        element: <OnboardingPage />,
       },
       {
         path: "/meal-history",
@@ -70,6 +77,17 @@ export const router = createBrowserRouter([
       {
         path: "/settings",
         element: <SettingsPage />,
+      },
+    ],
+  },
+
+  // Trang admin — yêu cầu quyền ADMIN
+  {
+    element: <AdminRoute />,
+    children: [
+      {
+        path: "/admin/dashboard",
+        element: <AdminDashboardPage />,
       },
     ],
   },

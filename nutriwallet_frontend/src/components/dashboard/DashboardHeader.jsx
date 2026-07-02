@@ -1,5 +1,6 @@
 import Typewriter from "../common/Typewriter";
 import { useMemo, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 import {
   CalendarDays,
   Check,
@@ -32,6 +33,7 @@ export default function DashboardHeader({
   selectedPeriod,
   onPeriodChange,
 }) {
+  const { currentUser } = useAuth();
   const today = new Date();
   const greeting = getCurrentGreeting();
   const weekdayLabels = getWeekdayLabels();
@@ -80,7 +82,7 @@ export default function DashboardHeader({
   return (
     <header className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div>
-        <h2 className="overflow-hidden whitespace-nowrap text-[1.1rem] font-bold tracking-tight sm:text-[1.75rem] xl:text-[2rem]">
+        <h2 className="whitespace-nowrap text-3xl font-normal tracking-[-0.04em] sm:text-4xl xl:text-[40px]">
           <span className="text-slate-900 dark:text-white">
             <Typewriter
               text={`${greeting.icon} ${greeting.text}, `}
@@ -92,7 +94,7 @@ export default function DashboardHeader({
 
           <span className="text-emerald-600 dark:text-emerald-400">
             <Typewriter
-              text={userInfo.name}
+              text={currentUser?.fullName ?? userInfo.name}
               speed={55}
               initialDelay={800}
               loop={false}

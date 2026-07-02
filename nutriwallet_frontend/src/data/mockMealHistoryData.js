@@ -18,6 +18,7 @@ export const mealHistoryResponse = {
       meal_type: "BREAKFAST",
       meal_time: "08:30",
       meal_date: "2026-06-28",
+      source: "WEB",
       nutrition: {
         calories: 540,
         protein: 34,
@@ -37,6 +38,7 @@ export const mealHistoryResponse = {
       meal_type: "LUNCH",
       meal_time: "12:45",
       meal_date: "2026-06-28",
+      source: "MESSENGER",
       nutrition: {
         calories: 320,
         protein: 12,
@@ -56,6 +58,7 @@ export const mealHistoryResponse = {
       meal_type: "DINNER",
       meal_time: "19:15",
       meal_date: "2026-06-28",
+      source: "WEB",
       nutrition: {
         calories: 610,
         protein: 38,
@@ -75,6 +78,7 @@ export const mealHistoryResponse = {
       meal_type: "BREAKFAST",
       meal_time: "07:45",
       meal_date: "2026-06-28",
+      source: "MESSENGER",
       nutrition: {
         calories: 280,
         protein: 10,
@@ -94,6 +98,7 @@ export const mealHistoryResponse = {
       meal_type: "LUNCH",
       meal_time: "12:20",
       meal_date: "2026-06-28",
+      source: "WEB",
       nutrition: {
         calories: 450,
         protein: 42,
@@ -141,6 +146,7 @@ export function mapMealRecord(meal) {
     fatGram: meal.nutrition?.fat ?? 0,
     aiStatus: meal.ai?.status ?? "UNKNOWN",
     modelName: meal.ai?.model ?? "N/A",
+    source: meal.source || "WEB",
   };
 }
 

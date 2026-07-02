@@ -1,129 +1,177 @@
-/**
- * auth.service.js
- *
- * Tầng service xử lý authentication.
- */
+import api, {
+  clearAuthSession,
+  createApiError,
+  getStoredAccessToken,
+  getStoredUser,
+  persistAuthSession,
+  readStoredSession,
+  unwrapApiData,
+} from "./api";
 
-import api from "../lib/axios";
+function formatDateTime(value) {
+  if (!value) {
+    return "";
+  }
 
-const SESSION_KEY = "nw_session";
-
-/**
- * Lưu session vào sessionStorage.
- * @param {object} user
- * @param {string} token
- */
-function persistSession(user, token) {
-  sessionStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({ user, token }),
-  );
+  return new Date(value).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-/**
- * Xóa session khỏi sessionStorage.
- */
-function clearSession() {
-  sessionStorage.removeItem(SESSION_KEY);
+function humanizeRole(role) {
+  if (role === "ADMIN") {
+    return "Admin";
+  }
+
+  if (role === "USER") {
+    return "Người dùng";
+  }
+
+  return role ?? "Người dùng";
 }
 
-/**
- * Đọc session hiện tại từ sessionStorage.
- * @returns {{ user: object, token: string } | null}
- */
+export function mapCurrentUser(apiUser, fallbackUser = null) {
+  const nextUser = apiUser ?? fallbackUser ?? {};
+  const status = nextUser.status ?? fallbackUser?.status ?? "ACTIVE";
+
+  return {
+    id: nextUser.id ?? fallbackUser?.id ?? null,
+    fullName: nextUser.fullName ?? fallbackUser?.fullName ?? "",
+    email: nextUser.email ?? fallbackUser?.email ?? "",
+    avatarUrl:
+      nextUser.avatarUrl ??
+      fallbackUser?.avatarUrl ??
+      "https://i.pravatar.cc/100?img=12",
+    role: humanizeRole(nextUser.role ?? fallbackUser?.rawRole),
+    rawRole: nextUser.role ?? fallbackUser?.rawRole ?? "USER",
+    status,
+    emailVerified:
+      typeof fallbackUser?.emailVerified === "boolean"
+        ? fallbackUser.emailVerified
+        : status === "ACTIVE",
+    emailVerifiedAt:
+      fallbackUser?.emailVerifiedAt ||
+      (status === "ACTIVE" ? formatDateTime(new Date()) : ""),
+    messengerPlatform: fallbackUser?.messengerPlatform ?? "Messenger",
+    messengerLinkedAt: fallbackUser?.messengerLinkedAt ?? "",
+    provider: nextUser.provider ?? fallbackUser?.provider ?? null,
+    createdAt: nextUser.createdAt ?? fallbackUser?.createdAt ?? null,
+    updatedAt: nextUser.updatedAt ?? fallbackUser?.updatedAt ?? null,
+  };
+}
+
+function persistMappedAuth(authPayload, fallbackUser = getStoredUser()) {
+  const mappedUser = mapCurrentUser(authPayload?.user, fallbackUser);
+  const accessToken = authPayload?.accessToken ?? getStoredAccessToken();
+
+  persistAuthSession(mappedUser, accessToken);
+
+  return {
+    user: mappedUser,
+    token: accessToken,
+  };
+}
+
 export function readSession() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
+  const session = readStoredSession();
+
+  if (!session) {
     return null;
   }
+
+  return {
+    user: session.user ? mapCurrentUser(session.user, session.user) : null,
+    token: session.token ?? null,
+  };
 }
 
-/**
- * Đăng nhập bằng email/password (Đã bị vô hiệu hóa).
- */
-export function login() {
-  throw new Error("Đăng nhập bằng tài khoản nội bộ đã bị vô hiệu hóa. Vui lòng đăng nhập qua Google hoặc Facebook.");
-}
-
-/**
- * Đăng ký tài khoản bằng email/password (Đã bị vô hiệu hóa).
- */
-export function register() {
-  throw new Error("Đăng ký tài khoản nội bộ đã bị vô hiệu hóa. Vui lòng đăng ký qua Google hoặc Facebook.");
-}
-
-/**
- * Đăng xuất — xóa session hiện tại.
- */
-export async function logout() {
+export async function login(credentials) {
   try {
-    await api.post("/auth/logout");
-  } catch (err) {
-    console.error("Backend logout failed:", err);
-  } finally {
-    clearSession();
+    const authResponse = unwrapApiData(
+      await api.post("/api/auth/login", credentials),
+    );
+    return persistMappedAuth(authResponse);
+  } catch (error) {
+    throw createApiError(error, "Không thể đăng nhập lúc này.");
   }
 }
 
-/**
- * Yêu cầu đặt lại mật khẩu (Đã bị vô hiệu hóa).
- */
+export async function register(payload) {
+  try {
+    const authResponse = unwrapApiData(
+      await api.post("/api/auth/register", payload),
+    );
+    return persistMappedAuth(authResponse);
+  } catch (error) {
+    throw createApiError(error, "Không thể đăng ký lúc này.");
+  }
+}
+
+export async function logout() {
+  const accessToken = getStoredAccessToken();
+
+  try {
+    if (accessToken) {
+      await api.post("/api/auth/logout");
+    }
+  } catch (error) {
+    console.error("Backend logout failed:", error);
+  } finally {
+    clearAuthSession();
+  }
+}
+
+export async function fetchCurrentUser() {
+  const fallbackUser = getStoredUser();
+  const accessToken = getStoredAccessToken();
+
+  if (!accessToken) {
+    return fallbackUser;
+  }
+
+  try {
+    const apiUser = unwrapApiData(await api.get("/api/auth/me"));
+    const mappedUser = mapCurrentUser(apiUser, fallbackUser);
+    persistAuthSession(mappedUser, accessToken);
+    return mappedUser;
+  } catch {
+    const apiUser = unwrapApiData(await api.get("/api/users/me"));
+    const mappedUser = mapCurrentUser(apiUser, fallbackUser);
+    persistAuthSession(mappedUser, accessToken);
+    return mappedUser;
+  }
+}
+
 export async function requestPasswordReset() {
   throw new Error("Khôi phục mật khẩu nội bộ đã bị vô hiệu hóa.");
 }
 
-/**
- * Đặt lại mật khẩu mới (Đã bị vô hiệu hóa).
- */
 export async function resetPassword() {
   throw new Error("Khôi phục mật khẩu nội bộ đã bị vô hiệu hóa.");
 }
 
-/**
- * Đăng nhập qua Google (Client-Verification Flow)
- * @param {string} idToken
- * @returns {Promise<{ user: MockUser, token: string }>}
- */
 export async function loginWithGoogle(idToken) {
-  const response = await api.post("/auth/google", { idToken });
-  const authResponse = response.data.data;
-  const mappedUser = {
-    id: authResponse.user.id,
-    fullName: authResponse.user.fullName,
-    email: authResponse.user.email,
-    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
-    role: authResponse.user.role === "ADMIN" ? "Admin" : "Người dùng",
-    emailVerified: authResponse.user.status === "ACTIVE",
-    emailVerifiedAt: new Date().toLocaleString(),
-    messengerPlatform: null,
-    messengerLinkedAt: null,
-  };
-  persistSession(mappedUser, authResponse.accessToken);
-  return { user: mappedUser, token: authResponse.accessToken };
+  try {
+    const authResponse = unwrapApiData(
+      await api.post("/api/auth/google", { idToken }),
+    );
+    return persistMappedAuth(authResponse);
+  } catch (error) {
+    throw createApiError(error, "Lỗi đăng nhập Google.");
+  }
 }
 
-/**
- * Đăng nhập qua Facebook (Client-Verification Flow)
- * @param {string} accessToken
- * @returns {Promise<{ user: MockUser, token: string }>}
- */
 export async function loginWithFacebook(accessToken) {
-  const response = await api.post("/auth/facebook", { accessToken });
-  const authResponse = response.data.data;
-  const mappedUser = {
-    id: authResponse.user.id,
-    fullName: authResponse.user.fullName,
-    email: authResponse.user.email,
-    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
-    role: authResponse.user.role === "ADMIN" ? "Admin" : "Người dùng",
-    emailVerified: authResponse.user.status === "ACTIVE",
-    emailVerifiedAt: new Date().toLocaleString(),
-    messengerPlatform: null,
-    messengerLinkedAt: null,
-  };
-  persistSession(mappedUser, authResponse.accessToken);
-  return { user: mappedUser, token: authResponse.accessToken };
+  try {
+    const authResponse = unwrapApiData(
+      await api.post("/api/auth/facebook", { accessToken }),
+    );
+    return persistMappedAuth(authResponse);
+  } catch (error) {
+    throw createApiError(error, "Lỗi đăng nhập Facebook.");
+  }
 }

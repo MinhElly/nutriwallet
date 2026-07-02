@@ -10,6 +10,8 @@ import {
   Download,
   Sun,
   Sunset,
+  Globe,
+  MessageCircle,
 } from "lucide-react";
 import {
   buildCalendarDays,
@@ -95,8 +97,16 @@ function formatMealDate(dateValue) {
 }
 
 function formatDateRangeLabel(startDate, endDate) {
-  if (!startDate || !endDate) {
-    return "Chọn ngày";
+  if (!startDate && !endDate) {
+    return "Tất cả thời gian";
+  }
+
+  if (!startDate) {
+    return `Đến ${formatMealDate(endDate)}`;
+  }
+
+  if (!endDate) {
+    return `Từ ${formatMealDate(startDate)}`;
   }
 
   if (startDate === endDate) {
@@ -144,22 +154,26 @@ function escapeCsvValue(value) {
 }
 
 export default function MealHistoryTable({ searchQuery = "" }) {
-  const { meals: mealHistoryData } = useMealHistoryData();
+  const {
+    meals: mealHistoryData,
+    loading,
+    error,
+  } = useMealHistoryData();
   const minMealDate = useMemo(() => {
     const sortedDates = getSortedMealDates(mealHistoryData);
     return sortedDates[0] ?? "";
   }, [mealHistoryData]);
   const [liveTodayDate, setLiveTodayDate] = useState(getTodayDateString);
-  const [isUsingLiveToday, setIsUsingLiveToday] = useState(true);
+  const [isUsingLiveToday, setIsUsingLiveToday] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [activeDateField, setActiveDateField] = useState("start");
-  const [selectedStartDate, setSelectedStartDate] = useState(getTodayDateString);
-  const [selectedEndDate, setSelectedEndDate] = useState(getTodayDateString);
-  const [draftStartDate, setDraftStartDate] = useState(getTodayDateString);
-  const [draftEndDate, setDraftEndDate] = useState(getTodayDateString);
-  const [viewDate, setViewDate] = useState(() => toDate(getTodayDateString()) ?? new Date());
+  const [selectedStartDate, setSelectedStartDate] = useState("");
+  const [selectedEndDate, setSelectedEndDate] = useState("");
+  const [draftStartDate, setDraftStartDate] = useState("");
+  const [draftEndDate, setDraftEndDate] = useState("");
+  const [viewDate, setViewDate] = useState(() => new Date());
   const sectionRef = useRef(null);
 
   const today = useMemo(() => toDate(liveTodayDate) ?? new Date(), [liveTodayDate]);
@@ -326,6 +340,17 @@ export default function MealHistoryTable({ searchQuery = "" }) {
     setOpenDropdown(null);
   }
 
+  function handleResetToAllTime() {
+    setIsUsingLiveToday(false);
+    setSelectedStartDate("");
+    setSelectedEndDate("");
+    setDraftStartDate("");
+    setDraftEndDate("");
+    setViewDate(new Date());
+    setActiveDateField("start");
+    setOpenDropdown(null);
+  }
+
   function handleExportMeals() {
     if (filteredMeals.length === 0) {
       return;
@@ -344,6 +369,7 @@ export default function MealHistoryTable({ searchQuery = "" }) {
         "Chất béo (g)",
         "Trạng thái AI",
         "Mô hình AI",
+        "Nguồn",
       ],
       ...filteredMeals.map((meal) => [
         meal.mealName,
@@ -357,6 +383,7 @@ export default function MealHistoryTable({ searchQuery = "" }) {
         meal.fatGram,
         "Hoàn tất",
         meal.modelName,
+        meal.source === "MESSENGER" ? "Messenger" : "Web",
       ]),
     ];
 
@@ -535,13 +562,22 @@ export default function MealHistoryTable({ searchQuery = "" }) {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={handleResetToToday}
-                      className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
-                    >
-                      Hôm nay
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleResetToToday}
+                        className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
+                      >
+                        Hôm nay
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetToAllTime}
+                        className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
+                      >
+                        Tất cả
+                      </button>
+                    </div>
 
                     <div className="flex items-center gap-3">
                       <button
@@ -649,6 +685,12 @@ export default function MealHistoryTable({ searchQuery = "" }) {
         </button>
       </div>
 
+      {(loading || error) && (
+        <div className="border-b border-slate-100 px-5 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          {loading ? "Đang tải lịch sử bữa ăn..." : error}
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[980px] text-left">
           <thead>
@@ -683,9 +725,25 @@ export default function MealHistoryTable({ searchQuery = "" }) {
                           className="h-16 w-16 rounded-2xl object-cover"
                         />
                         <div>
-                          <h3 className="text-lg font-bold text-slate-950 dark:text-white">
-                            {meal.mealName}
-                          </h3>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-bold text-slate-950 dark:text-white">
+                              {meal.mealName}
+                            </h3>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                meal.source === "MESSENGER"
+                                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400"
+                                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                              }`}
+                            >
+                              {meal.source === "MESSENGER" ? (
+                                <MessageCircle size={10} strokeWidth={2.5} />
+                              ) : (
+                                <Globe size={10} strokeWidth={2.5} />
+                              )}
+                              {meal.source === "MESSENGER" ? "Messenger" : "Web"}
+                            </span>
+                          </div>
                           <p className="mt-1 max-w-[220px] text-sm leading-5 text-slate-500 dark:text-slate-400">
                             {meal.description}
                           </p>

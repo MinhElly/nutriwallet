@@ -14,6 +14,9 @@ public record AiAnalyzeMealResponse(
         BigDecimal fatGram,
         String modelName,
         String foodName,
-        AiAnalysisSource source
+        AiAnalysisSource source,
+        BigDecimal confidence,
+        String mealType,
+        BigDecimal estimatedPriceVnd
 ) {
 }

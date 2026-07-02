@@ -1,0 +1,3054 @@
+﻿diff --git a/nutriwallet_frontend/.gitignore b/nutriwallet_frontend/.gitignore
+index 78e31b9..3544285 100644
+--- a/nutriwallet_frontend/.gitignore
++++ b/nutriwallet_frontend/.gitignore
+@@ -9,6 +9,7 @@ lerna-debug.log*
+ 
+ node_modules
+ dist
++build-check
+ dist-ssr
+ *.local
+ 
+diff --git a/nutriwallet_frontend/eslint.config.js b/nutriwallet_frontend/eslint.config.js
+index ea36dd3..6a44494 100644
+--- a/nutriwallet_frontend/eslint.config.js
++++ b/nutriwallet_frontend/eslint.config.js
+@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
+ import { defineConfig, globalIgnores } from 'eslint/config'
+ 
+ export default defineConfig([
+-  globalIgnores(['dist']),
++  globalIgnores(['dist', 'build-check']),
+   {
+     files: ['**/*.{js,jsx}'],
+     extends: [
+diff --git a/nutriwallet_frontend/src/components/auth/LoginForm.jsx b/nutriwallet_frontend/src/components/auth/LoginForm.jsx
+index 875cb14..c888dd4 100644
+--- a/nutriwallet_frontend/src/components/auth/LoginForm.jsx
++++ b/nutriwallet_frontend/src/components/auth/LoginForm.jsx
+@@ -1,31 +1,64 @@
+ import { useState } from "react";
+-import { useNavigate } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import { useGoogleLogin } from "@react-oauth/google";
+ import {
++  Eye,
++  EyeOff,
+   HeartPulse,
+-  Wallet,
++  Lock,
++  Mail,
+   PersonStanding,
+   Sprout,
++  Wallet,
+ } from "lucide-react";
+-
+ import LoginFloatingCard from "./LoginFloatingCard";
+ import { useAuth } from "../../hooks/useAuth";
+ 
+ function LoginForm() {
+   const navigate = useNavigate();
+-  const { loginWithGoogle, loginWithFacebook } = useAuth();
++  const { login, loginWithGoogle, loginWithFacebook } = useAuth();
++  const [email, setEmail] = useState("");
++  const [password, setPassword] = useState("");
++  const [showPassword, setShowPassword] = useState(false);
+   const [error, setError] = useState("");
+   const [isSubmitting, setIsSubmitting] = useState(false);
+ 
++  async function handleSubmit(event) {
++    event.preventDefault();
++    setError("");
++
++    if (!email.trim() || !password) {
++      setError("Vui l├▓ng nhß║¡p email v├á mß║¡t khß║⌐u.");
++      return;
++    }
++
++    setIsSubmitting(true);
++
++    try {
++      await login({
++        email: email.trim(),
++        password,
++      });
++      navigate("/dashboard", { replace: true });
++    } catch (err) {
++      setError(err?.message || "Kh├┤ng thß╗â ─æ─âng nhß║¡p.");
++    } finally {
++      setIsSubmitting(false);
++    }
++  }
++
+   const triggerGoogleLogin = useGoogleLogin({
+     onSuccess: async (tokenResponse) => {
+       setIsSubmitting(true);
+       setError("");
++
+       try {
+         await loginWithGoogle(tokenResponse.access_token);
+         navigate("/dashboard", { replace: true });
+       } catch (err) {
+-        setError(err?.response?.data?.message || err?.message || "Lß╗ùi ─æ─âng nhß║¡p Google.");
++        setError(
++          err?.response?.data?.message || err?.message || "Lß╗ùi ─æ─âng nhß║¡p Google.",
++        );
+       } finally {
+         setIsSubmitting(false);
+       }
+@@ -35,58 +68,72 @@ function LoginForm() {
+     },
+   });
+ 
+-  const loadFacebookSDK = () => {
+-    return new Promise((resolve) => {
++  const loadFacebookSDK = () =>
++    new Promise((resolve) => {
+       if (window.FB) {
+         resolve(window.FB);
+         return;
+       }
+-      window.fbAsyncInit = function() {
++
++      window.fbAsyncInit = function initializeFacebook() {
+         window.FB.init({
+-          appId: import.meta.env.VITE_FACEBOOK_APP_ID || 'mock-fb-app-id',
++          appId: import.meta.env.VITE_FACEBOOK_APP_ID || "mock-fb-app-id",
+           cookie: true,
+           xfbml: true,
+-          version: 'v18.0'
++          version: "v18.0",
+         });
+         resolve(window.FB);
+       };
+-      (function(d, s, id) {
+-        var js, fjs = d.getElementsByTagName(s)[0];
+-        if (d.getElementById(id)) return;
+-        js = d.createElement(s); js.id = id;
+-        js.src = "https://connect.facebook.net/en_US/sdk.js";
+-        fjs.parentNode.insertBefore(js, fjs);
+-      }(document, 'script', 'facebook-jssdk'));
++
++      (function injectFacebookScript(documentRef, scriptTagName, scriptId) {
++        let scriptNode;
++        const firstScript = documentRef.getElementsByTagName(scriptTagName)[0];
++
++        if (documentRef.getElementById(scriptId)) {
++          return;
++        }
++
++        scriptNode = documentRef.createElement(scriptTagName);
++        scriptNode.id = scriptId;
++        scriptNode.src = "https://connect.facebook.net/en_US/sdk.js";
++        firstScript.parentNode.insertBefore(scriptNode, firstScript);
++      }(document, "script", "facebook-jssdk"));
+     });
+-  };
+ 
+   const handleFacebookLogin = async () => {
+     setIsSubmitting(true);
+     setError("");
++
+     try {
+-      const FB = await loadFacebookSDK();
+-      FB.login((response) => {
++      const facebookSdk = await loadFacebookSDK();
++
++      facebookSdk.login((response) => {
+         if (response.authResponse) {
+-          const accessToken = response.authResponse.accessToken;
+-          loginWithFacebook(accessToken)
++          loginWithFacebook(response.authResponse.accessToken)
+             .then(() => {
+               navigate("/dashboard", { replace: true });
+             })
+             .catch((err) => {
+-              setError(err?.response?.data?.message || err?.message || "Lß╗ùi ─æ─âng nhß║¡p Facebook.");
++              setError(
++                err?.response?.data?.message ||
++                  err?.message ||
++                  "Lß╗ùi ─æ─âng nhß║¡p Facebook.",
++              );
+               setIsSubmitting(false);
+             });
+-        } else {
+-          setError("Ng╞░ß╗¥i d├╣ng ─æ├ú hß╗ºy ─æ─âng nhß║¡p hoß║╖c kh├┤ng cß║Ñp quyß╗ün.");
+-          setIsSubmitting(false);
++          return;
+         }
+-      }, { scope: 'email,public_profile' });
++
++        setError("Ng╞░ß╗¥i d├╣ng ─æ├ú hß╗ºy ─æ─âng nhß║¡p hoß║╖c kh├┤ng cß║Ñp quyß╗ün.");
++        setIsSubmitting(false);
++      }, { scope: "email,public_profile" });
+     } catch (err) {
+       console.error("Failed to initialize Facebook SDK login:", err);
+       setError("Kh├┤ng thß╗â khß╗ƒi tß║ío SDK Facebook.");
+       setIsSubmitting(false);
+     }
+   };
++
+   return (
+     <main
+       className="relative h-screen overflow-hidden bg-[#F0FDF4] text-[#0F172A]"
+@@ -156,7 +203,12 @@ function LoginForm() {
+         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#16A34A] text-xs font-extrabold text-white shadow-lg">
+           NW
+         </div>
+-        <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "Psionic" }}>NutriWallet AI</span>
++        <span
++          className="text-lg font-extrabold tracking-tight"
++          style={{ fontFamily: "Psionic" }}
++        >
++          NutriWallet AI
++        </span>
+       </header>
+ 
+       <section className="relative z-10 flex h-[calc(100vh-80px)] items-center justify-center px-4 pb-8">
+@@ -209,10 +261,70 @@ function LoginForm() {
+           </div>
+ 
+           {error && (
+-            <p className="mt-5 text-[13px] text-red-500 text-center">{error}</p>
++            <p className="mt-5 text-center text-[13px] text-red-500">{error}</p>
+           )}
+ 
+-          <div className="mt-8 space-y-3">
++          <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
++            <div className="relative">
++              <Mail
++                size={18}
++                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
++              />
++              <input
++                type="email"
++                value={email}
++                onChange={(event) => setEmail(event.target.value)}
++                placeholder="Email"
++                autoComplete="email"
++                className="h-[50px] w-full rounded-2xl border border-[#E5E7EB] bg-white/80 pl-11 pr-4 text-[14px] text-[#0F172A] outline-none transition-colors focus:border-[#22C55E]"
++              />
++            </div>
++
++            <div className="relative">
++              <Lock
++                size={18}
++                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
++              />
++              <input
++                type={showPassword ? "text" : "password"}
++                value={password}
++                onChange={(event) => setPassword(event.target.value)}
++                placeholder="Mß║¡t khß║⌐u"
++                autoComplete="current-password"
++                className="h-[50px] w-full rounded-2xl border border-[#E5E7EB] bg-white/80 pl-11 pr-12 text-[14px] text-[#0F172A] outline-none transition-colors focus:border-[#22C55E]"
++              />
++              <button
++                type="button"
++                onClick={() => setShowPassword((current) => !current)}
++                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-[#94A3B8] transition-colors hover:text-[#16A34A]"
++              >
++                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
++              </button>
++            </div>
++
++            <button
++              type="submit"
++              disabled={isSubmitting}
++              className="btn-gradient flex h-[50px] w-full cursor-pointer items-center justify-center rounded-2xl text-[14px] font-semibold text-white shadow-sm disabled:opacity-50"
++            >
++              ─É─âng nhß║¡p
++            </button>
++          </form>
++
++          <p className="mt-4 text-center text-[13px] text-[#64748B]">
++            Ch╞░a c├│ t├ái khoß║ún?{" "}
++            <Link to="/register" className="font-semibold text-[#16A34A]">
++              ─É─âng k├╜
++            </Link>
++          </p>
++
++          <div className="mt-4 flex items-center gap-3">
++            <div className="h-px flex-1 bg-[#E5E7EB]" />
++            <span className="text-[12px] text-[#94A3B8]">hoß║╖c</span>
++            <div className="h-px flex-1 bg-[#E5E7EB]" />
++          </div>
++
++          <div className="mt-4 space-y-3">
+             <button
+               type="button"
+               onClick={() => triggerGoogleLogin()}
+diff --git a/nutriwallet_frontend/src/components/auth/RegisterForm.jsx b/nutriwallet_frontend/src/components/auth/RegisterForm.jsx
+index d6d6b60..81fba38 100644
+--- a/nutriwallet_frontend/src/components/auth/RegisterForm.jsx
++++ b/nutriwallet_frontend/src/components/auth/RegisterForm.jsx
+@@ -1,22 +1,23 @@
+ import { useEffect, useState } from "react";
+ import { Link, useNavigate } from "react-router-dom";
+ import {
+-  Mail,
+-  Lock,
+-  Eye,
+-  EyeOff,
+   ArrowRight,
+-  ShieldCheck,
+-  HeartPulse,
+   ChartColumnBig,
+   CheckCircle2,
+-  User,
++  Eye,
++  EyeOff,
++  HeartPulse,
++  Lock,
++  Mail,
++  ShieldCheck,
+   Sprout,
++  User,
+ } from "lucide-react";
+-import { register } from "../../services/auth.service";
++import { useAuth } from "../../hooks/useAuth";
+ 
+ function RegisterForm() {
+   const navigate = useNavigate();
++  const { register } = useAuth();
+   const [showPassword, setShowPassword] = useState(false);
+   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+   const [healthScore, setHealthScore] = useState(0);
+@@ -37,7 +38,7 @@ function RegisterForm() {
+     let currentStep = 0;
+ 
+     const timer = setInterval(() => {
+-      currentStep++;
++      currentStep += 1;
+ 
+       const progress = currentStep / steps;
+       const easeOut = 1 - Math.pow(1 - progress, 3);
+@@ -55,7 +56,7 @@ function RegisterForm() {
+     return () => clearInterval(timer);
+   }, []);
+ 
+-  function handleSubmit(event) {
++  async function handleSubmit(event) {
+     event.preventDefault();
+     setError("");
+ 
+@@ -70,8 +71,13 @@ function RegisterForm() {
+     }
+ 
+     setIsSubmitting(true);
++
+     try {
+-      register({ fullName: fullName.trim(), email: email.trim(), password });
++      await register({
++        fullName: fullName.trim(),
++        email: email.trim(),
++        password,
++      });
+       navigate("/dashboard", { replace: true });
+     } catch (err) {
+       setError(err?.message ?? "Lß╗ùi ─æ─âng k├╜. Vui l├▓ng thß╗¡ lß║íi.");
+@@ -120,13 +126,17 @@ function RegisterForm() {
+         }
+       `}</style>
+ 
+-      <div className="flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] relative">
+-        <div className="absolute top-4 left-4 z-10">
+-          <h2 className="text-[14px] font-extrabold tracking-[-0.02em] text-[#16A34A] flex items-center gap-1.5" style={{ fontFamily: "Psionic" }}>
++      <div className="relative flex h-full w-full overflow-hidden rounded-[26px] border border-[#E5E7EB] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
++        <div className="absolute left-4 top-4 z-10">
++          <h2
++            className="flex items-center gap-1.5 text-[14px] font-extrabold tracking-[-0.02em] text-[#16A34A]"
++            style={{ fontFamily: "Psionic" }}
++          >
+             <Sprout size={18} strokeWidth={2.5} className="text-[#16A34A]" />
+             NutriWallet AI
+           </h2>
+         </div>
++
+         <section className="intro-panel hidden w-1/2 items-center justify-center lg:flex">
+           <div className="flex w-full max-w-[420px] flex-col items-center text-center">
+             <div className="hero-image h-[150px] w-[150px] overflow-hidden rounded-full bg-[#0C3B2B] shadow-[0_18px_42px_rgba(12,59,43,0.2)]">
+@@ -186,10 +196,7 @@ function RegisterForm() {
+           <div className="flex w-full max-w-[390px] flex-col justify-center py-2">
+             <p className="mb-5 pt-1 text-right text-[12px] text-[#64748B]">
+               ─É├ú c├│ t├ái khoß║ún?{" "}
+-              <Link
+-                to="/login"
+-                className="cursor-pointer font-bold text-[#15803D]"
+-              >
++              <Link to="/login" className="cursor-pointer font-bold text-[#15803D]">
+                 ─É─âng nhß║¡p
+               </Link>
+             </p>
+@@ -203,17 +210,14 @@ function RegisterForm() {
+               Tß║ío t├ái khoß║ún ─æß╗â bß║»t ─æß║ºu quß║ún l├╜ sß╗⌐c khß╗Åe v├á t├ái ch├¡nh cß╗ºa bß║ín
+             </p>
+ 
+-            <form
+-              className="mt-5 space-y-3"
+-              onSubmit={handleSubmit}
+-            >
++            <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
+               <Input
+                 label="Hß╗ì v├á t├¬n"
+                 icon={<User size={18} />}
+                 placeholder="Nhß║¡p hß╗ì v├á t├¬n"
+                 rightIcon={<CheckCircle2 size={18} />}
+                 value={fullName}
+-                onChange={(e) => setFullName(e.target.value)}
++                onChange={(event) => setFullName(event.target.value)}
+                 autoComplete="name"
+               />
+ 
+@@ -224,7 +228,7 @@ function RegisterForm() {
+                 type="email"
+                 rightIcon={<CheckCircle2 size={18} />}
+                 value={email}
+-                onChange={(e) => setEmail(e.target.value)}
++                onChange={(event) => setEmail(event.target.value)}
+                 autoComplete="email"
+               />
+ 
+@@ -235,12 +239,12 @@ function RegisterForm() {
+                   placeholder="Nhß║¡p mß║¡t khß║⌐u"
+                   type={showPassword ? "text" : "password"}
+                   value={password}
+-                  onChange={(e) => setPassword(e.target.value)}
++                  onChange={(event) => setPassword(event.target.value)}
+                   autoComplete="new-password"
+                   rightIcon={
+                     <button
+                       type="button"
+-                      onClick={() => setShowPassword(!showPassword)}
++                      onClick={() => setShowPassword((current) => !current)}
+                       className="flex items-center justify-center text-[#64748B] hover:text-[#16A34A]"
+                     >
+                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+@@ -249,9 +253,9 @@ function RegisterForm() {
+                 />
+ 
+                 <div className="mt-1.5 space-y-0.5 text-[11px] font-medium text-[#16A34A]">
+-                  <p>Γ£ô ├ìt nhß║Ñt 8 k├╜ tß╗▒</p>
+-                  <p>Γ£ô Bao gß╗ôm sß╗æ hoß║╖c k├╜ hiß╗çu</p>
+-                  <p>Γ£ô Bao gß╗ôm chß╗» hoa v├á chß╗» th╞░ß╗¥ng</p>
++                  <p>├ìt nhß║Ñt 8 k├╜ tß╗▒</p>
++                  <p>Bao gß╗ôm sß╗æ hoß║╖c k├╜ hiß╗çu</p>
++                  <p>Bao gß╗ôm chß╗» hoa v├á chß╗» th╞░ß╗¥ng</p>
+                 </div>
+               </div>
+ 
+@@ -261,12 +265,14 @@ function RegisterForm() {
+                 placeholder="Nhß║¡p lß║íi mß║¡t khß║⌐u"
+                 type={showConfirmPassword ? "text" : "password"}
+                 value={confirmPassword}
+-                onChange={(e) => setConfirmPassword(e.target.value)}
++                onChange={(event) => setConfirmPassword(event.target.value)}
+                 autoComplete="new-password"
+                 rightIcon={
+                   <button
+                     type="button"
+-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
++                    onClick={() =>
++                      setShowConfirmPassword((current) => !current)
++                    }
+                     className="flex items-center justify-center text-[#64748B] hover:text-[#16A34A]"
+                   >
+                     {showConfirmPassword ? (
+@@ -278,9 +284,7 @@ function RegisterForm() {
+                 }
+               />
+ 
+-              {error && (
+-                <p className="text-[12px] text-red-500">{error}</p>
+-              )}
++              {error && <p className="text-[12px] text-red-500">{error}</p>}
+ 
+               <button
+                 type="submit"
+@@ -291,16 +295,6 @@ function RegisterForm() {
+                 <ArrowRight size={18} />
+               </button>
+             </form>
+-
+-            <div className="mt-5 mb-4 flex items-center gap-3">
+-              <div className="h-px flex-1 bg-[#E5E7EB]" />
+-              <span className="whitespace-nowrap text-[11px] text-[#94A3B8]">
+-                Hoß║╖c tiß║┐p tß╗Ñc vß╗¢i
+-              </span>
+-              <div className="h-px flex-1 bg-[#E5E7EB]" />
+-            </div>
+-
+-            <SocialGoogle />
+           </div>
+         </section>
+       </div>
+@@ -308,7 +302,16 @@ function RegisterForm() {
+   );
+ }
+ 
+-function Input({ label, icon, placeholder, rightIcon, type = "text", value, onChange, autoComplete }) {
++function Input({
++  label,
++  icon,
++  placeholder,
++  rightIcon,
++  type = "text",
++  value,
++  onChange,
++  autoComplete,
++}) {
+   return (
+     <div>
+       <label className="mb-1.5 block text-[12px] font-semibold text-[#0F172A]">
+@@ -383,39 +386,4 @@ function Feature({ icon, title, desc }) {
+   );
+ }
+ 
+-function SocialGoogle() {
+-  return (
+-    <button
+-      type="button"
+-      className="flex h-[42px] w-full cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border border-[#E5E7EB] bg-white text-[13px] font-semibold text-[#0F172A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#22C55E] hover:bg-[#F8FAFC] hover:shadow-md"
+-    >
+-      <GoogleIcon />
+-      <span>Tiß║┐p tß╗Ñc vß╗¢i Google</span>
+-    </button>
+-  );
+-}
+-
+-function GoogleIcon() {
+-  return (
+-    <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+-      <path
+-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+-        fill="#4285F4"
+-      />
+-      <path
+-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+-        fill="#34A853"
+-      />
+-      <path
+-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z"
+-        fill="#FBBC05"
+-      />
+-      <path
+-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+-        fill="#EA4335"
+-      />
+-    </svg>
+-  );
+-}
+-
+ export default RegisterForm;
+diff --git a/nutriwallet_frontend/src/components/dashboard/DashboardHeader.jsx b/nutriwallet_frontend/src/components/dashboard/DashboardHeader.jsx
+index e6881ad..eacf532 100644
+--- a/nutriwallet_frontend/src/components/dashboard/DashboardHeader.jsx
++++ b/nutriwallet_frontend/src/components/dashboard/DashboardHeader.jsx
+@@ -1,5 +1,6 @@
+ import Typewriter from "../common/Typewriter";
+ import { useMemo, useState } from "react";
++import { useAuth } from "../../hooks/useAuth";
+ import {
+   CalendarDays,
+   Check,
+@@ -32,6 +33,7 @@ export default function DashboardHeader({
+   selectedPeriod,
+   onPeriodChange,
+ }) {
++  const { currentUser } = useAuth();
+   const today = new Date();
+   const greeting = getCurrentGreeting();
+   const weekdayLabels = getWeekdayLabels();
+@@ -92,7 +94,7 @@ export default function DashboardHeader({
+ 
+           <span className="text-emerald-600 dark:text-emerald-400">
+             <Typewriter
+-              text={userInfo.name}
++              text={currentUser?.fullName ?? userInfo.name}
+               speed={55}
+               initialDelay={800}
+               loop={false}
+diff --git a/nutriwallet_frontend/src/components/dashboard/RecommendationCard.jsx b/nutriwallet_frontend/src/components/dashboard/RecommendationCard.jsx
+index 9f29785..f4d892b 100644
+--- a/nutriwallet_frontend/src/components/dashboard/RecommendationCard.jsx
++++ b/nutriwallet_frontend/src/components/dashboard/RecommendationCard.jsx
+@@ -4,7 +4,6 @@ import {
+   Salad,
+   WalletCards,
+ } from "lucide-react";
+-import { useDashboardData } from "../../hooks/useDashboardData";
+ import SectionCard from "./SectionCard";
+ 
+ const toneClasses = {
+@@ -33,12 +32,11 @@ const iconMap = {
+   suggestion: Lightbulb,
+ };
+ 
+-export default function RecommendationCard() {
+-  const { aiRecommendations } = useDashboardData();
++export default function RecommendationCard({ items = [] }) {
+   return (
+     <SectionCard title="Gß╗úi ├╜ AI" icon={Brain} compact hideViewAll>
+       <div className="flex h-full flex-col gap-2.5">
+-        {aiRecommendations.map((item) => {
++        {items.map((item) => {
+           const tone = toneClasses[item.tone] ?? toneClasses.info;
+           const Icon = iconMap[item.icon] ?? Lightbulb;
+ 
+diff --git a/nutriwallet_frontend/src/components/meal/MealHistoryTable.jsx b/nutriwallet_frontend/src/components/meal/MealHistoryTable.jsx
+index 61f2c12..f43aae7 100644
+--- a/nutriwallet_frontend/src/components/meal/MealHistoryTable.jsx
++++ b/nutriwallet_frontend/src/components/meal/MealHistoryTable.jsx
+@@ -144,7 +144,11 @@ function escapeCsvValue(value) {
+ }
+ 
+ export default function MealHistoryTable({ searchQuery = "" }) {
+-  const { meals: mealHistoryData } = useMealHistoryData();
++  const {
++    meals: mealHistoryData,
++    loading,
++    error,
++  } = useMealHistoryData();
+   const minMealDate = useMemo(() => {
+     const sortedDates = getSortedMealDates(mealHistoryData);
+     return sortedDates[0] ?? "";
+@@ -649,6 +653,12 @@ export default function MealHistoryTable({ searchQuery = "" }) {
+         </button>
+       </div>
+ 
++      {(loading || error) && (
++        <div className="border-b border-slate-100 px-5 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
++          {loading ? "─Éang tß║úi lß╗ïch sß╗¡ bß╗»a ─ân..." : error}
++        </div>
++      )}
++
+       <div className="overflow-x-auto">
+         <table className="w-full min-w-[980px] text-left">
+           <thead>
+diff --git a/nutriwallet_frontend/src/context/AuthContext.jsx b/nutriwallet_frontend/src/context/AuthContext.jsx
+index f716d76..0ce567a 100644
+--- a/nutriwallet_frontend/src/context/AuthContext.jsx
++++ b/nutriwallet_frontend/src/context/AuthContext.jsx
+@@ -1,100 +1,145 @@
+-import { useState, useCallback } from "react";
++import { useCallback, useEffect, useState } from "react";
+ import { AuthContext } from "./auth-context";
+ import {
++  fetchCurrentUser,
+   login as authLogin,
+-  register as authRegister,
++  loginWithFacebook as authLoginWithFacebook,
++  loginWithGoogle as authLoginWithGoogle,
+   logout as authLogout,
+   readSession,
+-  loginWithGoogle as authLoginWithGoogle,
+-  loginWithFacebook as authLoginWithFacebook,
++  register as authRegister,
+ } from "../services/auth.service";
++import { persistAuthSession } from "../services/api";
+ 
+-/**
+- * AuthProvider ΓÇö cung cß║Ñp trß║íng th├íi x├íc thß╗▒c cho to├án bß╗Ö ß╗⌐ng dß╗Ñng.
+- *
+- * Hiß╗çn tß║íi d├╣ng mock session (sessionStorage).
+- * Sau n├áy chß╗ë cß║ºn thay service calls ─æß╗â gß╗ìi API thß║¡t.
+- *
+- * Context value:
+- *   - currentUser: th├┤ng tin ng╞░ß╗¥i d├╣ng ─æang ─æ─âng nhß║¡p (hoß║╖c null)
+- *   - accessToken: JWT token (hoß║╖c null)
+- *   - isAuthenticated: boolean
+- *   - isLoading: boolean (d├ánh cho async sau n├áy)
+- *   - login(credentials): ─æ─âng nhß║¡p
+- *   - register(data): ─æ─âng k├╜
+- *   - logout(): ─æ─âng xuß║Ñt
+- *   - replaceUser(user): cß║¡p nhß║¡t th├┤ng tin user (d├╣ng sau khi edit profile)
+- */
+ export function AuthProvider({ children }) {
+   const [session] = useState(() => readSession());
+-
+-  const [currentUser, setCurrentUser] = useState(
+-    () => session?.user ?? null,
+-  );
+-  const [accessToken, setAccessToken] = useState(
+-    () => session?.token ?? null,
+-  );
+-  const [isLoading, setIsLoading] = useState(false);
++  const [currentUser, setCurrentUser] = useState(() => session?.user ?? null);
++  const [accessToken, setAccessToken] = useState(() => session?.token ?? null);
++  const [isLoading, setIsLoading] = useState(() => Boolean(session?.token));
+ 
+   const isAuthenticated = currentUser !== null && accessToken !== null;
+ 
+-  const login = useCallback((credentials) => {
+-    setIsLoading(true);
+-    try {
+-      const result = authLogin(credentials);
+-      setCurrentUser(result.user);
+-      setAccessToken(result.token);
+-      return result;
+-    } finally {
+-      setIsLoading(false);
+-    }
++  const applyAuthResult = useCallback((result) => {
++    setCurrentUser(result.user);
++    setAccessToken(result.token);
++    return result;
+   }, []);
+ 
+-  const loginWithGoogle = useCallback(async (idToken) => {
+-    setIsLoading(true);
+-    try {
+-      const result = await authLoginWithGoogle(idToken);
+-      setCurrentUser(result.user);
+-      setAccessToken(result.token);
+-      return result;
+-    } finally {
+-      setIsLoading(false);
+-    }
++  const clearAuthState = useCallback(() => {
++    setCurrentUser(null);
++    setAccessToken(null);
+   }, []);
+ 
+-  const loginWithFacebook = useCallback(async (accessToken) => {
+-    setIsLoading(true);
+-    try {
+-      const result = await authLoginWithFacebook(accessToken);
+-      setCurrentUser(result.user);
+-      setAccessToken(result.token);
+-      return result;
+-    } finally {
++  useEffect(() => {
++    if (!accessToken) {
++      return undefined;
++    }
++
++    let ignore = false;
++
++    fetchCurrentUser()
++      .then((user) => {
++        if (!ignore && user) {
++          setCurrentUser(user);
++        }
++      })
++      .catch(() => {
++        if (!ignore) {
++          clearAuthState();
++        }
++      })
++      .finally(() => {
++        if (!ignore) {
++          setIsLoading(false);
++        }
++      });
++
++    return () => {
++      ignore = true;
++    };
++  }, [accessToken, clearAuthState]);
++
++  useEffect(() => {
++    function handleAuthLogout() {
++      clearAuthState();
+       setIsLoading(false);
+     }
+-  }, []);
+ 
+-  const register = useCallback((data) => {
++    window.addEventListener("auth:logout", handleAuthLogout);
++
++    return () => {
++      window.removeEventListener("auth:logout", handleAuthLogout);
++    };
++  }, [clearAuthState]);
++
++  const login = useCallback(
++    async (credentials) => {
++      setIsLoading(true);
++      try {
++        return applyAuthResult(await authLogin(credentials));
++      } finally {
++        setIsLoading(false);
++      }
++    },
++    [applyAuthResult],
++  );
++
++  const loginWithGoogle = useCallback(
++    async (idToken) => {
++      setIsLoading(true);
++      try {
++        return applyAuthResult(await authLoginWithGoogle(idToken));
++      } finally {
++        setIsLoading(false);
++      }
++    },
++    [applyAuthResult],
++  );
++
++  const loginWithFacebook = useCallback(
++    async (nextAccessToken) => {
++      setIsLoading(true);
++      try {
++        return applyAuthResult(await authLoginWithFacebook(nextAccessToken));
++      } finally {
++        setIsLoading(false);
++      }
++    },
++    [applyAuthResult],
++  );
++
++  const register = useCallback(
++    async (payload) => {
++      setIsLoading(true);
++      try {
++        return applyAuthResult(await authRegister(payload));
++      } finally {
++        setIsLoading(false);
++      }
++    },
++    [applyAuthResult],
++  );
++
++  const logout = useCallback(async () => {
+     setIsLoading(true);
+     try {
+-      const result = authRegister(data);
+-      setCurrentUser(result.user);
+-      setAccessToken(result.token);
+-      return result;
++      await authLogout();
+     } finally {
++      clearAuthState();
+       setIsLoading(false);
+     }
+-  }, []);
++  }, [clearAuthState]);
+ 
+-  const logout = useCallback(() => {
+-    authLogout();
+-    setCurrentUser(null);
+-    setAccessToken(null);
+-  }, []);
++  const replaceUser = useCallback(
++    (user) => {
++      setCurrentUser(user);
+ 
+-  const replaceUser = useCallback((user) => {
+-    setCurrentUser(user);
+-  }, []);
++      if (accessToken) {
++        persistAuthSession(user, accessToken);
++      }
++    },
++    [accessToken],
++  );
+ 
+   return (
+     <AuthContext.Provider
+diff --git a/nutriwallet_frontend/src/hooks/useBudgetData.js b/nutriwallet_frontend/src/hooks/useBudgetData.js
+index ffd54b3..64e2e65 100644
+--- a/nutriwallet_frontend/src/hooks/useBudgetData.js
++++ b/nutriwallet_frontend/src/hooks/useBudgetData.js
+@@ -1,16 +1,49 @@
+-import { useMemo } from "react";
+-import { getBudgetData } from "../services/budget.service";
+-
+-/**
+- * useBudgetData ΓÇö hook lß║Ñy dß╗» liß╗çu ng├ón s├ích.
+- *
+- * Page kh├┤ng import mock trß╗▒c tiß║┐p.
+- * Sau n├áy service gß╗ìi API, hook kh├┤ng cß║ºn thay ─æß╗òi.
+- *
+- * @returns {{ budget: ReturnType<typeof getBudgetData>["budget"], expenses: ReturnType<typeof getBudgetData>["expenses"] }}
+- */
++import { useCallback, useEffect, useState } from "react";
++import { fetchBudgetData, getBudgetData } from "../services/budget.service";
++import { createExpense } from "../services/expense.service";
++
+ export function useBudgetData() {
+-  const { budget, expenses } = useMemo(() => getBudgetData(), []);
++  const fallback = getBudgetData();
++  const [budget, setBudget] = useState(() => fallback.budget);
++  const [expenses, setExpenses] = useState(() => fallback.expenses);
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
++
++  useEffect(() => {
++    let ignore = false;
++
++    fetchBudgetData()
++      .then((result) => {
++        if (ignore) {
++          return;
++        }
++
++        setBudget(result.data.budget);
++        setExpenses(result.data.expenses);
++        setError(result.error ?? "");
++      })
++      .finally(() => {
++        if (!ignore) {
++          setLoading(false);
++        }
++      });
++
++    return () => {
++      ignore = true;
++    };
++  }, []);
++
++  const addExpense = useCallback(async (payload) => {
++    const nextExpense = await createExpense(payload);
++
++    setExpenses((current) =>
++      [...current, nextExpense].sort((firstItem, secondItem) =>
++        secondItem.expenseDate.localeCompare(firstItem.expenseDate),
++      ),
++    );
++
++    return nextExpense;
++  }, []);
+ 
+-  return { budget, expenses };
++  return { budget, expenses, loading, error, addExpense };
+ }
+diff --git a/nutriwallet_frontend/src/hooks/useDashboardData.js b/nutriwallet_frontend/src/hooks/useDashboardData.js
+index 5d9c5e2..b5da95d 100644
+--- a/nutriwallet_frontend/src/hooks/useDashboardData.js
++++ b/nutriwallet_frontend/src/hooks/useDashboardData.js
+@@ -1,41 +1,62 @@
+-import { useMemo, useState } from "react";
++import { useEffect, useMemo, useState } from "react";
+ import {
+-  getDashboardData,
++  fetchDashboardData,
+   getAiRecommendations,
++  getDashboardData,
+ } from "../services/dashboard.service";
+ 
+-/**
+- * useDashboardData ΓÇö hook quß║ún l├╜ to├án bß╗Ö dß╗» liß╗çu dashboard.
+- *
+- * Page chß╗ë cß║ºn d├╣ng hook n├áy ΓÇö kh├┤ng import mock trß╗▒c tiß║┐p.
+- * Sau n├áy service sß║╜ gß╗ìi API, hook kh├┤ng cß║ºn thay ─æß╗òi.
+- *
+- * @returns {{
+- *   selectedDate: Date,
+- *   setSelectedDate: (date: Date) => void,
+- *   selectedPeriod: string,
+- *   setSelectedPeriod: (period: string) => void,
+- *   snapshot: ReturnType<typeof getDashboardData>,
+- *   aiRecommendations: ReturnType<typeof getAiRecommendations>,
+- * }}
+- */
+ export function useDashboardData() {
+   const [selectedDate, setSelectedDate] = useState(() => new Date());
+   const [selectedPeriod, setSelectedPeriod] = useState("1 th├íng qua");
+-
+-  const snapshot = useMemo(
+-    () => getDashboardData(selectedDate, selectedPeriod),
+-    [selectedDate, selectedPeriod],
++  const [snapshot, setSnapshot] = useState(() =>
++    getDashboardData(new Date(), "1 th├íng qua"),
+   );
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
++
++  useEffect(() => {
++    let ignore = false;
++
++    fetchDashboardData(selectedDate, selectedPeriod)
++      .then((result) => {
++        if (ignore) {
++          return;
++        }
++
++        setSnapshot(result.data);
++        setError(result.error ?? "");
++      })
++      .finally(() => {
++        if (!ignore) {
++          setLoading(false);
++        }
++      });
++
++    return () => {
++      ignore = true;
++    };
++  }, [selectedDate, selectedPeriod]);
+ 
+   const aiRecommendations = useMemo(() => getAiRecommendations(), []);
+ 
++  function updateSelectedDate(nextDate) {
++    setLoading(true);
++    setSelectedDate(nextDate);
++  }
++
++  function updateSelectedPeriod(nextPeriod) {
++    setLoading(true);
++    setSelectedPeriod(nextPeriod);
++  }
++
+   return {
+     selectedDate,
+-    setSelectedDate,
++    setSelectedDate: updateSelectedDate,
+     selectedPeriod,
+-    setSelectedPeriod,
++    setSelectedPeriod: updateSelectedPeriod,
+     snapshot,
+     aiRecommendations,
++    loading,
++    error,
+   };
+ }
+diff --git a/nutriwallet_frontend/src/hooks/useExpenseHistoryData.js b/nutriwallet_frontend/src/hooks/useExpenseHistoryData.js
+index a0357d9..836043b 100644
+--- a/nutriwallet_frontend/src/hooks/useExpenseHistoryData.js
++++ b/nutriwallet_frontend/src/hooks/useExpenseHistoryData.js
+@@ -1,22 +1,41 @@
+-import { useMemo } from "react";
+-import { getExpenseHistory } from "../services/expense.service";
++import { useEffect, useState } from "react";
++import {
++  fetchExpenseHistory,
++  getExpenseHistory,
++} from "../services/expense.service";
+ 
+-/**
+- * useExpenseHistoryData ΓÇö hook lß║Ñy dß╗» liß╗çu lß╗ïch sß╗¡ chi ti├¬u.
+- *
+- * Page kh├┤ng import mock trß╗▒c tiß║┐p.
+- * Sau n├áy service gß╗ìi API, hook kh├┤ng cß║ºn thay ─æß╗òi.
+- *
+- * @returns {{
+- *   expenses: ReturnType<typeof getExpenseHistory>["expenses"],
+- *   categoryLabelMap: ReturnType<typeof getExpenseHistory>["categoryLabelMap"],
+- * }}
+- */
+ export function useExpenseHistoryData() {
+-  const { expenses, categoryLabelMap } = useMemo(
+-    () => getExpenseHistory(),
+-    [],
++  const fallback = getExpenseHistory();
++  const [expenses, setExpenses] = useState(() => fallback.expenses);
++  const [categoryLabelMap, setCategoryLabelMap] = useState(
++    () => fallback.categoryLabelMap,
+   );
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
+ 
+-  return { expenses, categoryLabelMap };
++  useEffect(() => {
++    let ignore = false;
++
++    fetchExpenseHistory()
++      .then((result) => {
++        if (ignore) {
++          return;
++        }
++
++        setExpenses(result.data.expenses);
++        setCategoryLabelMap(result.data.categoryLabelMap);
++        setError(result.error ?? "");
++      })
++      .finally(() => {
++        if (!ignore) {
++          setLoading(false);
++        }
++      });
++
++    return () => {
++      ignore = true;
++    };
++  }, []);
++
++  return { expenses, categoryLabelMap, loading, error };
+ }
+diff --git a/nutriwallet_frontend/src/hooks/useMealHistoryData.js b/nutriwallet_frontend/src/hooks/useMealHistoryData.js
+index 7ef535c..c73e1ea 100644
+--- a/nutriwallet_frontend/src/hooks/useMealHistoryData.js
++++ b/nutriwallet_frontend/src/hooks/useMealHistoryData.js
+@@ -1,16 +1,33 @@
+-import { useMemo } from "react";
+-import { getMealHistory } from "../services/meal.service";
++import { useEffect, useState } from "react";
++import { fetchMealHistory, getMealHistory } from "../services/meal.service";
+ 
+-/**
+- * useMealHistoryData ΓÇö hook lß║Ñy dß╗» liß╗çu lß╗ïch sß╗¡ bß╗»a ─ân.
+- *
+- * Page/component kh├┤ng import mock trß╗▒c tiß║┐p.
+- * Sau n├áy service gß╗ìi API, hook kh├┤ng cß║ºn thay ─æß╗òi.
+- *
+- * @returns {{ meals: ReturnType<typeof getMealHistory> }}
+- */
+ export function useMealHistoryData() {
+-  const meals = useMemo(() => getMealHistory(), []);
++  const [meals, setMeals] = useState(() => getMealHistory());
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
+ 
+-  return { meals };
++  useEffect(() => {
++    let ignore = false;
++
++    fetchMealHistory()
++      .then((result) => {
++        if (ignore) {
++          return;
++        }
++
++        setMeals(result.data);
++        setError(result.error ?? "");
++      })
++      .finally(() => {
++        if (!ignore) {
++          setLoading(false);
++        }
++      });
++
++    return () => {
++      ignore = true;
++    };
++  }, []);
++
++  return { meals, loading, error };
+ }
+diff --git a/nutriwallet_frontend/src/hooks/useProfileData.js b/nutriwallet_frontend/src/hooks/useProfileData.js
+index 877e7ac..9669984 100644
+--- a/nutriwallet_frontend/src/hooks/useProfileData.js
++++ b/nutriwallet_frontend/src/hooks/useProfileData.js
+@@ -1,36 +1,54 @@
+-import { useCallback, useMemo, useState } from "react";
++import { useCallback, useEffect, useState } from "react";
+ import {
++  fetchProfileData,
+   getProfileData,
+   updateProfile as serviceUpdateProfile,
+ } from "../services/profile.service";
+ 
+-/**
+- * useProfileData ΓÇö hook lß║Ñy v├á cß║¡p nhß║¡t dß╗» liß╗çu hß╗ô s╞í ng╞░ß╗¥i d├╣ng.
+- *
+- * Page kh├┤ng import mock trß╗▒c tiß║┐p.
+- * Sau n├áy service gß╗ìi API, hook kh├┤ng cß║ºn thay ─æß╗òi.
+- *
+- * @returns {{
+- *   profileData: ReturnType<typeof getProfileData>,
+- *   updateProfile: (updates: { fullName?: string, email?: string }) => void,
+- * }}
+- */
+ export function useProfileData() {
+-  const initialData = useMemo(() => getProfileData(), []);
+-  const [profileData, setProfileData] = useState(initialData);
+-
+-  const updateProfile = useCallback((updates) => {
+-    serviceUpdateProfile(updates);
+-    setProfileData((prev) => ({
+-      ...prev,
+-      user: {
+-        ...prev.user,
+-        ...(updates.fullName !== undefined && { fullName: updates.fullName }),
+-        ...(updates.email !== undefined && { email: updates.email }),
+-        ...(updates.avatarUrl !== undefined && { avatarUrl: updates.avatarUrl }),
+-      },
+-    }));
++  const [profileData, setProfileData] = useState(() => getProfileData());
++  const [loading, setLoading] = useState(true);
++  const [saving, setSaving] = useState(false);
++  const [error, setError] = useState("");
++
++  useEffect(() => {
++    let ignore = false;
++
++    fetchProfileData()
++      .then((result) => {
++        if (ignore) {
++          return;
++        }
++
++        setProfileData(result.data);
++        setError(result.error ?? "");
++      })
++      .finally(() => {
++        if (!ignore) {
++          setLoading(false);
++        }
++      });
++
++    return () => {
++      ignore = true;
++    };
+   }, []);
+ 
+-  return { profileData, updateProfile };
++  const updateProfile = useCallback(
++    async (updates) => {
++      setSaving(true);
++
++      try {
++        const result = await serviceUpdateProfile(updates, profileData);
++        setProfileData(result.data);
++        setError(result.error ?? "");
++        return result;
++      } finally {
++        setSaving(false);
++      }
++    },
++    [profileData],
++  );
++
++  return { profileData, updateProfile, loading, saving, error };
+ }
+diff --git a/nutriwallet_frontend/src/lib/axios.js b/nutriwallet_frontend/src/lib/axios.js
+index 6206e2b..3a5c496 100644
+--- a/nutriwallet_frontend/src/lib/axios.js
++++ b/nutriwallet_frontend/src/lib/axios.js
+@@ -1,44 +1 @@
+-import axios from 'axios';
+-
+-const api = axios.create({
+-  baseURL: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8081/api',
+-  headers: {
+-    'Content-Type': 'application/json',
+-  },
+-});
+-
+-api.interceptors.request.use((config) => {
+-  try {
+-    const session = sessionStorage.getItem('nw_session');
+-    if (session) {
+-      const parsed = JSON.parse(session);
+-      const token = parsed?.token;
+-      if (token && config.headers) {
+-        config.headers.Authorization = `Bearer ${token}`;
+-      }
+-    }
+-  } catch (e) {
+-    console.error('Failed to parse nw_session from sessionStorage', e);
+-  }
+-  return config;
+-}, (error) => {
+-  return Promise.reject(error);
+-});
+-
+-api.interceptors.response.use((response) => response, (error) => {
+-  if (error.response && error.response.status === 401) {
+-    sessionStorage.removeItem('nw_session');
+-
+-    if (typeof window !== 'undefined') {
+-      window.dispatchEvent(new Event('auth:logout'));
+-    }
+-
+-    const currentPath = window.location.pathname;
+-    if (currentPath !== '/login') {
+-      window.location.href = '/login';
+-    }
+-  }
+-  return Promise.reject(error);
+-});
+-
+-export default api;
++export { default } from "../services/api";
+diff --git a/nutriwallet_frontend/src/pages/budget/BudgetPage.jsx b/nutriwallet_frontend/src/pages/budget/BudgetPage.jsx
+index 42deb95..69e3f0d 100644
+--- a/nutriwallet_frontend/src/pages/budget/BudgetPage.jsx
++++ b/nutriwallet_frontend/src/pages/budget/BudgetPage.jsx
+@@ -151,14 +151,24 @@ function isDateOutsideRange(dateValue, minDateValue, maxDateValue) {
+   return dateValue < minDateValue || dateValue > maxDateValue;
+ }
+ 
++function normalizeBudgetExpense(expense) {
++  return {
++    ...expense,
++    date: expense.date ?? expense.expenseDate,
++  };
++}
++
+ function BudgetPage() {
+   const navigate = useNavigate();
+   const [openDropdown, setOpenDropdown] = useState(null);
+   const [activeDateField, setActiveDateField] = useState("start");
+-  const { budget, expenses } = useBudgetData();
++  const { budget, expenses, loading, error, addExpense } = useBudgetData();
+   const sectionRef = useRef(null);
+-  const [allExpenses, setAllExpenses] = useState(expenses);
++  const [allExpenses, setAllExpenses] = useState(() =>
++    expenses.map(normalizeBudgetExpense),
++  );
+   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
++  const [isSavingExpense, setIsSavingExpense] = useState(false);
+   const [formError, setFormError] = useState("");
+ 
+   const [selectedStartDate, setSelectedStartDate] = useState(budget.startDate);
+@@ -214,6 +224,26 @@ function BudgetPage() {
+     };
+   }, [selectedEndDate, selectedStartDate]);
+ 
++  useEffect(() => {
++    queueMicrotask(() => {
++      setAllExpenses(expenses.map(normalizeBudgetExpense));
++    });
++  }, [expenses]);
++
++  useEffect(() => {
++    queueMicrotask(() => {
++      setSelectedStartDate(budget.startDate);
++      setSelectedEndDate(budget.endDate);
++      setDraftStartDate(budget.startDate);
++      setDraftEndDate(budget.endDate);
++      setViewDate(toDate(budget.startDate) ?? new Date());
++      setExpenseForm((current) => ({
++        ...current,
++        date: budget.endDate,
++      }));
++    });
++  }, [budget.endDate, budget.startDate]);
++
+   const dateRangeLabel = formatDateRangeLabel(
+     normalizedSelectedRange.startDate,
+     normalizedSelectedRange.endDate,
+@@ -438,7 +468,7 @@ function BudgetPage() {
+     }));
+   }
+ 
+-  function handleAddExpenseSubmit(event) {
++  async function handleAddExpenseSubmit(event) {
+     event.preventDefault();
+ 
+     const trimmedDescription = expenseForm.description.trim();
+@@ -466,6 +496,30 @@ function BudgetPage() {
+       return;
+     }
+ 
++    setIsSavingExpense(true);
++
++    try {
++      await addExpense({
++        date: expenseForm.date,
++        expenseDate: expenseForm.date,
++        category: expenseForm.category,
++        description: trimmedDescription,
++        amount,
++        currency: budget.currency,
++        note: trimmedNote,
++      });
++      setIsAddExpenseOpen(false);
++      resetExpenseForm(expenseForm.date);
++      return;
++    } catch (submitError) {
++      console.error(
++        "Failed to save budget expense via API, using local fallback.",
++        submitError,
++      );
++    } finally {
++      setIsSavingExpense(false);
++    }
++
+     const nextExpense = {
+       id: allExpenses.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1,
+       date: expenseForm.date,
+@@ -492,6 +546,7 @@ function BudgetPage() {
+           budget={budget}
+           expenseForm={expenseForm}
+           formError={formError}
++          isSubmitting={isSavingExpense}
+           minDate={minSelectableDateValue}
+           maxDate={maxSelectableDateValue}
+           onChange={handleExpenseFormChange}
+@@ -509,6 +564,11 @@ function BudgetPage() {
+           <p className="mt-2 text-slate-500 dark:text-slate-400">
+             Theo d├╡i ng├ón s├ích, khoß║ún chi v├á xu h╞░ß╗¢ng sß╗¡ dß╗Ñng tiß╗ün cß╗ºa bß║ín.
+           </p>
++          {(loading || error) && (
++            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
++              {loading ? "─Éang tß║úi dß╗» liß╗çu ng├ón s├ích..." : error}
++            </p>
++          )}
+         </div>
+ 
+             <div className="relative w-full sm:w-auto">
+@@ -770,6 +830,7 @@ function AddExpenseModal({
+   budget,
+   expenseForm,
+   formError,
++  isSubmitting,
+   minDate,
+   maxDate,
+   onChange,
+@@ -900,7 +961,8 @@ function AddExpenseModal({
+             </button>
+             <button
+               type="submit"
+-              className="cursor-pointer rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
++              disabled={isSubmitting}
++              className="cursor-pointer rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-70"
+             >
+               L╞░u khoß║ún chi
+             </button>
+diff --git a/nutriwallet_frontend/src/pages/dashboard/DashboardPage.jsx b/nutriwallet_frontend/src/pages/dashboard/DashboardPage.jsx
+index c7c5883..d24df6e 100644
+--- a/nutriwallet_frontend/src/pages/dashboard/DashboardPage.jsx
++++ b/nutriwallet_frontend/src/pages/dashboard/DashboardPage.jsx
+@@ -17,6 +17,9 @@ export default function DashboardPage() {
+     selectedPeriod,
+     setSelectedPeriod,
+     snapshot: dashboardSnapshot,
++    aiRecommendations,
++    loading,
++    error,
+   } = useDashboardData();
+ 
+   const {
+@@ -39,6 +42,12 @@ export default function DashboardPage() {
+         onPeriodChange={setSelectedPeriod}
+       />
+ 
++      {(loading || error) && (
++        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
++          {loading ? "─Éang tß║úi dß╗» liß╗çu dashboard..." : error}
++        </p>
++      )}
++
+       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+         <div className="group flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 xl:p-5 dark:border-slate-800 dark:bg-slate-900">
+           <div className="flex items-start justify-between">
+@@ -119,7 +128,7 @@ export default function DashboardPage() {
+       </section>
+ 
+       <div className="mt-3">
+-        <RecommendationCard />
++        <RecommendationCard items={aiRecommendations} />
+       </div>
+ 
+       <div className="mt-3">
+diff --git a/nutriwallet_frontend/src/pages/expense/ExpenseHistoryPage.jsx b/nutriwallet_frontend/src/pages/expense/ExpenseHistoryPage.jsx
+index f52c5e2..c56c610 100644
+--- a/nutriwallet_frontend/src/pages/expense/ExpenseHistoryPage.jsx
++++ b/nutriwallet_frontend/src/pages/expense/ExpenseHistoryPage.jsx
+@@ -95,7 +95,12 @@ function getDefaultRange(expenses = []) {
+ }
+ 
+ export default function ExpenseHistoryPage() {
+-  const { expenses: expenseHistoryData, categoryLabelMap: expenseCategoryLabelMap } = useExpenseHistoryData();
++  const {
++    expenses: expenseHistoryData,
++    categoryLabelMap: expenseCategoryLabelMap,
++    loading,
++    error,
++  } = useExpenseHistoryData();
+   const today = useMemo(() => new Date(), []);
+   const defaultRange = useMemo(() => getDefaultRange(expenseHistoryData), [expenseHistoryData]);
+ 
+@@ -124,6 +129,16 @@ export default function ExpenseHistoryPage() {
+     };
+   }, []);
+ 
++  useEffect(() => {
++    queueMicrotask(() => {
++      setSelectedStartDate(defaultRange.startDate);
++      setSelectedEndDate(defaultRange.endDate);
++      setDraftStartDate(defaultRange.startDate);
++      setDraftEndDate(defaultRange.endDate);
++      setViewDate(toDate(defaultRange.startDate) ?? today);
++    });
++  }, [defaultRange.endDate, defaultRange.startDate, today]);
++
+   const dateRangeLabel = useMemo(
+     () => formatDateRangeLabel(selectedStartDate, selectedEndDate),
+     [selectedStartDate, selectedEndDate],
+@@ -248,6 +263,12 @@ export default function ExpenseHistoryPage() {
+         className="overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+       >
+         <div className="border-b border-slate-100 p-5 dark:border-slate-800">
++          {(loading || error) && (
++            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
++              {loading ? "─Éang tß║úi lß╗ïch sß╗¡ chi ti├¬u..." : error}
++            </p>
++          )}
++
+           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+             <div className="relative w-full xl:max-w-[420px]">
+               <Search
+diff --git a/nutriwallet_frontend/src/pages/profile/ProfilePage.jsx b/nutriwallet_frontend/src/pages/profile/ProfilePage.jsx
+index 26ee851..7b34a4a 100644
+--- a/nutriwallet_frontend/src/pages/profile/ProfilePage.jsx
++++ b/nutriwallet_frontend/src/pages/profile/ProfilePage.jsx
+@@ -1,9 +1,88 @@
+-import { BadgeCheck, CalendarClock, Pencil, Share2, Wallet, X } from "lucide-react";
+-import { useState } from "react";
++import {
++  BadgeCheck,
++  CalendarClock,
++  Pencil,
++  Share2,
++  Wallet,
++  X,
++} from "lucide-react";
++import { useEffect, useRef, useState } from "react";
+ import AppShell from "../../components/layout/AppShell";
+ import { useProfileData } from "../../hooks/useProfileData";
+ import { useAuth } from "../../hooks/useAuth";
+ 
++const PROFILE_META_STORAGE_KEY = "nw_profile_meta";
++const defaultProfileMeta = {
++  headline: "Ng╞░ß╗¥i d├╣ng sß╗⌐c khß╗Åe",
++  interestOne: "Kiß╗âm so├ít chi ti├¬u",
++  interestTwo: "─én uß╗æng khoa hß╗ìc",
++  interestThree: "─É├ú li├¬n kß║┐t Messenger",
++};
++
++function readProfileMeta() {
++  if (typeof window === "undefined") {
++    return { ...defaultProfileMeta };
++  }
++
++  try {
++    const rawValue = window.localStorage.getItem(PROFILE_META_STORAGE_KEY);
++
++    if (!rawValue) {
++      return { ...defaultProfileMeta };
++    }
++
++    const parsedValue = JSON.parse(rawValue);
++
++    return {
++      headline: parsedValue?.headline?.trim() || defaultProfileMeta.headline,
++      interestOne:
++        parsedValue?.interestOne?.trim() || defaultProfileMeta.interestOne,
++      interestTwo:
++        parsedValue?.interestTwo?.trim() || defaultProfileMeta.interestTwo,
++      interestThree:
++        parsedValue?.interestThree?.trim() || defaultProfileMeta.interestThree,
++    };
++  } catch {
++    return { ...defaultProfileMeta };
++  }
++}
++
++function persistProfileMeta(profileMeta) {
++  if (typeof window === "undefined") {
++    return;
++  }
++
++  window.localStorage.setItem(
++    PROFILE_META_STORAGE_KEY,
++    JSON.stringify(profileMeta),
++  );
++}
++
++function createProfileForm(user, profileMeta) {
++  return {
++    fullName: user.fullName ?? "",
++    email: user.email ?? "",
++    avatarUrl: user.avatarUrl ?? "",
++    avatarFile: null,
++    headline: profileMeta.headline,
++    interestOne: profileMeta.interestOne,
++    interestTwo: profileMeta.interestTwo,
++    interestThree: profileMeta.interestThree,
++  };
++}
++
++function normalizeProfileMeta(profileForm) {
++  return {
++    headline: profileForm.headline.trim() || defaultProfileMeta.headline,
++    interestOne:
++      profileForm.interestOne.trim() || defaultProfileMeta.interestOne,
++    interestTwo:
++      profileForm.interestTwo.trim() || defaultProfileMeta.interestTwo,
++    interestThree:
++      profileForm.interestThree.trim() || defaultProfileMeta.interestThree,
++  };
++}
++
+ function formatDateTime(dateValue) {
+   return new Date(dateValue).toLocaleString("vi-VN", {
+     day: "2-digit",
+@@ -26,34 +105,50 @@ function formatJoinedDate(dateValue) {
+ }
+ 
+ export default function ProfilePage() {
+-  const { profileData, updateProfile } = useProfileData();
++  const { profileData, updateProfile, loading, error } = useProfileData();
+   const { replaceUser, currentUser } = useAuth();
+   const { user, stats } = profileData;
++  const avatarPreviewUrlRef = useRef("");
+   const [isEditOpen, setIsEditOpen] = useState(false);
+   const [shareLabel, setShareLabel] = useState("Chia sß║╗");
+-  const [profileForm, setProfileForm] = useState({
+-    fullName: user.fullName,
+-    email: user.email,
+-    headline: "Ng╞░ß╗¥i d├╣ng sß╗⌐c khß╗Åe",
+-    interestOne: "Kiß╗âm so├ít chi ti├¬u",
+-    interestTwo: "─én uß╗æng khoa hß╗ìc",
+-    interestThree: "─É├ú li├¬n kß║┐t Messenger",
+-    avatarUrl: user.avatarUrl,
+-  });
++  const [profileMeta, setProfileMeta] = useState(readProfileMeta);
++  const [profileForm, setProfileForm] = useState(() =>
++    createProfileForm(user, readProfileMeta()),
++  );
++
++  function clearAvatarPreview() {
++    if (!avatarPreviewUrlRef.current) {
++      return;
++    }
++
++    URL.revokeObjectURL(avatarPreviewUrlRef.current);
++    avatarPreviewUrlRef.current = "";
++  }
++
++  function resetProfileForm(nextUser = user, nextProfileMeta = profileMeta) {
++    setProfileForm(createProfileForm(nextUser, nextProfileMeta));
++  }
++
++  useEffect(
++    () => () => {
++      clearAvatarPreview();
++    },
++    [],
++  );
+ 
+   const tags = [
+-    profileForm.interestOne,
+-    profileForm.interestTwo,
+-    profileForm.interestThree,
++    profileMeta.interestOne,
++    profileMeta.interestTwo,
++    profileMeta.interestThree,
+   ].filter(Boolean);
+ 
+   async function handleShareProfile() {
+-    const shareText = `${profileForm.fullName}\n${profileForm.email}\n${profileForm.headline}`;
++    const shareText = `${user.fullName}\n${user.email}\n${profileMeta.headline}`;
+ 
+     try {
+       if (navigator.share) {
+         await navigator.share({
+-          title: `Hß╗ô s╞í ${profileForm.fullName}`,
++          title: `Hß╗ô s╞í ${user.fullName}`,
+           text: shareText,
+         });
+         setShareLabel("─É├ú chia sß║╗");
+@@ -81,23 +176,59 @@ export default function ProfilePage() {
+ 
+   function handleAvatarChange(event) {
+     const file = event.target.files?.[0];
+-    if (!file) return;
++
++    if (!file) {
++      return;
++    }
++
++    clearAvatarPreview();
++
+     const objectUrl = URL.createObjectURL(file);
+-    setProfileForm((current) => ({ ...current, avatarUrl: objectUrl }));
++    avatarPreviewUrlRef.current = objectUrl;
++
++    setProfileForm((current) => ({
++      ...current,
++      avatarUrl: objectUrl,
++      avatarFile: file,
++    }));
++  }
++
++  function handleOpenEditModal() {
++    resetProfileForm(user, profileMeta);
++    setIsEditOpen(true);
+   }
+ 
+-  function handleSaveProfile(event) {
++  function handleCloseEditModal() {
++    clearAvatarPreview();
++    resetProfileForm(user, profileMeta);
++    setIsEditOpen(false);
++  }
++
++  async function handleSaveProfile(event) {
+     event.preventDefault();
+-    updateProfile({
++
++    const result = await updateProfile({
+       fullName: profileForm.fullName,
+-      email: profileForm.email,
+       avatarUrl: profileForm.avatarUrl,
++      avatarFile: profileForm.avatarFile,
+     });
++
++    if (result.error) {
++      return;
++    }
++
++    const nextProfileMeta = normalizeProfileMeta(profileForm);
++    const nextProfile = result.data;
++
++    clearAvatarPreview();
++    setProfileMeta(nextProfileMeta);
++    persistProfileMeta(nextProfileMeta);
++    resetProfileForm(nextProfile.user, nextProfileMeta);
+     replaceUser({
+-      ...currentUser,
+-      fullName: profileForm.fullName,
+-      email: profileForm.email,
+-      avatarUrl: profileForm.avatarUrl,
++      ...(currentUser ?? {}),
++      fullName: nextProfile.user.fullName,
++      email: nextProfile.user.email,
++      avatarUrl: nextProfile.user.avatarUrl,
+     });
+     setIsEditOpen(false);
+   }
+@@ -109,22 +240,29 @@ export default function ProfilePage() {
+           profileForm={profileForm}
+           onChange={handleProfileFieldChange}
+           onAvatarChange={handleAvatarChange}
+-          onClose={() => setIsEditOpen(false)}
++          onClose={handleCloseEditModal}
+           onSubmit={handleSaveProfile}
+         />
+       )}
+ 
+       <div className="mb-6">
+-        <h1 className="text-3xl font-bold xl:text-4xl text-slate-950 dark:text-white">Hß╗ô s╞í</h1>
++        <h1 className="text-3xl font-bold text-slate-950 dark:text-white xl:text-4xl">
++          Hß╗ô s╞í
++        </h1>
++        {(loading || error) && (
++          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
++            {loading ? "─Éang tß║úi hß╗ô s╞í..." : error}
++          </p>
++        )}
+       </div>
+ 
+-      <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
++      <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+             <div className="overflow-hidden rounded-[1.6rem] bg-emerald-100 shadow-lg dark:bg-emerald-950">
+               <img
+-                src={profileForm.avatarUrl || user.avatarUrl}
+-                alt={profileForm.fullName}
++                src={user.avatarUrl}
++                alt={user.fullName}
+                 className="h-24 w-24 object-cover sm:h-28 sm:w-28"
+               />
+             </div>
+@@ -132,7 +270,7 @@ export default function ProfilePage() {
+             <div>
+               <div className="flex flex-wrap items-center gap-2">
+                 <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+-                  {profileForm.fullName}
++                  {user.fullName}
+                 </h2>
+                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                   <BadgeCheck size={14} />
+@@ -141,7 +279,8 @@ export default function ProfilePage() {
+               </div>
+ 
+               <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+-                Tham gia {formatJoinedDate(user.createdAt)} ΓÇó {profileForm.headline}
++                Tham gia {formatJoinedDate(user.createdAt)} ΓÇó{" "}
++                {profileMeta.headline}
+               </p>
+ 
+               <div className="mt-4 flex flex-wrap gap-2">
+@@ -155,7 +294,7 @@ export default function ProfilePage() {
+           <div className="flex flex-col gap-3 sm:flex-row">
+             <button
+               type="button"
+-              onClick={() => setIsEditOpen(true)}
++              onClick={handleOpenEditModal}
+               className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+             >
+               <Pencil size={17} />
+@@ -192,13 +331,16 @@ export default function ProfilePage() {
+           title="Th├┤ng tin t├ái khoß║ún"
+           items={[
+             { label: "ID ng╞░ß╗¥i d├╣ng", value: `#${user.id}` },
+-            { label: "T├¬n hiß╗ân thß╗ï", value: profileForm.fullName },
+-            { label: "Email", value: profileForm.email },
++            { label: "T├¬n hiß╗ân thß╗ï", value: user.fullName },
++            { label: "Email", value: user.email },
+             { label: "Vai tr├▓", value: user.role },
+             { label: "Trß║íng th├íi", value: user.status },
+             { label: "Ph╞░╞íng thß╗⌐c ─æ─âng nhß║¡p", value: user.provider },
+             { label: "Tß║ío l├║c", value: formatDateTime(user.createdAt) },
+-            { label: "Cß║¡p nhß║¡t lß║ºn cuß╗æi", value: formatDateTime(user.updatedAt) },
++            {
++              label: "Cß║¡p nhß║¡t lß║ºn cuß╗æi",
++              value: formatDateTime(user.updatedAt),
++            },
+           ]}
+         />
+       </section>
+@@ -206,9 +348,15 @@ export default function ProfilePage() {
+   );
+ }
+ 
+-function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSubmit }) {
++function EditProfileModal({
++  profileForm,
++  onChange,
++  onAvatarChange,
++  onClose,
++  onSubmit,
++}) {
+   return (
+-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 p-0 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4 dark:bg-slate-950/60">
++    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 p-0 backdrop-blur-[1px] dark:bg-slate-950/60 sm:items-center sm:justify-center sm:p-4">
+       <button
+         type="button"
+         aria-label="─É├│ng sß╗¡a hß╗ô s╞í"
+@@ -216,9 +364,11 @@ function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSu
+         onClick={onClose}
+       />
+ 
+-      <div className="relative z-10 w-full rounded-t-[28px] bg-white p-5 shadow-2xl sm:max-w-xl sm:rounded-3xl sm:p-6 dark:border dark:border-slate-800 dark:bg-slate-900">
++      <div className="relative z-10 w-full rounded-t-[28px] bg-white p-5 shadow-2xl dark:border dark:border-slate-800 dark:bg-slate-900 sm:max-w-xl sm:rounded-3xl sm:p-6">
+         <div className="mb-5 flex items-center justify-between gap-4">
+-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Sß╗¡a hß╗ô s╞í</h2>
++          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
++            Sß╗¡a hß╗ô s╞í
++          </h2>
+ 
+           <button
+             type="button"
+@@ -230,7 +380,6 @@ function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSu
+         </div>
+ 
+         <form className="space-y-4" onSubmit={onSubmit}>
+-          {/* Avatar picker */}
+           <div className="flex flex-col items-center gap-3 pb-2">
+             <div className="relative">
+               <div className="h-20 w-20 overflow-hidden rounded-[1.4rem] bg-emerald-100 shadow-md dark:bg-emerald-950">
+@@ -245,7 +394,17 @@ function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSu
+                 className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg transition-colors hover:bg-emerald-700"
+                 title="─Éß╗òi ß║únh ─æß║íi diß╗çn"
+               >
+-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
++                <svg
++                  xmlns="http://www.w3.org/2000/svg"
++                  width="13"
++                  height="13"
++                  viewBox="0 0 24 24"
++                  fill="none"
++                  stroke="currentColor"
++                  strokeWidth="2.5"
++                  strokeLinecap="round"
++                  strokeLinejoin="round"
++                >
+                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                   <circle cx="12" cy="13" r="4" />
+                 </svg>
+@@ -275,9 +434,14 @@ function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSu
+               type="email"
+               name="email"
+               value={profileForm.email}
+-              onChange={onChange}
+-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
++              disabled
++              readOnly
++              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 outline-none dark:border-slate-800 dark:bg-slate-800 dark:text-slate-400"
+             />
++            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
++              Email hiß╗çn ─æ╞░ß╗úc quß║ún l├╜ tß╗½ t├ái khoß║ún ─æ─âng nhß║¡p, ch╞░a hß╗ù trß╗ú chß╗ënh
++              sß╗¡a tß║íi ─æ├óy.
++            </p>
+           </Field>
+ 
+           <Field label="D├▓ng m├┤ tß║ú">
+@@ -332,7 +496,8 @@ function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSu
+             </button>
+             <button
+               type="submit"
+-              className="cursor-pointer rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
++              disabled={!profileForm.fullName.trim()}
++              className="cursor-pointer rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+             >
+               L╞░u hß╗ô s╞í
+             </button>
+@@ -346,7 +511,9 @@ function EditProfileModal({ profileForm, onChange, onAvatarChange, onClose, onSu
+ function Field({ label, children }) {
+   return (
+     <label className="block">
+-      <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</span>
++      <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
++        {label}
++      </span>
+       {children}
+     </label>
+   );
+@@ -365,9 +532,13 @@ function MiniInfoCard({ icon, label, value }) {
+     <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
+       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+         <div className="text-emerald-600 dark:text-emerald-400">{icon}</div>
+-        <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
++        <span className="text-xs font-semibold uppercase tracking-wide">
++          {label}
++        </span>
+       </div>
+-      <p className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100">{value}</p>
++      <p className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100">
++        {value}
++      </p>
+     </div>
+   );
+ }
+@@ -375,16 +546,22 @@ function MiniInfoCard({ icon, label, value }) {
+ function InfoCard({ title, items }) {
+   return (
+     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+-      <h2 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h2>
++      <h2 className="text-xl font-bold text-slate-900 dark:text-white">
++        {title}
++      </h2>
+ 
+-      <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100 dark:divide-slate-800 dark:border-slate-800">
++      <div className="mt-5 overflow-hidden rounded-2xl border border-slate-100 divide-y divide-slate-100 dark:border-slate-800 dark:divide-slate-800">
+         {items.map((item) => (
+           <div
+             key={item.label}
+             className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+           >
+-            <p className="text-sm text-slate-500 dark:text-slate-400">{item.label}</p>
+-            <p className="text-sm font-bold text-slate-900 dark:text-slate-200">{item.value}</p>
++            <p className="text-sm text-slate-500 dark:text-slate-400">
++              {item.label}
++            </p>
++            <p className="text-sm font-bold text-slate-900 dark:text-slate-200">
++              {item.value}
++            </p>
+           </div>
+         ))}
+       </div>
+diff --git a/nutriwallet_frontend/src/routes/route-guards.jsx b/nutriwallet_frontend/src/routes/route-guards.jsx
+index 5ecb065..13b56a3 100644
+--- a/nutriwallet_frontend/src/routes/route-guards.jsx
++++ b/nutriwallet_frontend/src/routes/route-guards.jsx
+@@ -12,7 +12,11 @@ import { useAuth } from "../hooks/useAuth";
+  *   { element: <ProtectedRoute />, children: [...] }
+  */
+ export function ProtectedRoute() {
+-  const { isAuthenticated } = useAuth();
++  const { isAuthenticated, isLoading } = useAuth();
++
++  if (isLoading) {
++    return null;
++  }
+ 
+   if (!isAuthenticated) {
+     return <Navigate to="/login" replace />;
+@@ -28,7 +32,11 @@ export function ProtectedRoute() {
+  * D├╣ng cho c├íc trang login, register.
+  */
+ export function PublicOnlyRoute() {
+-  const { isAuthenticated } = useAuth();
++  const { isAuthenticated, isLoading } = useAuth();
++
++  if (isLoading) {
++    return null;
++  }
+ 
+   if (isAuthenticated) {
+     return <Navigate to="/dashboard" replace />;
+diff --git a/nutriwallet_frontend/src/routes/router.jsx b/nutriwallet_frontend/src/routes/router.jsx
+index 6da8655..256d051 100644
+--- a/nutriwallet_frontend/src/routes/router.jsx
++++ b/nutriwallet_frontend/src/routes/router.jsx
+@@ -1,5 +1,6 @@
+ import { createBrowserRouter, Navigate } from "react-router-dom";
+ import LoginPage from "../pages/auth/LoginPage";
++import RegisterPage from "../pages/auth/RegisterPage";
+ import LandingPage from "../components/LandingPage/LandingPage";
+ import BudgetPage from "../pages/budget/BudgetPage";
+ import DashboardPage from "../pages/dashboard/DashboardPage";
+@@ -26,7 +27,7 @@ export const router = createBrowserRouter([
+       },
+       {
+         path: "/register",
+-        element: <Navigate to="/login" replace />,
++        element: <RegisterPage />,
+       },
+       {
+         path: "/forgot-password",
+diff --git a/nutriwallet_frontend/src/services/auth.service.js b/nutriwallet_frontend/src/services/auth.service.js
+index c84e2d9..2dea5f8 100644
+--- a/nutriwallet_frontend/src/services/auth.service.js
++++ b/nutriwallet_frontend/src/services/auth.service.js
+@@ -1,129 +1,177 @@
+-/**
+- * auth.service.js
+- *
+- * Tß║ºng service xß╗¡ l├╜ authentication.
+- */
+-
+-import api from "../lib/axios";
+-
+-const SESSION_KEY = "nw_session";
+-
+-/**
+- * L╞░u session v├áo sessionStorage.
+- * @param {object} user
+- * @param {string} token
+- */
+-function persistSession(user, token) {
+-  sessionStorage.setItem(
+-    SESSION_KEY,
+-    JSON.stringify({ user, token }),
+-  );
++import api, {
++  clearAuthSession,
++  createApiError,
++  getStoredAccessToken,
++  getStoredUser,
++  persistAuthSession,
++  readStoredSession,
++  unwrapApiData,
++} from "./api";
++
++function formatDateTime(value) {
++  if (!value) {
++    return "";
++  }
++
++  return new Date(value).toLocaleString("vi-VN", {
++    day: "2-digit",
++    month: "2-digit",
++    year: "numeric",
++    hour: "2-digit",
++    minute: "2-digit",
++  });
++}
++
++function humanizeRole(role) {
++  if (role === "ADMIN") {
++    return "Admin";
++  }
++
++  if (role === "USER") {
++    return "Ng╞░ß╗¥i d├╣ng";
++  }
++
++  return role ?? "Ng╞░ß╗¥i d├╣ng";
++}
++
++export function mapCurrentUser(apiUser, fallbackUser = null) {
++  const nextUser = apiUser ?? fallbackUser ?? {};
++  const status = nextUser.status ?? fallbackUser?.status ?? "ACTIVE";
++
++  return {
++    id: nextUser.id ?? fallbackUser?.id ?? null,
++    fullName: nextUser.fullName ?? fallbackUser?.fullName ?? "",
++    email: nextUser.email ?? fallbackUser?.email ?? "",
++    avatarUrl:
++      nextUser.avatarUrl ??
++      fallbackUser?.avatarUrl ??
++      "https://i.pravatar.cc/100?img=12",
++    role: humanizeRole(nextUser.role ?? fallbackUser?.rawRole),
++    rawRole: nextUser.role ?? fallbackUser?.rawRole ?? "USER",
++    status,
++    emailVerified:
++      typeof fallbackUser?.emailVerified === "boolean"
++        ? fallbackUser.emailVerified
++        : status === "ACTIVE",
++    emailVerifiedAt:
++      fallbackUser?.emailVerifiedAt ||
++      (status === "ACTIVE" ? formatDateTime(new Date()) : ""),
++    messengerPlatform: fallbackUser?.messengerPlatform ?? "Messenger",
++    messengerLinkedAt: fallbackUser?.messengerLinkedAt ?? "",
++    provider: nextUser.provider ?? fallbackUser?.provider ?? null,
++    createdAt: nextUser.createdAt ?? fallbackUser?.createdAt ?? null,
++    updatedAt: nextUser.updatedAt ?? fallbackUser?.updatedAt ?? null,
++  };
+ }
+ 
+-/**
+- * X├│a session khß╗Åi sessionStorage.
+- */
+-function clearSession() {
+-  sessionStorage.removeItem(SESSION_KEY);
++function persistMappedAuth(authPayload, fallbackUser = getStoredUser()) {
++  const mappedUser = mapCurrentUser(authPayload?.user, fallbackUser);
++  const accessToken = authPayload?.accessToken ?? getStoredAccessToken();
++
++  persistAuthSession(mappedUser, accessToken);
++
++  return {
++    user: mappedUser,
++    token: accessToken,
++  };
+ }
+ 
+-/**
+- * ─Éß╗ìc session hiß╗çn tß║íi tß╗½ sessionStorage.
+- * @returns {{ user: object, token: string } | null}
+- */
+ export function readSession() {
+-  try {
+-    const raw = sessionStorage.getItem(SESSION_KEY);
+-    if (!raw) return null;
+-    return JSON.parse(raw);
+-  } catch {
++  const session = readStoredSession();
++
++  if (!session) {
+     return null;
+   }
++
++  return {
++    user: session.user ? mapCurrentUser(session.user, session.user) : null,
++    token: session.token ?? null,
++  };
+ }
+ 
+-/**
+- * ─É─âng nhß║¡p bß║▒ng email/password (─É├ú bß╗ï v├┤ hiß╗çu h├│a).
+- */
+-export function login() {
+-  throw new Error("─É─âng nhß║¡p bß║▒ng t├ái khoß║ún nß╗Öi bß╗Ö ─æ├ú bß╗ï v├┤ hiß╗çu h├│a. Vui l├▓ng ─æ─âng nhß║¡p qua Google hoß║╖c Facebook.");
++export async function login(credentials) {
++  try {
++    const authResponse = unwrapApiData(
++      await api.post("/api/auth/login", credentials),
++    );
++    return persistMappedAuth(authResponse);
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â ─æ─âng nhß║¡p l├║c n├áy.");
++  }
+ }
+ 
+-/**
+- * ─É─âng k├╜ t├ái khoß║ún bß║▒ng email/password (─É├ú bß╗ï v├┤ hiß╗çu h├│a).
+- */
+-export function register() {
+-  throw new Error("─É─âng k├╜ t├ái khoß║ún nß╗Öi bß╗Ö ─æ├ú bß╗ï v├┤ hiß╗çu h├│a. Vui l├▓ng ─æ─âng k├╜ qua Google hoß║╖c Facebook.");
++export async function register(payload) {
++  try {
++    const authResponse = unwrapApiData(
++      await api.post("/api/auth/register", payload),
++    );
++    return persistMappedAuth(authResponse);
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â ─æ─âng k├╜ l├║c n├áy.");
++  }
+ }
+ 
+-/**
+- * ─É─âng xuß║Ñt ΓÇö x├│a session hiß╗çn tß║íi.
+- */
+ export async function logout() {
++  const accessToken = getStoredAccessToken();
++
+   try {
+-    await api.post("/auth/logout");
+-  } catch (err) {
+-    console.error("Backend logout failed:", err);
++    if (accessToken) {
++      await api.post("/api/auth/logout");
++    }
++  } catch (error) {
++    console.error("Backend logout failed:", error);
+   } finally {
+-    clearSession();
++    clearAuthSession();
++  }
++}
++
++export async function fetchCurrentUser() {
++  const fallbackUser = getStoredUser();
++  const accessToken = getStoredAccessToken();
++
++  if (!accessToken) {
++    return fallbackUser;
++  }
++
++  try {
++    const apiUser = unwrapApiData(await api.get("/api/auth/me"));
++    const mappedUser = mapCurrentUser(apiUser, fallbackUser);
++    persistAuthSession(mappedUser, accessToken);
++    return mappedUser;
++  } catch {
++    const apiUser = unwrapApiData(await api.get("/api/users/me"));
++    const mappedUser = mapCurrentUser(apiUser, fallbackUser);
++    persistAuthSession(mappedUser, accessToken);
++    return mappedUser;
+   }
+ }
+ 
+-/**
+- * Y├¬u cß║ºu ─æß║╖t lß║íi mß║¡t khß║⌐u (─É├ú bß╗ï v├┤ hiß╗çu h├│a).
+- */
+ export async function requestPasswordReset() {
+   throw new Error("Kh├┤i phß╗Ñc mß║¡t khß║⌐u nß╗Öi bß╗Ö ─æ├ú bß╗ï v├┤ hiß╗çu h├│a.");
+ }
+ 
+-/**
+- * ─Éß║╖t lß║íi mß║¡t khß║⌐u mß╗¢i (─É├ú bß╗ï v├┤ hiß╗çu h├│a).
+- */
+ export async function resetPassword() {
+   throw new Error("Kh├┤i phß╗Ñc mß║¡t khß║⌐u nß╗Öi bß╗Ö ─æ├ú bß╗ï v├┤ hiß╗çu h├│a.");
+ }
+ 
+-/**
+- * ─É─âng nhß║¡p qua Google (Client-Verification Flow)
+- * @param {string} idToken
+- * @returns {Promise<{ user: MockUser, token: string }>}
+- */
+ export async function loginWithGoogle(idToken) {
+-  const response = await api.post("/auth/google", { idToken });
+-  const authResponse = response.data.data;
+-  const mappedUser = {
+-    id: authResponse.user.id,
+-    fullName: authResponse.user.fullName,
+-    email: authResponse.user.email,
+-    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
+-    role: authResponse.user.role === "ADMIN" ? "Admin" : "Ng╞░ß╗¥i d├╣ng",
+-    emailVerified: authResponse.user.status === "ACTIVE",
+-    emailVerifiedAt: new Date().toLocaleString(),
+-    messengerPlatform: null,
+-    messengerLinkedAt: null,
+-  };
+-  persistSession(mappedUser, authResponse.accessToken);
+-  return { user: mappedUser, token: authResponse.accessToken };
++  try {
++    const authResponse = unwrapApiData(
++      await api.post("/api/auth/google", { idToken }),
++    );
++    return persistMappedAuth(authResponse);
++  } catch (error) {
++    throw createApiError(error, "Lß╗ùi ─æ─âng nhß║¡p Google.");
++  }
+ }
+ 
+-/**
+- * ─É─âng nhß║¡p qua Facebook (Client-Verification Flow)
+- * @param {string} accessToken
+- * @returns {Promise<{ user: MockUser, token: string }>}
+- */
+ export async function loginWithFacebook(accessToken) {
+-  const response = await api.post("/auth/facebook", { accessToken });
+-  const authResponse = response.data.data;
+-  const mappedUser = {
+-    id: authResponse.user.id,
+-    fullName: authResponse.user.fullName,
+-    email: authResponse.user.email,
+-    avatarUrl: authResponse.user.avatarUrl || "https://i.pravatar.cc/100?img=12",
+-    role: authResponse.user.role === "ADMIN" ? "Admin" : "Ng╞░ß╗¥i d├╣ng",
+-    emailVerified: authResponse.user.status === "ACTIVE",
+-    emailVerifiedAt: new Date().toLocaleString(),
+-    messengerPlatform: null,
+-    messengerLinkedAt: null,
+-  };
+-  persistSession(mappedUser, authResponse.accessToken);
+-  return { user: mappedUser, token: authResponse.accessToken };
++  try {
++    const authResponse = unwrapApiData(
++      await api.post("/api/auth/facebook", { accessToken }),
++    );
++    return persistMappedAuth(authResponse);
++  } catch (error) {
++    throw createApiError(error, "Lß╗ùi ─æ─âng nhß║¡p Facebook.");
++  }
+ }
+diff --git a/nutriwallet_frontend/src/services/budget.service.js b/nutriwallet_frontend/src/services/budget.service.js
+index 8a6c33a..3316822 100644
+--- a/nutriwallet_frontend/src/services/budget.service.js
++++ b/nutriwallet_frontend/src/services/budget.service.js
+@@ -1,21 +1,97 @@
+-/**
+- * budget.service.js
+- *
+- * Tß║ºng service cho dß╗» liß╗çu ng├ón s├ích.
+- * Hiß╗çn tß║íi trß║ú vß╗ü mock data ΓÇö kh├┤ng gß╗ìi API.
+- *
+- * Sau n├áy thay bß║▒ng:
+- *   const response = await axios.get(`${API_BASE_URL}/budget`);
+- *   return mapBudgetResponse(response.data);
+- */
+-
+-import { budgetData } from "../data/mockBudgetDta";
+-
+-/**
+- * Lß║Ñy dß╗» liß╗çu ng├ón s├ích hiß╗çn tß║íi.
+- *
+- * @returns {typeof budgetData}
+- */
++import api, { createApiError, extractApiMessage, unwrapApiData } from "./api";
++import { fetchExpenseHistory, getExpenseHistory } from "./expense.service";
++import { budgetData as fallbackBudgetData } from "../data/mockBudgetDta";
++
++function getFallbackBudgetData() {
++  return {
++    budget: {
++      ...fallbackBudgetData.budget,
++    },
++    expenses: [...fallbackBudgetData.expenses],
++  };
++}
++
++function isExpenseWithinBudget(expense, budget) {
++  return (
++    expense.expenseDate >= budget.startDate && expense.expenseDate <= budget.endDate
++  );
++}
++
++function mapBudgetRecord(budget, expenses) {
++  const relatedExpenses = expenses.filter((expense) =>
++    isExpenseWithinBudget(expense, {
++      startDate: String(budget.startDate).slice(0, 10),
++      endDate: String(budget.endDate).slice(0, 10),
++    }),
++  );
++  const amount = Number(budget.amount ?? 0);
++  const spentAmount = relatedExpenses.reduce(
++    (sum, expense) => sum + Number(expense.amount ?? 0),
++    0,
++  );
++  const remainingAmount = Math.max(amount - spentAmount, 0);
++  const usagePercent = amount > 0 ? Math.round((spentAmount / amount) * 100) : 0;
++
++  return {
++    id: budget.id,
++    amount,
++    spentAmount,
++    remainingAmount,
++    usagePercent,
++    period: budget.period,
++    startDate: String(budget.startDate).slice(0, 10),
++    endDate: String(budget.endDate).slice(0, 10),
++    warningThresholdPercent: budget.warningThresholdPercent ?? 80,
++    currency: relatedExpenses[0]?.currency ?? "VND",
++    active: budget.active ?? true,
++  };
++}
++
+ export function getBudgetData() {
+-  return budgetData;
++  return getFallbackBudgetData();
++}
++
++export async function fetchBudgetData() {
++  const fallback = getBudgetData();
++
++  try {
++    const [budgetResponse, expenseResult] = await Promise.all([
++      api.get("/api/budgets/current"),
++      fetchExpenseHistory(),
++    ]);
++    const budget = unwrapApiData(budgetResponse);
++    const expenses = expenseResult.data?.expenses ?? getExpenseHistory().expenses;
++
++    return {
++      data: {
++        budget: mapBudgetRecord(budget, expenses),
++        expenses,
++      },
++      error: expenseResult.error,
++    };
++  } catch (error) {
++    return {
++      data: fallback,
++      error: extractApiMessage(
++        error,
++        "Kh├┤ng thß╗â tß║úi ng├ón s├ích. ─Éang d├╣ng dß╗» liß╗çu mß║½u.",
++      ),
++    };
++  }
++}
++
++export async function createBudget(payload) {
++  try {
++    return unwrapApiData(await api.post("/api/budgets", payload));
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â tß║ío ng├ón s├ích.");
++  }
++}
++
++export async function updateBudget(id, payload) {
++  try {
++    return unwrapApiData(await api.patch(`/api/budgets/${id}`, payload));
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â cß║¡p nhß║¡t ng├ón s├ích.");
++  }
+ }
+diff --git a/nutriwallet_frontend/src/services/dashboard.service.js b/nutriwallet_frontend/src/services/dashboard.service.js
+index 7ac5143..88cfad4 100644
+--- a/nutriwallet_frontend/src/services/dashboard.service.js
++++ b/nutriwallet_frontend/src/services/dashboard.service.js
+@@ -1,32 +1,291 @@
+-/**
+- * dashboard.service.js
+- *
+- * Tß║ºng service cho dß╗» liß╗çu dashboard.
+- * Hiß╗çn tß║íi trß║ú vß╗ü mock data ΓÇö kh├┤ng gß╗ìi API.
+- *
+- * Sau n├áy thay bß║▒ng:
+- *   const response = await axios.get(`${API_BASE_URL}/dashboard`, { params: { date, period } });
+- *   return mapDashboardResponse(response.data);
+- */
+-
++import api, { extractApiMessage, unwrapApiData } from "./api";
++import { fetchBudgetData } from "./budget.service";
++import {
++  expenseCategoryLabelMap,
++  fetchExpenseHistory,
++} from "./expense.service";
++import { fetchMealHistory } from "./meal.service";
+ import { getDashboardSnapshot, aiRecommendations } from "../data/dashboardData";
++import { getInclusiveDayCount, getPeriodRange } from "../utils/date";
++
++const currencyFormatter = new Intl.NumberFormat("en-US");
++
++const mealTypeLabelMap = {
++  Breakfast: "Bß╗»a s├íng",
++  Lunch: "Bß╗»a tr╞░a",
++  Dinner: "Bß╗»a tß╗æi",
++};
++
++function formatNumber(value) {
++  return currencyFormatter.format(Math.max(Math.round(Number(value) || 0), 0));
++}
++
++function formatCurrency(value, currency = "VND") {
++  return `${formatNumber(value)} ${currency}`;
++}
++
++function formatDisplayDate(dateValue) {
++  const date = new Date(dateValue);
++
++  if (Number.isNaN(date.getTime())) {
++    return String(dateValue ?? "");
++  }
++
++  return date.toLocaleDateString("vi-VN", {
++    day: "2-digit",
++    month: "2-digit",
++    year: "numeric",
++  });
++}
++
++function toDateString(date) {
++  const year = date.getFullYear();
++  const month = String(date.getMonth() + 1).padStart(2, "0");
++  const day = String(date.getDate()).padStart(2, "0");
++
++  return `${year}-${month}-${day}`;
++}
++
++function buildDateRange(startDate, endDate) {
++  const dates = [];
++  const currentDate = new Date(startDate);
++
++  while (currentDate <= endDate) {
++    dates.push(new Date(currentDate));
++    currentDate.setDate(currentDate.getDate() + 1);
++  }
++
++  return dates;
++}
++
++function filterMealsByRange(meals, startDateValue, endDateValue) {
++  return meals.filter(
++    (meal) => meal.mealDate >= startDateValue && meal.mealDate <= endDateValue,
++  );
++}
++
++function filterExpensesByRange(expenses, startDateValue, endDateValue) {
++  return expenses.filter(
++    (expense) =>
++      expense.expenseDate >= startDateValue && expense.expenseDate <= endDateValue,
++  );
++}
++
++function buildTrendData(rangeDates, dataMap) {
++  const useWeekdayLabel = rangeDates.length <= 7;
++
++  return rangeDates.map((date) => {
++    const key = toDateString(date);
++
++    return {
++      day: useWeekdayLabel
++        ? date.toLocaleDateString("vi-VN", { weekday: "short" })
++        : date.toLocaleDateString("vi-VN", {
++            day: "2-digit",
++            month: "2-digit",
++          }),
++      value: dataMap.get(key) ?? 0,
++    };
++  });
++}
++
++function getBudgetRangeAmount(budget, selectedDayCount) {
++  if (!budget?.amount || !budget?.startDate || !budget?.endDate) {
++    return 0;
++  }
++
++  const totalBudgetDays = Math.max(
++    getInclusiveDayCount(new Date(budget.startDate), new Date(budget.endDate)),
++    1,
++  );
++
++  return Math.round((Number(budget.amount) * selectedDayCount) / totalBudgetDays);
++}
++
++function buildDashboardSnapshotFromApi({
++  selectedDate,
++  selectedPeriod,
++  summary,
++  meals,
++  expenses,
++  budget,
++}) {
++  const { startDate, endDate } = getPeriodRange(selectedDate, selectedPeriod);
++  const startDateValue = toDateString(startDate);
++  const endDateValue = toDateString(endDate);
++  const rangeDates = buildDateRange(startDate, endDate);
++  const selectedDayCount = getInclusiveDayCount(startDate, endDate);
++  const filteredMeals = filterMealsByRange(meals, startDateValue, endDateValue);
++  const filteredExpenses = filterExpensesByRange(
++    expenses,
++    startDateValue,
++    endDateValue,
++  );
++
++  const totalCaloriesValue =
++    summary?.totalCalories !== undefined
++      ? Number(summary.totalCalories)
++      : filteredMeals.reduce((sum, meal) => sum + Number(meal.totalCalories || 0), 0);
++  const totalExpenseValue =
++    summary?.totalExpense !== undefined
++      ? Number(summary.totalExpense)
++      : filteredExpenses.reduce(
++          (sum, expense) => sum + Number(expense.amount || 0),
++          0,
++        );
++  const mealCount = summary?.mealCount ?? filteredMeals.length;
++  const expenseCount = summary?.expenseCount ?? filteredExpenses.length;
++  const rangeBudgetAmount = getBudgetRangeAmount(budget, selectedDayCount);
++  const usedPercent =
++    rangeBudgetAmount > 0
++      ? Math.min(Math.round((totalExpenseValue / rangeBudgetAmount) * 100), 100)
++      : 0;
++  const remainingBudgetValue = Math.max(rangeBudgetAmount - totalExpenseValue, 0);
++  const currency = budget?.currency ?? filteredExpenses[0]?.currency ?? "VND";
++
++  const mealDailyMap = filteredMeals.reduce((result, meal) => {
++    result.set(
++      meal.mealDate,
++      (result.get(meal.mealDate) ?? 0) + Number(meal.totalCalories || 0),
++    );
++    return result;
++  }, new Map());
++  const expenseDailyMap = filteredExpenses.reduce((result, expense) => {
++    result.set(
++      expense.expenseDate,
++      (result.get(expense.expenseDate) ?? 0) + Number(expense.amount || 0),
++    );
++    return result;
++  }, new Map());
++
++  return {
++    budgetSummary: {
++      amount: formatCurrency(rangeBudgetAmount, currency),
++      period: selectedPeriod,
++      duration: `${formatDisplayDate(startDateValue)} - ${formatDisplayDate(endDateValue)}`,
++      warningThreshold: budget?.warningThresholdPercent ?? 80,
++      usedPercent,
++      spent: formatCurrency(totalExpenseValue, currency),
++      remaining: formatCurrency(remainingBudgetValue, currency),
++    },
++    budgetUsage: [
++      {
++        name: "─É├ú d├╣ng",
++        value: usedPercent,
++        fill: "#059669",
++      },
++    ],
++    mealSummary: {
++      totalMeals: mealCount,
++      totalCalories: `${formatNumber(totalCaloriesValue)} kcal`,
++      helperText:
++        selectedPeriod === "H├┤m nay"
++          ? "Bß╗»a ─ân trong ng├áy ─æ├ú chß╗ìn"
++          : `Bß╗»a ─ân trong ${selectedPeriod.toLowerCase()}`,
++    },
++    expenseSummary: {
++      totalExpenses: expenseCount,
++      totalAmount: formatCurrency(totalExpenseValue, currency),
++      helperText:
++        selectedPeriod === "H├┤m nay"
++          ? "Khoß║ún chi trong ng├áy ─æ├ú chß╗ìn"
++          : `Khoß║ún chi trong ${selectedPeriod.toLowerCase()}`,
++    },
++    mealTrend: buildTrendData(rangeDates, mealDailyMap),
++    expenseTrend: buildTrendData(rangeDates, expenseDailyMap),
++    meals: filteredMeals.map((meal) => ({
++      name: meal.mealName,
++      image: meal.imageUrl,
++      time: `${mealTypeLabelMap[meal.mealType] ?? meal.mealType}\n${meal.mealTime}`,
++      date: formatDisplayDate(meal.mealDate),
++      calories: `${formatNumber(meal.totalCalories)} kcal`,
++      caloriesValue: meal.totalCalories,
++      protein: `${meal.proteinGram} g`,
++      carb: `${meal.carbGram} g`,
++      fat: `${meal.fatGram} g`,
++    })),
++    expenses: filteredExpenses.map((expense) => ({
++      category: expenseCategoryLabelMap[expense.category] ?? expense.category,
++      amount: formatNumber(expense.amount),
++      amountValue: expense.amount,
++      currency: expense.currency,
++      date: formatDisplayDate(expense.expenseDate),
++      note: expense.note,
++    })),
++  };
++}
++
++async function fetchDashboardSummary(selectedPeriod) {
++  const endpoint =
++    selectedPeriod === "H├┤m nay"
++      ? "/api/dashboard/today"
++      : selectedPeriod === "1 th├íng qua"
++        ? "/api/dashboard/month"
++        : null;
++
++  if (!endpoint) {
++    return {
++      data: null,
++      error: null,
++    };
++  }
++
++  try {
++    return {
++      data: unwrapApiData(await api.get(endpoint)),
++      error: null,
++    };
++  } catch (error) {
++    return {
++      data: null,
++      error: extractApiMessage(error, "Kh├┤ng thß╗â tß║úi tß╗òng quan dashboard."),
++    };
++  }
++}
+ 
+-/**
+- * Lß║Ñy snapshot dß╗» liß╗çu dashboard theo ng├áy v├á kß╗│ ─æ╞░ß╗úc chß╗ìn.
+- *
+- * @param {Date} selectedDate
+- * @param {string} selectedPeriod
+- * @returns {ReturnType<typeof getDashboardSnapshot>}
+- */
+ export function getDashboardData(selectedDate, selectedPeriod) {
+   return getDashboardSnapshot(selectedDate, selectedPeriod);
+ }
+ 
+-/**
+- * Lß║Ñy danh s├ích gß╗úi ├╜ AI.
+- *
+- * @returns {typeof aiRecommendations}
+- */
++export async function fetchDashboardData(selectedDate, selectedPeriod) {
++  const fallback = getDashboardData(selectedDate, selectedPeriod);
++  const [summaryResult, mealResult, expenseResult, budgetResult] =
++    await Promise.all([
++      fetchDashboardSummary(selectedPeriod),
++      fetchMealHistory(),
++      fetchExpenseHistory(),
++      fetchBudgetData(),
++    ]);
++
++  try {
++    return {
++      data: buildDashboardSnapshotFromApi({
++        selectedDate,
++        selectedPeriod,
++        summary: summaryResult.data,
++        meals: mealResult.data,
++        expenses: expenseResult.data.expenses,
++        budget: budgetResult.data.budget,
++      }),
++      error:
++        summaryResult.error ||
++        mealResult.error ||
++        expenseResult.error ||
++        budgetResult.error,
++    };
++  } catch {
++    return {
++      data: fallback,
++      error:
++        summaryResult.error ||
++        mealResult.error ||
++        expenseResult.error ||
++        budgetResult.error ||
++        "Kh├┤ng thß╗â tß║úi dashboard. ─Éang d├╣ng dß╗» liß╗çu mß║½u.",
++    };
++  }
++}
++
+ export function getAiRecommendations() {
+   return aiRecommendations;
+ }
+diff --git a/nutriwallet_frontend/src/services/expense.service.js b/nutriwallet_frontend/src/services/expense.service.js
+index c8a3987..546e2c3 100644
+--- a/nutriwallet_frontend/src/services/expense.service.js
++++ b/nutriwallet_frontend/src/services/expense.service.js
+@@ -1,27 +1,160 @@
+-/**
+- * expense.service.js
+- *
+- * Tß║ºng service cho dß╗» liß╗çu lß╗ïch sß╗¡ chi ti├¬u.
+- * Hiß╗çn tß║íi trß║ú vß╗ü mock data ΓÇö kh├┤ng gß╗ìi API.
+- *
+- * Sau n├áy thay bß║▒ng:
+- *   const response = await axios.get(`${API_BASE_URL}/expenses`);
+- *   return mapExpenseHistoryResponse(response.data);
+- */
+-
++import api, { createApiError, extractApiMessage, unwrapApiData } from "./api";
++import { mapMealRecord } from "./meal.service";
+ import {
+-  expenseHistoryData,
+   expenseCategoryLabelMap,
++  expenseHistoryData as fallbackExpenseHistoryData,
+ } from "../data/accountData";
+ 
+-/**
+- * Lß║Ñy danh s├ích lß╗ïch sß╗¡ chi ti├¬u.
+- *
+- * @returns {{ expenses: typeof expenseHistoryData, categoryLabelMap: typeof expenseCategoryLabelMap }}
+- */
+-export function getExpenseHistory() {
++export { expenseCategoryLabelMap };
++
++function getFallbackExpenseHistory() {
+   return {
+-    expenses: expenseHistoryData,
++    expenses: [...fallbackExpenseHistoryData],
+     categoryLabelMap: expenseCategoryLabelMap,
+   };
+ }
++
++function formatExpenseDate(value) {
++  if (!value) {
++    return "";
++  }
++
++  return String(value).slice(0, 10);
++}
++
++function buildExpenseDescription(expense, mealsById) {
++  const linkedMeal = expense.mealRecordId
++    ? mealsById.get(expense.mealRecordId)
++    : null;
++
++  return (
++    linkedMeal?.mealName ??
++    expenseCategoryLabelMap[expense.category] ??
++    expense.category ??
++    "Chi ti├¬u"
++  );
++}
++
++export function mapExpenseRecord(expense, mealsById = new Map()) {
++  const expenseDate = formatExpenseDate(expense.expenseDate);
++  const description = buildExpenseDescription(expense, mealsById);
++  const note = expense.note?.trim() || "Kh├┤ng c├│ ghi ch├║";
++
++  return {
++    id: expense.id,
++    userId: 1,
++    mealRecordId: expense.mealRecordId ?? null,
++    mealName: expense.mealRecordId
++      ? mealsById.get(expense.mealRecordId)?.mealName ?? null
++      : null,
++    amount: Number(expense.amount ?? 0),
++    currency: expense.currency || "VND",
++    category: expense.category,
++    expenseDate,
++    description,
++    note,
++    createdAt: `${expenseDate}T00:00:00`,
++    updatedAt: `${expenseDate}T00:00:00`,
++  };
++}
++
++export function getExpenseHistory() {
++  return getFallbackExpenseHistory();
++}
++
++export async function fetchExpenseHistory() {
++  const fallback = getExpenseHistory();
++
++  try {
++    const [expensesResponse, mealsResponse] = await Promise.all([
++      api.get("/api/expenses"),
++      api.get("/api/meals").catch(() => null),
++    ]);
++    const expenses = unwrapApiData(expensesResponse);
++    const meals = mealsResponse ? unwrapApiData(mealsResponse) : [];
++    const mealsById = new Map(
++      (Array.isArray(meals) ? meals : [])
++        .map(mapMealRecord)
++        .map((meal) => [meal.id, meal]),
++    );
++
++    return {
++      data: {
++        expenses: Array.isArray(expenses)
++          ? expenses.map((expense) => mapExpenseRecord(expense, mealsById))
++          : fallback.expenses,
++        categoryLabelMap: expenseCategoryLabelMap,
++      },
++      error: null,
++    };
++  } catch (error) {
++    return {
++      data: fallback,
++      error: extractApiMessage(
++        error,
++        "Kh├┤ng thß╗â tß║úi chi ti├¬u. ─Éang d├╣ng dß╗» liß╗çu mß║½u.",
++      ),
++    };
++  }
++}
++
++export async function createExpense(payload) {
++  const requestBody = {
++    mealRecordId: payload.mealRecordId ?? null,
++    amount: Number(payload.amount ?? 0),
++    currency: payload.currency ?? "VND",
++    category: payload.category,
++    expenseDate: payload.expenseDate ?? payload.date,
++    note: payload.note?.trim() || payload.description?.trim() || "",
++  };
++
++  try {
++    const expense = unwrapApiData(await api.post("/api/expenses", requestBody));
++    const mappedExpense = mapExpenseRecord(expense);
++
++    return {
++      ...mappedExpense,
++      description: payload.description?.trim() || mappedExpense.description,
++      note: payload.note?.trim() || mappedExpense.note,
++    };
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â tß║ío khoß║ún chi.");
++  }
++}
++
++export async function updateExpense(id, payload) {
++  const requestBody = {
++    mealRecordId: payload.mealRecordId ?? null,
++    amount:
++      payload.amount !== undefined && payload.amount !== null
++        ? Number(payload.amount)
++        : undefined,
++    currency: payload.currency,
++    category: payload.category,
++    expenseDate: payload.expenseDate ?? payload.date,
++    note: payload.note?.trim() || payload.description?.trim() || "",
++  };
++
++  try {
++    const expense = unwrapApiData(
++      await api.patch(`/api/expenses/${id}`, requestBody),
++    );
++    const mappedExpense = mapExpenseRecord(expense);
++
++    return {
++      ...mappedExpense,
++      description: payload.description?.trim() || mappedExpense.description,
++      note: payload.note?.trim() || mappedExpense.note,
++    };
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â cß║¡p nhß║¡t khoß║ún chi.");
++  }
++}
++
++export async function deleteExpense(id) {
++  try {
++    await api.delete(`/api/expenses/${id}`);
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â x├│a khoß║ún chi.");
++  }
++}
+diff --git a/nutriwallet_frontend/src/services/meal.service.js b/nutriwallet_frontend/src/services/meal.service.js
+index e5fb782..33735bc 100644
+--- a/nutriwallet_frontend/src/services/meal.service.js
++++ b/nutriwallet_frontend/src/services/meal.service.js
+@@ -1,21 +1,108 @@
+-/**
+- * meal.service.js
+- *
+- * Tß║ºng service cho dß╗» liß╗çu lß╗ïch sß╗¡ bß╗»a ─ân.
+- * Hiß╗çn tß║íi trß║ú vß╗ü mock data ΓÇö kh├┤ng gß╗ìi API.
+- *
+- * Sau n├áy thay bß║▒ng:
+- *   const response = await axios.get(`${API_BASE_URL}/meals/history`);
+- *   return mapMealHistoryResponse(response.data);
+- */
+-
++import api, { createApiError, extractApiMessage, unwrapApiData } from "./api";
+ import { mealHistoryData } from "../data/mockMealHistoryData";
+ 
+-/**
+- * Lß║Ñy danh s├ích lß╗ïch sß╗¡ bß╗»a ─ân.
+- *
+- * @returns {typeof mealHistoryData}
+- */
++function getFallbackMeals() {
++  return [...mealHistoryData];
++}
++
++function formatMealDate(value) {
++  if (!value) {
++    return "";
++  }
++
++  return new Date(value).toISOString().slice(0, 10);
++}
++
++function formatMealTime(value) {
++  if (!value) {
++    return "";
++  }
++
++  return new Date(value).toLocaleTimeString("vi-VN", {
++    hour: "2-digit",
++    minute: "2-digit",
++  });
++}
++
++function inferMealType(mealTime) {
++  const hour = new Date(mealTime).getHours();
++
++  if (hour < 11) {
++    return "Breakfast";
++  }
++
++  if (hour < 16) {
++    return "Lunch";
++  }
++
++  return "Dinner";
++}
++
++export function mapMealRecord(meal) {
++  return {
++    id: meal.id,
++    mealName: meal.mealName ?? "Bß╗»a ─ân",
++    description: meal.description ?? "Ch╞░a c├│ m├┤ tß║ú",
++    imageUrl: meal.imageUrl || "/salad-hero.png",
++    mealType: inferMealType(meal.mealTime),
++    mealTime: formatMealTime(meal.mealTime),
++    mealDate: formatMealDate(meal.mealTime),
++    totalCalories: Number(meal.totalCalories ?? 0),
++    proteinGram: Number(meal.proteinGram ?? 0),
++    carbGram: Number(meal.carbGram ?? 0),
++    fatGram: Number(meal.fatGram ?? 0),
++    aiStatus: meal.aiEstimated ? "ESTIMATED" : "COMPLETED",
++    modelName: meal.aiEstimated ? "AI Estimate" : "NutriWallet",
++  };
++}
++
+ export function getMealHistory() {
+-  return mealHistoryData;
++  return getFallbackMeals();
++}
++
++export async function fetchMealHistory() {
++  const fallback = getMealHistory();
++
++  try {
++    const meals = unwrapApiData(await api.get("/api/meals"));
++
++    return {
++      data: Array.isArray(meals) ? meals.map(mapMealRecord) : fallback,
++      error: null,
++    };
++  } catch (error) {
++    return {
++      data: fallback,
++      error: extractApiMessage(
++        error,
++        "Kh├┤ng thß╗â tß║úi lß╗ïch sß╗¡ bß╗»a ─ân. ─Éang d├╣ng dß╗» liß╗çu mß║½u.",
++      ),
++    };
++  }
++}
++
++export async function createMeal(payload) {
++  try {
++    const meal = unwrapApiData(await api.post("/api/meals", payload));
++    return mapMealRecord(meal);
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â tß║ío bß╗»a ─ân.");
++  }
++}
++
++export async function updateMeal(id, payload) {
++  try {
++    const meal = unwrapApiData(await api.patch(`/api/meals/${id}`, payload));
++    return mapMealRecord(meal);
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â cß║¡p nhß║¡t bß╗»a ─ân.");
++  }
++}
++
++export async function deleteMeal(id) {
++  try {
++    await api.delete(`/api/meals/${id}`);
++  } catch (error) {
++    throw createApiError(error, "Kh├┤ng thß╗â x├│a bß╗»a ─ân.");
++  }
+ }
+diff --git a/nutriwallet_frontend/src/services/profile.service.js b/nutriwallet_frontend/src/services/profile.service.js
+index b031d55..1d0c301 100644
+--- a/nutriwallet_frontend/src/services/profile.service.js
++++ b/nutriwallet_frontend/src/services/profile.service.js
+@@ -1,33 +1,5 @@
+-/**
+- * profile.service.js
+- *
+- * Tß║ºng service cho dß╗» liß╗çu hß╗ô s╞í ng╞░ß╗¥i d├╣ng.
+- * Hiß╗çn tß║íi trß║ú vß╗ü mock data ΓÇö kh├┤ng gß╗ìi API.
+- *
+- * Sau n├áy thay bß║▒ng:
+- *   const response = await axios.get(`${API_BASE_URL}/profile`);
+- *   return mapProfileData(response.data);
+- */
+-
+-import {
+-  profileData,
+-  applyProfileDataUpdates,
+-} from "../data/accountData";
+-
+-/**
+- * Lß║Ñy dß╗» liß╗çu hß╗ô s╞í ng╞░ß╗¥i d├╣ng hiß╗çn tß║íi.
+- *
+- * @returns {typeof profileData}
+- */
+-export function getProfileData() {
+-  return profileData;
+-}
+-
+-/**
+- * Cß║¡p nhß║¡t hß╗ô s╞í ng╞░ß╗¥i d├╣ng (mock ΓÇö cß║¡p nhß║¡t object in-memory).
+- *
+- * @param {{ fullName?: string, email?: string }} updates
+- */
+-export function updateProfile(updates) {
+-  applyProfileDataUpdates(updates);
+-}
++export {
++  fetchProfileData,
++  getProfileData,
++  updateCurrentUser as updateProfile,
++} from "./user.service";

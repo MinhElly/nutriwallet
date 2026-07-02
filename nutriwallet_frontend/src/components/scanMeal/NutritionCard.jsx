@@ -18,7 +18,7 @@ export default function NutritionCard({
       />
       <p
         className={`break-words font-bold leading-tight text-slate-950 dark:text-white ${
-          compact ? "text-[1.05rem] sm:text-[1.75rem]" : "text-xl sm:text-2xl"
+          compact ? "text-[0.95rem] sm:text-[1.25rem] lg:text-[1.4rem]" : "text-lg sm:text-xl"
         }`}
       >
         {value}

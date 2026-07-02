@@ -95,7 +95,12 @@ function getDefaultRange(expenses = []) {
 }
 
 export default function ExpenseHistoryPage() {
-  const { expenses: expenseHistoryData, categoryLabelMap: expenseCategoryLabelMap } = useExpenseHistoryData();
+  const {
+    expenses: expenseHistoryData,
+    categoryLabelMap: expenseCategoryLabelMap,
+    loading,
+    error,
+  } = useExpenseHistoryData();
   const today = useMemo(() => new Date(), []);
   const defaultRange = useMemo(() => getDefaultRange(expenseHistoryData), [expenseHistoryData]);
 
@@ -123,6 +128,16 @@ export default function ExpenseHistoryPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setSelectedStartDate(defaultRange.startDate);
+      setSelectedEndDate(defaultRange.endDate);
+      setDraftStartDate(defaultRange.startDate);
+      setDraftEndDate(defaultRange.endDate);
+      setViewDate(toDate(defaultRange.startDate) ?? today);
+    });
+  }, [defaultRange.endDate, defaultRange.startDate, today]);
 
   const dateRangeLabel = useMemo(
     () => formatDateRangeLabel(selectedStartDate, selectedEndDate),
@@ -248,6 +263,12 @@ export default function ExpenseHistoryPage() {
         className="overflow-visible rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="border-b border-slate-100 p-5 dark:border-slate-800">
+          {(loading || error) && (
+            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+              {loading ? "Đang tải lịch sử chi tiêu..." : error}
+            </p>
+          )}
+
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative w-full xl:max-w-[420px]">
               <Search

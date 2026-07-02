@@ -151,14 +151,24 @@ function isDateOutsideRange(dateValue, minDateValue, maxDateValue) {
   return dateValue < minDateValue || dateValue > maxDateValue;
 }
 
+function normalizeBudgetExpense(expense) {
+  return {
+    ...expense,
+    date: expense.date ?? expense.expenseDate,
+  };
+}
+
 function BudgetPage() {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [activeDateField, setActiveDateField] = useState("start");
-  const { budget, expenses } = useBudgetData();
+  const { budget, expenses, loading, error, addExpense } = useBudgetData();
   const sectionRef = useRef(null);
-  const [allExpenses, setAllExpenses] = useState(expenses);
+  const [allExpenses, setAllExpenses] = useState(() =>
+    expenses.map(normalizeBudgetExpense),
+  );
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isSavingExpense, setIsSavingExpense] = useState(false);
   const [formError, setFormError] = useState("");
 
   const [selectedStartDate, setSelectedStartDate] = useState(budget.startDate);
@@ -213,6 +223,26 @@ function BudgetPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [selectedEndDate, selectedStartDate]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setAllExpenses(expenses.map(normalizeBudgetExpense));
+    });
+  }, [expenses]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setSelectedStartDate(budget.startDate);
+      setSelectedEndDate(budget.endDate);
+      setDraftStartDate(budget.startDate);
+      setDraftEndDate(budget.endDate);
+      setViewDate(toDate(budget.startDate) ?? new Date());
+      setExpenseForm((current) => ({
+        ...current,
+        date: budget.endDate,
+      }));
+    });
+  }, [budget.endDate, budget.startDate]);
 
   const dateRangeLabel = formatDateRangeLabel(
     normalizedSelectedRange.startDate,
@@ -438,7 +468,7 @@ function BudgetPage() {
     }));
   }
 
-  function handleAddExpenseSubmit(event) {
+  async function handleAddExpenseSubmit(event) {
     event.preventDefault();
 
     const trimmedDescription = expenseForm.description.trim();
@@ -464,6 +494,30 @@ function BudgetPage() {
     ) {
       setFormError("Ngày chi tiêu phải nằm trong kỳ ngân sách hiện tại.");
       return;
+    }
+
+    setIsSavingExpense(true);
+
+    try {
+      await addExpense({
+        date: expenseForm.date,
+        expenseDate: expenseForm.date,
+        category: expenseForm.category,
+        description: trimmedDescription,
+        amount,
+        currency: budget.currency,
+        note: trimmedNote,
+      });
+      setIsAddExpenseOpen(false);
+      resetExpenseForm(expenseForm.date);
+      return;
+    } catch (submitError) {
+      console.error(
+        "Failed to save budget expense via API, using local fallback.",
+        submitError,
+      );
+    } finally {
+      setIsSavingExpense(false);
     }
 
     const nextExpense = {
@@ -492,6 +546,7 @@ function BudgetPage() {
           budget={budget}
           expenseForm={expenseForm}
           formError={formError}
+          isSubmitting={isSavingExpense}
           minDate={minSelectableDateValue}
           maxDate={maxSelectableDateValue}
           onChange={handleExpenseFormChange}
@@ -509,6 +564,11 @@ function BudgetPage() {
           <p className="mt-2 text-slate-500 dark:text-slate-400">
             Theo dõi ngân sách, khoản chi và xu hướng sử dụng tiền của bạn.
           </p>
+          {(loading || error) && (
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              {loading ? "Đang tải dữ liệu ngân sách..." : error}
+            </p>
+          )}
         </div>
 
             <div className="relative w-full sm:w-auto">
@@ -770,6 +830,7 @@ function AddExpenseModal({
   budget,
   expenseForm,
   formError,
+  isSubmitting,
   minDate,
   maxDate,
   onChange,
@@ -900,7 +961,8 @@ function AddExpenseModal({
             </button>
             <button
               type="submit"
-              className="cursor-pointer rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+              disabled={isSubmitting}
+              className="cursor-pointer rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Lưu khoản chi
             </button>

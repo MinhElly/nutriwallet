@@ -45,9 +45,20 @@ export default function AccountCard() {
             </b>
 
             <p className="mt-2.5 text-sm text-slate-500 dark:text-slate-400">Liên kết lúc</p>
-            <b className="mt-0.5 block font-medium text-slate-900 dark:text-slate-200">
-              {currentUser?.messengerLinkedAt ?? ""}
-            </b>
+            {!currentUser?.messengerLinkedAt ? (
+              <a
+                href={`https://www.facebook.com/messages/t/${import.meta.env.VITE_MESSENGER_PAGE_ID || "61560946284698"}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-sky-600 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
+              >
+                Chưa liên kết • Liên kết ngay
+              </a>
+            ) : (
+              <b className="mt-0.5 block font-medium text-slate-900 dark:text-slate-200">
+                {currentUser.messengerLinkedAt}
+              </b>
+            )}
           </div>
         </div>
 

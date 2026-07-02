@@ -1,41 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  getDashboardData,
+  fetchDashboardData,
   getAiRecommendations,
+  getDashboardData,
 } from "../services/dashboard.service";
 
-/**
- * useDashboardData — hook quản lý toàn bộ dữ liệu dashboard.
- *
- * Page chỉ cần dùng hook này — không import mock trực tiếp.
- * Sau này service sẽ gọi API, hook không cần thay đổi.
- *
- * @returns {{
- *   selectedDate: Date,
- *   setSelectedDate: (date: Date) => void,
- *   selectedPeriod: string,
- *   setSelectedPeriod: (period: string) => void,
- *   snapshot: ReturnType<typeof getDashboardData>,
- *   aiRecommendations: ReturnType<typeof getAiRecommendations>,
- * }}
- */
 export function useDashboardData() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [selectedPeriod, setSelectedPeriod] = useState("1 tháng qua");
-
-  const snapshot = useMemo(
-    () => getDashboardData(selectedDate, selectedPeriod),
-    [selectedDate, selectedPeriod],
+  const [snapshot, setSnapshot] = useState(() =>
+    getDashboardData(new Date(), "1 tháng qua"),
   );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const aiRecommendations = useMemo(() => getAiRecommendations(), []);
+  useEffect(() => {
+    let ignore = false;
+
+    fetchDashboardData(selectedDate, selectedPeriod)
+      .then((result) => {
+        if (ignore) {
+          return;
+        }
+
+        setSnapshot(result.data);
+        setError(result.error ?? "");
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedDate, selectedPeriod]);
+
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+
+  useEffect(() => {
+    getAiRecommendations().then((recs) => setAiRecommendations(recs));
+  }, []);
+
+  function updateSelectedDate(nextDate) {
+    setLoading(true);
+    setSelectedDate(nextDate);
+  }
+
+  function updateSelectedPeriod(nextPeriod) {
+    setLoading(true);
+    setSelectedPeriod(nextPeriod);
+  }
 
   return {
     selectedDate,
-    setSelectedDate,
+    setSelectedDate: updateSelectedDate,
     selectedPeriod,
-    setSelectedPeriod,
+    setSelectedPeriod: updateSelectedPeriod,
     snapshot,
     aiRecommendations,
+    loading,
+    error,
   };
 }
