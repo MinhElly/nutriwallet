@@ -8,36 +8,15 @@ import {
   Save,
   Sun,
   UserRound,
+  Heart,
+  Sparkles,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "../../components/layout/AppShell";
 import { useTheme } from "../../hooks/useTheme";
 import { useSettingsData } from "../../hooks/useSettingsData";
 import { useProfileData } from "../../hooks/useProfileData";
 import { useAuth } from "../../hooks/useAuth";
-
-function getInitialSettingsMap(settingsData) {
-  const settingsMap = settingsData.sections.reduce((result, section) => {
-    section.items.forEach((item) => {
-      if (item.key === "default_model" || item.key === "warning_threshold_percent") {
-        return;
-      }
-
-      result[item.key] = item.value;
-    });
-
-    return result;
-  }, {});
-
-  const autoLinkSetting = settingsData.systemSettings.find(
-    (item) => item.settingKey === "messenger.auto_link_guest_session",
-  );
-
-  settingsMap.messenger_auto_link_guest_session =
-    autoLinkSetting?.settingValue === "true";
-
-  return settingsMap;
-}
 
 function formatSavedTime(date) {
   return date.toLocaleTimeString("vi-VN", {
@@ -47,16 +26,29 @@ function formatSavedTime(date) {
 }
 
 export default function SettingsPage() {
-  const { settingsData, saveSettings } = useSettingsData();
-  const { profileData } = useProfileData();
+  const { settings, loading, error, saveSettings } = useSettingsData();
+  const { profileData, refetchProfile } = useProfileData();
   const { currentUser } = useAuth();
-  const initialSettings = useMemo(() => getInitialSettingsMap(settingsData), [settingsData]);
-  const [settingsState, setSettingsState] = useState(initialSettings);
-  const [savedSettingsState, setSavedSettingsState] = useState(initialSettings);
+  
+  const [settingsState, setSettingsState] = useState(null);
+  const [savedSettingsState, setSavedSettingsState] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(new Date());
+  const [isSaving, setIsSaving] = useState(false);
   const { theme, setTheme } = useTheme();
 
+  useEffect(() => {
+    if (settings) {
+      const timer = setTimeout(() => {
+        setSettingsState(settings);
+        setSavedSettingsState(settings);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [settings]);
+
   const hasUnsavedChanges =
+    settingsState &&
+    savedSettingsState &&
     JSON.stringify(settingsState) !== JSON.stringify(savedSettingsState);
 
   function handleChange(key, value) {
@@ -66,41 +58,32 @@ export default function SettingsPage() {
     }));
   }
 
-  function handleSaveSettings() {
-    saveSettings(settingsState);
-    setSavedSettingsState(settingsState);
-    setLastSavedAt(new Date());
+  async function handleSaveSettings() {
+    if (!settingsState) return;
+    setIsSaving(true);
+    const res = await saveSettings(settingsState);
+    if (res.success) {
+      setSavedSettingsState(settingsState);
+      setLastSavedAt(new Date());
+      if (refetchProfile) {
+        refetchProfile();
+      }
+    }
+    setIsSaving(false);
   }
 
-  const accountFields = [
-    {
-      key: "display_name",
-      label: "Tên hiển thị",
-      type: "text",
-    },
-  ];
-
-  const notificationFields = [
-    {
-      key: "email_analysis_ready",
-      label: "Email khi AI phân tích xong",
-    },
-    {
-      key: "budget_warning_push",
-      label: "Cảnh báo khi gần vượt ngân sách",
-    },
-  ];
-
-  const automationFields = [
-    {
-      key: "auto_create_expense",
-      label: "Tự tạo khoản chi từ bữa ăn",
-    },
-    {
-      key: "messenger_auto_link_guest_session",
-      label: "Tự liên kết guest session",
-    },
-  ];
+  if (loading && !settingsState) {
+    return (
+      <AppShell pageLabel="Cài đặt">
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500"></div>
+            <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-400">Đang tải cài đặt...</p>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell pageLabel="Cài đặt">
@@ -119,142 +102,273 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={handleSaveSettings}
-            disabled={!hasUnsavedChanges}
+            disabled={!hasUnsavedChanges || isSaving}
             className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-800 disabled:cursor-default disabled:bg-slate-200 disabled:text-slate-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:disabled:bg-slate-800 dark:disabled:text-slate-600"
           >
-            {hasUnsavedChanges ? <Save size={18} /> : <Check size={18} />}
-            {hasUnsavedChanges ? "Lưu cấu hình" : "Đã lưu"}
+            {isSaving ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            ) : hasUnsavedChanges ? (
+              <Save size={18} />
+            ) : (
+              <Check size={18} />
+            )}
+            {isSaving ? "Đang lưu..." : hasUnsavedChanges ? "Lưu cấu hình" : "Đã lưu"}
           </button>
         </div>
       </div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <img
-              src={currentUser?.avatarUrl || profileData.user.avatarUrl}
-              alt={currentUser?.fullName || profileData.user.fullName}
-              className="h-20 w-20 rounded-[1.5rem] object-cover shadow-sm"
-            />
-
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
-                  {profileData.user.fullName}
-                </h2>
-                <span className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300">
-                  {profileData.user.role}
-                </span>
-              </div>
-
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {profileData.user.email} • {profileData.chatbotProfile.platform}
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                <ProfilePill text="Email đã xác minh" />
-                <ProfilePill text="Messenger đã kết nối" />
-                <ProfilePill text={`Provider ${profileData.user.provider}`} />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
-            PSID: {profileData.chatbotProfile.psid}
-          </div>
+      {error && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400">
+          {error}
         </div>
-      </section>
+      )}
 
-      <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-        {/* Theme Settings Card */}
-        <SettingsCard title="Giao diện & Chủ đề" icon={<Palette size={18} />}>
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Chế độ giao diện</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTheme("light")}
-                  className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
-                    theme === "light"
-                      ? "border-amber-500 bg-amber-50/60 text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-300"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <Sun size={18} className="text-amber-500" />
-                  Giao diện Sáng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme("dark")}
-                  className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
-                    theme === "dark"
-                      ? "border-emerald-500 bg-emerald-50/60 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <Moon size={18} className="text-emerald-400" />
-                  Giao diện Tối
-                </button>
+      {settingsState && (
+        <>
+          <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-4">
+                <img
+                  src={currentUser?.avatarUrl || profileData?.user?.avatarUrl}
+                  alt={currentUser?.fullName || profileData?.user?.fullName}
+                  className="h-20 w-20 rounded-[1.5rem] object-cover shadow-sm"
+                />
+
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {settingsState.display_name}
+                    </h2>
+                    <span className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300">
+                      {profileData?.user?.role || "USER"}
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {profileData?.user?.email} {profileData?.chatbotProfile ? `• ${profileData.chatbotProfile.platform}` : ""}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <ProfilePill text="Email đã xác minh" />
+                    {profileData?.chatbotProfile && <ProfilePill text="Messenger đã kết nối" />}
+                    <ProfilePill text={`Provider ${profileData?.user?.provider || "LOCAL"}`} />
+                  </div>
+                </div>
               </div>
+
+              {profileData?.chatbotProfile && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+                  PSID: {profileData.chatbotProfile.psid}
+                </div>
+              )}
             </div>
-          </div>
-        </SettingsCard>
+          </section>
 
-        <SettingsCard title="Tài khoản" icon={<UserRound size={18} />}>
-          <div className="space-y-3">
-            {accountFields.map((field) => (
-              <InputField
-                key={field.key}
-                field={field}
-                value={settingsState[field.key]}
-                onChange={handleChange}
-              />
-            ))}
-          </div>
-        </SettingsCard>
+          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+            {/* Health & Finance Profile Settings Card */}
+            <SettingsCard title="Hồ sơ Sức khỏe & Tài chính" icon={<Heart size={18} className="text-rose-500" />}>
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/30">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 mb-1">
+                    <Sparkles size={16} className="text-emerald-500" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Phân tích cá nhân hóa bởi AI</span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    AI sẽ dựa vào các thông số dưới đây để phân tích thể chất, dinh dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù hợp nhất cho bạn.
+                  </p>
+                </div>
 
-        <SettingsCard title="Thông báo" icon={<Bell size={18} />}>
-          <div className="space-y-3">
-            {notificationFields.map((field) => (
-              <ToggleRow
-                key={field.key}
-                label={field.label}
-                value={settingsState[field.key]}
-                onToggle={() => handleChange(field.key, !settingsState[field.key])}
-              />
-            ))}
-          </div>
-        </SettingsCard>
+                <SettingsInput
+                  label="Giới tính"
+                  type="select"
+                  value={settingsState.gender}
+                  onChange={(val) => handleChange("gender", val)}
+                  options={[
+                    { label: "Chọn giới tính", value: "" },
+                    { label: "Nam", value: "MALE" },
+                    { label: "Nữ", value: "FEMALE" },
+                    { label: "Khác", value: "OTHER" },
+                  ]}
+                />
 
-        <SettingsCard title="Tự động hóa" icon={<Bot size={18} />}>
-          <div className="space-y-3">
-            {automationFields.map((field) => (
-              <ToggleRow
-                key={field.key}
-                label={field.label}
-                value={settingsState[field.key]}
-                onToggle={() => handleChange(field.key, !settingsState[field.key])}
-              />
-            ))}
-          </div>
-        </SettingsCard>
+                <SettingsInput
+                  label="Tuổi"
+                  type="number"
+                  placeholder="Ví dụ: 25"
+                  value={settingsState.age}
+                  onChange={(val) => handleChange("age", val)}
+                />
 
-        <SettingsCard title="Bảo mật và kết nối" icon={<Lock size={18} />}>
-          <div className="space-y-3">
-            <ReadOnlyRow label="Email" value={profileData.user.email} />
-            <ReadOnlyRow
-              label="Trạng thái email"
-              value={profileData.emailVerification.verifiedAt ? "Đã xác minh" : "Chưa xác minh"}
-            />
-            <ReadOnlyRow label="Nền tảng" value={profileData.chatbotProfile.platform} />
-            <ReadOnlyRow
-              label="Guest session code"
-              value={profileData.chatbotProfile.guestSessionCode}
-            />
-          </div>
-        </SettingsCard>
-      </section>
+                <div className="grid grid-cols-2 gap-3">
+                  <SettingsInput
+                    label="Chiều cao"
+                    type="number"
+                    placeholder="170"
+                    suffix="cm"
+                    value={settingsState.height}
+                    onChange={(val) => handleChange("height", val)}
+                  />
+                  <SettingsInput
+                    label="Cân nặng"
+                    type="number"
+                    placeholder="65"
+                    suffix="kg"
+                    value={settingsState.weight}
+                    onChange={(val) => handleChange("weight", val)}
+                  />
+                </div>
+
+                <SettingsInput
+                  label="Mức độ vận động"
+                  type="select"
+                  value={settingsState.activityLevel}
+                  onChange={(val) => handleChange("activityLevel", val)}
+                  options={[
+                    { label: "Ít vận động (văn phòng)", value: "SEDENTARY" },
+                    { label: "Nhẹ nhàng (1-3 ngày/tuần)", value: "LIGHTLY_ACTIVE" },
+                    { label: "Vừa phải (3-5 ngày/tuần)", value: "MODERATELY_ACTIVE" },
+                    { label: "Tích cực (6-7 ngày/tuần)", value: "VERY_ACTIVE" },
+                  ]}
+                />
+
+                <SettingsInput
+                  label="Chế độ ăn kiêng"
+                  type="text"
+                  placeholder="Ví dụ: Bình thường, Chay, Keto, Low-carb..."
+                  value={settingsState.diet}
+                  onChange={(val) => handleChange("diet", val)}
+                />
+
+                <SettingsInput
+                  label="Mục tiêu sử dụng"
+                  type="text"
+                  placeholder="Ví dụ: Giảm cân, Giữ dáng, Tiết kiệm tiền..."
+                  value={settingsState.goal}
+                  onChange={(val) => handleChange("goal", val)}
+                />
+
+                <SettingsInput
+                  label="Ngân sách chi tiêu tháng"
+                  type="number"
+                  placeholder="Ví dụ: 5000000"
+                  suffix="VND"
+                  value={settingsState.monthlyBudget}
+                  onChange={(val) => handleChange("monthlyBudget", val)}
+                />
+              </div>
+            </SettingsCard>
+
+            {/* Other System Settings */}
+            <div className="space-y-6">
+              <SettingsCard title="Tài khoản" icon={<UserRound size={18} />}>
+                <div className="space-y-3">
+                  <SettingsInput
+                    label="Tên hiển thị"
+                    type="text"
+                    value={settingsState.display_name}
+                    onChange={(val) => handleChange("display_name", val)}
+                  />
+                  <SettingsInput
+                    label="Ngôn ngữ"
+                    type="select"
+                    value={settingsState.language}
+                    onChange={(val) => handleChange("language", val)}
+                    options={[
+                      { label: "Tiếng Việt", value: "vi" },
+                      { label: "English", value: "en" },
+                    ]}
+                  />
+                </div>
+              </SettingsCard>
+
+              {/* Theme Settings Card */}
+              <SettingsCard title="Giao diện & Chủ đề" icon={<Palette size={18} />}>
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                    <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Chế độ giao diện</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTheme("light");
+                          handleChange("theme", "light");
+                        }}
+                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                          theme === "light"
+                            ? "border-amber-500 bg-amber-50/60 text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-300"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <Sun size={18} className="text-amber-500" />
+                        Giao diện Sáng
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTheme("dark");
+                          handleChange("theme", "dark");
+                        }}
+                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                          theme === "dark"
+                            ? "border-emerald-500 bg-emerald-50/60 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <Moon size={18} className="text-emerald-400" />
+                        Giao diện Tối
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </SettingsCard>
+
+              <SettingsCard title="Thông báo" icon={<Bell size={18} />}>
+                <div className="space-y-3">
+                  <ToggleRow
+                    label="Email khi AI phân tích xong"
+                    value={settingsState.email_analysis_ready}
+                    onToggle={() => handleChange("email_analysis_ready", !settingsState.email_analysis_ready)}
+                  />
+                  <ToggleRow
+                    label="Cảnh báo khi gần vượt ngân sách"
+                    value={settingsState.budget_warning_push}
+                    onToggle={() => handleChange("budget_warning_push", !settingsState.budget_warning_push)}
+                  />
+                </div>
+              </SettingsCard>
+
+              <SettingsCard title="Tự động hóa" icon={<Bot size={18} />}>
+                <div className="space-y-3">
+                  <ToggleRow
+                    label="Tự tạo khoản chi từ bữa ăn"
+                    value={settingsState.auto_create_expense}
+                    onToggle={() => handleChange("auto_create_expense", !settingsState.auto_create_expense)}
+                  />
+                </div>
+              </SettingsCard>
+
+              <SettingsCard title="Bảo mật và kết nối" icon={<Lock size={18} />}>
+                <div className="space-y-3">
+                  <ReadOnlyRow label="Email" value={profileData?.user?.email} />
+                  <ReadOnlyRow
+                    label="Trạng thái email"
+                    value={profileData?.emailVerification?.verifiedAt ? "Đã xác minh" : "Đã xác minh"}
+                  />
+                  {profileData?.chatbotProfile && (
+                    <>
+                      <ReadOnlyRow label="Nền tảng Chatbot" value={profileData.chatbotProfile.platform} />
+                      <ReadOnlyRow
+                        label="Mã kết nối khách"
+                        value={profileData.chatbotProfile.guestSessionCode}
+                      />
+                    </>
+                  )}
+                </div>
+              </SettingsCard>
+            </div>
+          </section>
+        </>
+      )}
     </AppShell>
   );
 }
@@ -282,32 +396,42 @@ function SettingsCard({ title, icon, children }) {
   );
 }
 
-function InputField({ field, value, onChange }) {
+function SettingsInput({ label, type = "text", value, onChange, options, suffix, placeholder }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{field.label}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</p>
 
-        <div className="w-full sm:max-w-[220px]">
-          {field.type === "select" ? (
+        <div className="relative w-full sm:max-w-[220px]">
+          {type === "select" ? (
             <select
               value={value}
-              onChange={(event) => onChange(field.key, event.target.value)}
-              className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500"
+              onChange={(event) => onChange(event.target.value)}
+              className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-8 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500"
             >
-              {field.options.map((option) => (
+              {options.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
           ) : (
-            <input
-              type="text"
-              value={value}
-              onChange={(event) => onChange(field.key, event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500"
-            />
+            <div className="relative flex items-center">
+              <input
+                type={type}
+                value={value}
+                placeholder={placeholder}
+                onChange={(event) => onChange(event.target.value)}
+                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${
+                  suffix ? "pr-12" : ""
+                }`}
+              />
+              {suffix && (
+                <span className="absolute right-4 text-xs font-bold text-slate-400 dark:text-slate-500">
+                  {suffix}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -343,7 +467,7 @@ function ReadOnlyRow({ label, value }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
       <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{value}</p>
+      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{value || "N/A"}</p>
     </div>
   );
 }

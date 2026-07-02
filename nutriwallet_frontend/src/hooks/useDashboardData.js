@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   fetchDashboardData,
   getAiRecommendations,
@@ -37,7 +37,11 @@ export function useDashboardData() {
     };
   }, [selectedDate, selectedPeriod]);
 
-  const aiRecommendations = useMemo(() => getAiRecommendations(), []);
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+
+  useEffect(() => {
+    getAiRecommendations().then((recs) => setAiRecommendations(recs));
+  }, []);
 
   function updateSelectedDate(nextDate) {
     setLoading(true);

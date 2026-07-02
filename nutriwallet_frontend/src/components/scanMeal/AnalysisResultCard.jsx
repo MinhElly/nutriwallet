@@ -1,19 +1,42 @@
 import { useState } from "react";
 import {
   Beef,
+  Coffee,
   Droplet,
   Flame,
   Leaf,
+  Moon,
   Pencil,
   Save,
   Sparkles,
+  Sun,
+  Sunset,
   Wallet,
   Wheat,
   X,
 } from "lucide-react";
 import NutritionCard from "./NutritionCard";
 
-export default function AnalysisResultCard({ result, onUpdateResult }) {
+const MEAL_TYPE_META = {
+  BREAKFAST: { label: "Bữa sáng", icon: Sun, className: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400" },
+  LUNCH:     { label: "Bữa trưa", icon: Sunset, className: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400" },
+  DINNER:    { label: "Bữa tối", icon: Moon, className: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400" },
+  SNACK:     { label: "Bữa phụ", icon: Coffee, className: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400" },
+};
+
+const MEAL_TYPE_OPTIONS = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
+
+function formatRangeValue(value) {
+  if (value === null || value === undefined || isNaN(value)) return "0";
+  const numVal = Number(value);
+  if (numVal <= 0) return "0";
+  const min = Math.max(0, Math.round(numVal * 0.9));
+  const max = Math.round(numVal * 1.1);
+  if (min === max) return `${min}`;
+  return `${min} - ${max}`;
+}
+
+export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftResult, setDraftResult] = useState(result);
 
@@ -59,6 +82,13 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
     }));
   };
 
+  const updateMealType = (value) => {
+    setDraftResult((prev) => ({
+      ...prev,
+      mealType: value || null,
+    }));
+  };
+
   const updateEstimatedPrice = (value) => {
     setDraftResult((prev) => ({
       ...prev,
@@ -96,7 +126,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
       <img
         src={displayResult.imageUrl}
         alt={displayResult.foodName}
-        className="h-48 w-full rounded-2xl object-cover"
+        className="h-72 w-full rounded-2xl object-cover shadow-sm"
       />
 
       {isEditing ? (
@@ -109,9 +139,22 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
           />
         </div>
       ) : (
-        <h3 className="mt-5 text-2xl font-bold text-slate-950 dark:text-white">
-          {displayResult.foodName}
-        </h3>
+        <>
+          <h3 className="mt-5 text-2xl font-bold text-slate-950 dark:text-white">
+            {displayResult.foodName}
+          </h3>
+          {displayResult.mealType && (() => {
+            const meta = MEAL_TYPE_META[displayResult.mealType];
+            if (!meta) return null;
+            const Icon = meta.icon;
+            return (
+              <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${meta.className}`}>
+                <Icon size={13} />
+                {meta.label}
+              </span>
+            );
+          })()}
+        </>
       )}
 
       {isEditing ? (
@@ -151,6 +194,20 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
             onChange={updateEstimatedPrice}
             className="col-span-2"
           />
+
+          <div className="col-span-2">
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Loại bữa ăn</label>
+            <select
+              value={draftResult.mealType || ""}
+              onChange={(e) => updateMealType(e.target.value)}
+              className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">Không xác định</option>
+              {MEAL_TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>{MEAL_TYPE_META[type]?.label ?? type}</option>
+              ))}
+            </select>
+          </div>
         </div>
       ) : (
         <div className="mt-5 space-y-3">
@@ -158,7 +215,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
             <NutritionCard
               icon={Flame}
               label="Calories"
-              value={displayResult.nutrition.calories}
+              value={formatRangeValue(displayResult.nutrition.calories)}
               unit="kcal"
               color="text-orange-500"
               compact
@@ -167,7 +224,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
             <NutritionCard
               icon={Beef}
               label="Protein"
-              value={displayResult.nutrition.protein}
+              value={formatRangeValue(displayResult.nutrition.protein)}
               unit="g"
               color="text-emerald-600 dark:text-emerald-400"
               compact
@@ -176,7 +233,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
             <NutritionCard
               icon={Wheat}
               label="Carbs"
-              value={displayResult.nutrition.carbs}
+              value={formatRangeValue(displayResult.nutrition.carbs)}
               unit="g"
               color="text-amber-500"
               compact
@@ -185,7 +242,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
             <NutritionCard
               icon={Droplet}
               label="Fat"
-              value={displayResult.nutrition.fat}
+              value={formatRangeValue(displayResult.nutrition.fat)}
               unit="g"
               color="text-red-500"
               compact
@@ -259,6 +316,7 @@ export default function AnalysisResultCard({ result, onUpdateResult }) {
         <div className="mt-6 space-y-3">
           <button
             type="button"
+            onClick={onSave}
             className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
             <Save size={18} />

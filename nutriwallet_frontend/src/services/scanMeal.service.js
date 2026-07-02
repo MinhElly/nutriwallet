@@ -1,6 +1,7 @@
 import api, { createApiError, unwrapApiData } from "./api";
 import { createMeal } from "./meal.service";
 import { uploadImage } from "./storage.service";
+import { createExpense } from "./expense.service";
 
 const ANALYSIS_POLL_INTERVAL_MS = 1500;
 const ANALYSIS_TIMEOUT_MS = 25000;
@@ -57,13 +58,14 @@ function mapMealAnalysis(analysis, imageUrl) {
     analysisLogId: analysis?.analysisLogId ?? null,
     foodName: analysis?.foodName?.trim() || "Bữa ăn mới",
     imageUrl,
+    mealType: analysis?.mealType ?? null,
     nutrition: {
       calories: toSafeNumber(analysis?.calories),
       protein: toSafeNumber(analysis?.proteinGram),
       carbs: toSafeNumber(analysis?.carbGram),
       fat: toSafeNumber(analysis?.fatGram),
     },
-    estimatedPrice: 0,
+    estimatedPrice: toSafeNumber(analysis?.estimatedPriceVnd),
     currency: "VND",
     savedMealId: null,
     ai: {
@@ -71,7 +73,7 @@ function mapMealAnalysis(analysis, imageUrl) {
       inputType: "Image",
       status: humanizeAnalysisStatus(analysis?.status),
       statusCode: analysis?.status ?? "PENDING",
-      confidence: null,
+      confidence: analysis?.confidence ?? null,
       source: analysis?.source ?? null,
       message: buildAnalysisMessage(analysis),
       createdAt: formatDateTime(new Date()),
@@ -142,13 +144,30 @@ export async function analyzeMealImage(file) {
   }
 }
 
+function getLocalIsoString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+function getLocalDateFormat(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export async function saveAnalyzedMeal(result) {
   try {
-    return await createMeal({
+    const savedMeal = await createMeal({
       mealName: result.foodName?.trim() || "Bữa ăn mới",
       description: buildMealDescription(result),
       imageUrl: result.imageUrl,
-      mealTime: new Date().toISOString(),
+      mealTime: getLocalIsoString(),
       totalCalories: toSafeNumber(result.nutrition?.calories),
       proteinGram: toSafeNumber(result.nutrition?.protein),
       carbGram: toSafeNumber(result.nutrition?.carbs),
@@ -156,6 +175,37 @@ export async function saveAnalyzedMeal(result) {
       aiEstimated: true,
       confirmedByUser: true,
     });
+
+    const validCategories = new Set(["BREAKFAST", "LUNCH", "DINNER", "SNACK"]);
+    let category = validCategories.has(result.mealType) ? result.mealType : null;
+
+    if (!category) {
+      const hour = new Date().getHours();
+      if (hour < 11) {
+        category = "BREAKFAST";
+      } else if (hour < 16) {
+        category = "LUNCH";
+      } else if (hour < 21) {
+        category = "DINNER";
+      } else {
+        category = "OTHER";
+      }
+    }
+
+    try {
+      await createExpense({
+        mealRecordId: savedMeal.id,
+        amount: toSafeNumber(result.estimatedPrice),
+        currency: result.currency || "VND",
+        category,
+        expenseDate: getLocalDateFormat(),
+        note: `Tự động tạo từ quét bữa ăn: ${savedMeal.mealName}`,
+      });
+    } catch (expError) {
+      console.error("Failed to automatically record expense:", expError);
+    }
+
+    return savedMeal;
   } catch (error) {
     throw createApiError(error, "Không thể lưu bữa ăn.");
   }
