@@ -102,6 +102,9 @@ app:
     cloud-name: ${CLOUDINARY_CLOUD_NAME:}
     api-key: ${CLOUDINARY_API_KEY:}
     api-secret: ${CLOUDINARY_API_SECRET:}
+  messenger:
+    verify-token: ${MESSENGER_VERIFY_TOKEN:my_messenger_verify_token}
+    page-access-token: ${MESSENGER_PAGE_ACCESS_TOKEN:}
 
 facebook:
   app-secret: ${FACEBOOK_CLIENT_SECRET:123456789012345}
