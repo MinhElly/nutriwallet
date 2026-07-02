@@ -14,7 +14,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 function LoginForm() {
   const navigate = useNavigate();
-  const { loginWithGoogle, loginWithFacebook } = useAuth();
+  const { loginWithGoogle } = useAuth();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,58 +36,7 @@ function LoginForm() {
     },
   });
 
-  const loadFacebookSDK = () => {
-    return new Promise((resolve) => {
-      if (window.FB) {
-        resolve(window.FB);
-        return;
-      }
-      window.fbAsyncInit = function() {
-        window.FB.init({
-          appId: import.meta.env.VITE_FACEBOOK_APP_ID || 'mock-fb-app-id',
-          cookie: true,
-          xfbml: true,
-          version: 'v18.0'
-        });
-        resolve(window.FB);
-      };
-      (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = "https://connect.facebook.net/en_US/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-      }(document, 'script', 'facebook-jssdk'));
-    });
-  };
 
-  const handleFacebookLogin = async () => {
-    setIsSubmitting(true);
-    setError("");
-    try {
-      const FB = await loadFacebookSDK();
-      FB.login((response) => {
-        if (response.authResponse) {
-          const accessToken = response.authResponse.accessToken;
-          loginWithFacebook(accessToken)
-            .then(() => {
-              navigate("/dashboard", { replace: true });
-            })
-            .catch((err) => {
-              setError(err?.response?.data?.message || err?.message || "Lỗi đăng nhập Facebook.");
-              setIsSubmitting(false);
-            });
-        } else {
-          setError("Người dùng đã hủy đăng nhập hoặc không cấp quyền.");
-          setIsSubmitting(false);
-        }
-      }, { scope: 'email,public_profile' });
-    } catch (err) {
-      console.error("Failed to initialize Facebook SDK login:", err);
-      setError("Không thể khởi tạo SDK Facebook.");
-      setIsSubmitting(false);
-    }
-  };
   return (
     <main
       className="relative h-screen overflow-hidden bg-[#F0FDF4] text-[#0F172A]"
@@ -223,16 +172,6 @@ function LoginForm() {
               <GoogleIcon />
               Tiếp tục với Google
             </button>
-
-            <button
-              type="button"
-              onClick={handleFacebookLogin}
-              disabled={isSubmitting}
-              className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-[#1877F2] text-[14px] font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#166FE5] hover:shadow-lg disabled:opacity-50"
-            >
-              <FacebookIcon />
-              Tiếp tục với Facebook
-            </button>
           </div>
         </div>
       </section>
@@ -263,12 +202,6 @@ function GoogleIcon() {
   );
 }
 
-function FacebookIcon() {
-  return (
-    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-    </svg>
-  );
-}
+
 
 export default LoginForm;

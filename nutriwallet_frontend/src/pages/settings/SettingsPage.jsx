@@ -10,6 +10,7 @@ import {
   UserRound,
   Heart,
   Sparkles,
+  MessageCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppShell from "../../components/layout/AppShell";
@@ -354,7 +355,7 @@ export default function SettingsPage() {
                     label="Trạng thái email"
                     value={profileData?.emailVerification?.verifiedAt ? "Đã xác minh" : "Đã xác minh"}
                   />
-                  {profileData?.chatbotProfile && (
+                  {profileData?.chatbotProfile ? (
                     <>
                       <ReadOnlyRow label="Nền tảng Chatbot" value={profileData.chatbotProfile.platform} />
                       <ReadOnlyRow
@@ -362,6 +363,25 @@ export default function SettingsPage() {
                         value={profileData.chatbotProfile.guestSessionCode}
                       />
                     </>
+                  ) : (
+                    <div className="mt-2 rounded-2xl border border-slate-200 bg-emerald-50/30 p-4 dark:border-slate-800 dark:bg-emerald-950/10">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                        <MessageCircle size={16} />
+                        <span className="text-xs font-bold uppercase tracking-wider">Messenger Chatbot</span>
+                      </div>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        Kết nối với chatbot của chúng tôi trên Messenger để có thể theo dõi nhanh thực đơn ăn uống của bạn qua hình ảnh.
+                      </p>
+                      <a
+                        href={`https://www.facebook.com/messages/t/${import.meta.env.VITE_MESSENGER_PAGE_ID || "61560946284698"}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-500 shadow-sm"
+                      >
+                        <MessageCircle size={14} />
+                        Liên kết Messenger
+                      </a>
+                    </div>
                   )}
                 </div>
               </SettingsCard>
