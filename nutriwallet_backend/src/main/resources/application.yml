@@ -49,6 +49,15 @@ spring:
     password: ${RABBITMQ_PASSWORD:nutriwallet_dev_password}
     publisher-confirm-type: correlated
     publisher-returns: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2000
+          multiplier: 2
+          max-interval: 15000
   flyway:
     enabled: ${FLYWAY_ENABLED:true}
     baseline-on-migrate: true
@@ -108,3 +117,14 @@ app:
 
 facebook:
   app-secret: ${FACEBOOK_CLIENT_SECRET:123456789012345}
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+  fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-2.5-flash-lite}
+  max-output-tokens: ${GEMINI_MAX_OUTPUT_TOKENS:512}
+  retry:
+    max-attempts: ${GEMINI_RETRY_MAX_ATTEMPTS:3}
+    initial-delay-ms: ${GEMINI_RETRY_INITIAL_DELAY_MS:2000}
+    multiplier: ${GEMINI_RETRY_MULTIPLIER:2}
+    max-delay-ms: ${GEMINI_RETRY_MAX_DELAY_MS:8000}
