@@ -6,7 +6,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Shield
+  Shield,
+  AlertCircle
 } from "lucide-react";
 
 export default function Sidebar({ currentTab, setCurrentTab, currentUser, onLogout }) {
@@ -14,6 +15,7 @@ export default function Sidebar({ currentTab, setCurrentTab, currentUser, onLogo
     { id: "overview", label: "Overview", icon: LayoutGrid },
     { id: "users", label: "User Management", icon: Users },
     { id: "ai", label: "AI Console", icon: Brain },
+    { id: "ai-errors", label: "AI Error Logs", icon: AlertCircle },
     { id: "moderation", label: "Content Moderation", icon: Flag },
     { id: "analytics", label: "Reports & Analytics", icon: BarChart3 },
     { id: "settings", label: "System Settings", icon: Settings },

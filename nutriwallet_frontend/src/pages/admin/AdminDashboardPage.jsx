@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import Sidebar from "../../components/admin/Sidebar";
 import OverviewTab from "../../components/admin/OverviewTab";
 import AIConsoleTab from "../../components/admin/AIConsoleTab";
+import AiErrorLogsTab from "../../components/admin/AiErrorLogsTab";
 import ContentModerationTab from "../../components/admin/ContentModerationTab";
 import AnalyticsTab from "../../components/admin/AnalyticsTab";
 import SystemSettingsTab from "../../components/admin/SystemSettingsTab";
@@ -165,6 +166,9 @@ export default function AdminDashboardPage() {
 
           {/* AI CONSOLE TAB */}
           {currentTab === "ai" && <AIConsoleTab />}
+
+          {/* AI ERROR LOGS TAB */}
+          {currentTab === "ai-errors" && <AiErrorLogsTab />}
 
           {/* CONTENT MODERATION TAB */}
           {currentTab === "moderation" && <ContentModerationTab />}

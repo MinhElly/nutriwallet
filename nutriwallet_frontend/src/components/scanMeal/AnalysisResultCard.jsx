@@ -14,8 +14,11 @@ import {
   Wallet,
   Wheat,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import NutritionCard from "./NutritionCard";
+import toast from "react-hot-toast";
+import { submitAiErrorReport } from "../../services/aiLog.service";
 
 const MEAL_TYPE_META = {
   BREAKFAST: { label: "Bữa sáng", icon: Sun, className: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400" },
@@ -39,6 +42,30 @@ function formatRangeValue(value) {
 export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftResult, setDraftResult] = useState(result);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("WRONG_FOOD_NAME");
+  const [reportDescription, setReportDescription] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
+  const handleSubmitReport = async () => {
+    setIsSubmittingReport(true);
+    const toastId = toast.loading("Đang gửi báo cáo lỗi...");
+    try {
+      await submitAiErrorReport({
+        mealRecordId: result.savedMealId || null,
+        aiAnalysisLogId: result.analysisLogId || null,
+        reason: reportReason,
+        description: reportDescription,
+      });
+      toast.success("Báo cáo lỗi nhận diện AI thành công. Cảm ơn phản hồi từ bạn!", { id: toastId });
+      setShowReportModal(false);
+      setReportDescription("");
+    } catch (error) {
+      toast.error(error.message || "Gửi báo cáo thất bại.", { id: toastId });
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
 
   if (!result) {
     return (
@@ -347,6 +374,83 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
             <Pencil size={18} />
             Chỉnh sửa kết quả
           </button>
+
+          <button
+            type="button"
+            onClick={() => setShowReportModal(true)}
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white text-sm font-semibold text-rose-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-50 active:scale-[0.98] dark:border-rose-950/30 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
+          >
+            <AlertTriangle size={18} />
+            Báo lỗi nhận diện AI
+          </button>
+        </div>
+      )}
+
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl space-y-6 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" size={20} />
+                Báo cáo lỗi nhận diện AI
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                className="h-8 w-8 rounded-full bg-slate-100 hover:bg-rose-500 text-slate-500 hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer transition-colors dark:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Lý do lỗi
+                </label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-white cursor-pointer"
+                >
+                  <option value="WRONG_FOOD_NAME">Sai tên món ăn</option>
+                  <option value="WRONG_NUTRITION">Sai lượng calo/dinh dưỡng</option>
+                  <option value="WRONG_PRICE">Sai giá tiền ước lượng</option>
+                  <option value="OTHER">Lý do khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Mô tả chi tiết lỗi
+                </label>
+                <textarea
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Vui lòng nhập chi tiết phản hồi của bạn để giúp chúng tôi hoàn thiện hơn..."
+                  className="mt-2 w-full min-h-[100px] rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitReport}
+                disabled={isSubmittingReport}
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 transition-all cursor-pointer hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {isSubmittingReport ? "Đang gửi..." : "Gửi báo cáo"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>
