@@ -1,6 +1,4 @@
 import {
-  Bell,
-  Bot,
   Check,
   Lock,
   Moon,
@@ -81,16 +79,29 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  const hasUnsavedChanges =
-    settingsState &&
-    savedSettingsState &&
-    JSON.stringify(settingsState) !== JSON.stringify(savedSettingsState);
+  // Tính toán thay đổi chưa lưu, bỏ qua trường "theme" vì theme
+  // được quản lý riêng bởi ThemeContext và thay đổi ngay lập tức.
+  const hasUnsavedChanges = (() => {
+    if (!settingsState || !savedSettingsState) return false;
+    // eslint-disable-next-line no-unused-vars
+    const { theme: _t1, ...rest1 } = settingsState;
+    // eslint-disable-next-line no-unused-vars
+    const { theme: _t2, ...rest2 } = savedSettingsState;
+    return JSON.stringify(rest1) !== JSON.stringify(rest2);
+  })();
 
   function handleChange(key, value) {
     setSettingsState((current) => ({
       ...current,
       [key]: value,
     }));
+  }
+
+  // Đổi theme ngay lập tức (không cần nhấn Lưu)
+  function handleThemeChange(newTheme) {
+    setTheme(newTheme);
+    setSettingsState((curr) => ({ ...curr, theme: newTheme }));
+    setSavedSettingsState((curr) => ({ ...curr, theme: newTheme }));
   }
 
   async function handleSaveSettings() {
@@ -324,59 +335,30 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
-                        onClick={() => {
-                          setTheme("light");
-                          handleChange("theme", "light");
-                        }}
-                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${theme === "light"
+                        onClick={() => handleThemeChange("light")}
+                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                          theme === "light"
                             ? "border-amber-500 bg-amber-50/60 text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-300"
                             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
-                          }`}
+                        }`}
                       >
                         <Sun size={18} className="text-amber-500" />
                         Giao diện Sáng
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setTheme("dark");
-                          handleChange("theme", "dark");
-                        }}
-                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${theme === "dark"
+                        onClick={() => handleThemeChange("dark")}
+                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                          theme === "dark"
                             ? "border-emerald-500 bg-emerald-50/60 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
-                          }`}
+                        }`}
                       >
                         <Moon size={18} className="text-emerald-400" />
                         Giao diện Tối
                       </button>
                     </div>
                   </div>
-                </div>
-              </SettingsCard>
-
-              <SettingsCard title="Thông báo" icon={<Bell size={18} />}>
-                <div className="space-y-3">
-                  <ToggleRow
-                    label="Email khi AI phân tích xong"
-                    value={settingsState.email_analysis_ready}
-                    onToggle={() => handleChange("email_analysis_ready", !settingsState.email_analysis_ready)}
-                  />
-                  <ToggleRow
-                    label="Cảnh báo khi gần vượt ngân sách"
-                    value={settingsState.budget_warning_push}
-                    onToggle={() => handleChange("budget_warning_push", !settingsState.budget_warning_push)}
-                  />
-                </div>
-              </SettingsCard>
-
-              <SettingsCard title="Tự động hóa" icon={<Bot size={18} />}>
-                <div className="space-y-3">
-                  <ToggleRow
-                    label="Tự tạo khoản chi từ bữa ăn"
-                    value={settingsState.auto_create_expense}
-                    onToggle={() => handleChange("auto_create_expense", !settingsState.auto_create_expense)}
-                  />
                 </div>
               </SettingsCard>
 
@@ -521,28 +503,6 @@ function SettingsInput({ label, type = "text", value, onChange, options, suffix,
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function ToggleRow({ label, value, onToggle }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
-      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</p>
-
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full border transition-colors ${value
-            ? "border-slate-950 bg-slate-950 dark:border-emerald-500 dark:bg-emerald-600"
-            : "border-slate-300 bg-slate-200 dark:border-slate-700 dark:bg-slate-800"
-          }`}
-      >
-        <span
-          className={`absolute h-6 w-6 rounded-full bg-white transition-transform ${value ? "translate-x-7" : "translate-x-1"
-            }`}
-        />
-      </button>
     </div>
   );
 }
