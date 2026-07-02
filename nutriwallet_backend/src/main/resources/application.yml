@@ -119,9 +119,9 @@ facebook:
   app-secret: ${FACEBOOK_CLIENT_SECRET:123456789012345}
 
 gemini:
-  api-key: ${GEMINI_API_KEY}
-  model: ${GEMINI_MODEL:gemini-2.5-flash}
-  fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-2.5-flash-lite}
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
+  fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-2.5-flash}
   max-output-tokens: ${GEMINI_MAX_OUTPUT_TOKENS:512}
   retry:
     max-attempts: ${GEMINI_RETRY_MAX_ATTEMPTS:3}
