@@ -218,3 +218,34 @@ export async function fetchAllUsers() {
     };
   }
 }
+
+export async function linkMessengerAccount(code) {
+  try {
+    const res = await api.post("/api/messenger/accounts/link", { code });
+    return {
+      data: unwrapApiData(res),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: extractApiMessage(error, "Không thể liên kết tài khoản Messenger."),
+    };
+  }
+}
+
+export async function unlinkMessengerAccount() {
+  try {
+    const res = await api.delete("/api/messenger/accounts/unlink");
+    return {
+      data: unwrapApiData(res),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: extractApiMessage(error, "Không thể hủy liên kết tài khoản Messenger."),
+    };
+  }
+}
+

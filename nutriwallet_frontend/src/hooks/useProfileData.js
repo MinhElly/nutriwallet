@@ -3,6 +3,8 @@ import {
   fetchProfileData,
   getProfileData,
   updateProfile as serviceUpdateProfile,
+  linkMessengerAccount,
+  unlinkMessengerAccount,
 } from "../services/profile.service";
 
 export function useProfileData() {
@@ -10,6 +12,18 @@ export function useProfileData() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const refetchProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await fetchProfileData();
+      setProfileData(result.data);
+      setError(result.error ?? "");
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -50,5 +64,40 @@ export function useProfileData() {
     [profileData],
   );
 
-  return { profileData, updateProfile, loading, saving, error };
+  const linkAccount = useCallback(async (code) => {
+    setSaving(true);
+    try {
+      const result = await linkMessengerAccount(code);
+      if (!result.error) {
+        await refetchProfile();
+      }
+      return result;
+    } finally {
+      setSaving(false);
+    }
+  }, [refetchProfile]);
+
+  const unlinkAccount = useCallback(async () => {
+    setSaving(true);
+    try {
+      const result = await unlinkMessengerAccount();
+      if (!result.error) {
+        await refetchProfile();
+      }
+      return result;
+    } finally {
+      setSaving(false);
+    }
+  }, [refetchProfile]);
+
+  return {
+    profileData,
+    updateProfile,
+    refetchProfile,
+    linkAccount,
+    unlinkAccount,
+    loading,
+    saving,
+    error,
+  };
 }
