@@ -82,7 +82,7 @@ export default function DashboardHeader({
   return (
     <header className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div>
-        <h2 className="whitespace-nowrap text-3xl font-normal tracking-[-0.04em] sm:text-4xl xl:text-[40px]">
+        <h2 className="text-2xl font-normal tracking-[-0.04em] sm:text-3xl md:text-4xl xl:text-[40px] leading-tight">
           <span className="text-slate-900 dark:text-white">
             <Typewriter
               text={`${greeting.icon} ${greeting.text}, `}

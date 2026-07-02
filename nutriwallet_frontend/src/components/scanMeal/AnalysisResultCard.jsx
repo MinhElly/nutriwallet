@@ -211,7 +211,7 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
         </div>
       ) : (
         <div className="mt-5 space-y-3">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <NutritionCard
               icon={Flame}
               label="Calories"

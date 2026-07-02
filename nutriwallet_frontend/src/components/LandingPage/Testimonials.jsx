@@ -37,7 +37,7 @@ const Testimonials = () => {
             <p className="text-[10px] font-medium tracking-widest uppercase text-green-500 mb-4">Cộng đồng</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[0.95] mb-4">
+            <h2 className="text-3xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[1.1] sm:leading-[0.95] mb-4">
               Người dùng nói gì?
             </h2>
           </Reveal>
