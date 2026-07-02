@@ -5,7 +5,7 @@ import {
   fetchExpenseHistory,
 } from "./expense.service";
 import { fetchMealHistory } from "./meal.service";
-import { getDashboardSnapshot, aiRecommendations } from "../data/dashboardData";
+import { aiRecommendations } from "../data/dashboardData";
 import { getInclusiveDayCount, getPeriodRange } from "../utils/date";
 
 const currencyFormatter = new Intl.NumberFormat("en-US");
@@ -67,7 +67,8 @@ function filterMealsByRange(meals, startDateValue, endDateValue) {
 function filterExpensesByRange(expenses, startDateValue, endDateValue) {
   return expenses.filter(
     (expense) =>
-      expense.expenseDate >= startDateValue && expense.expenseDate <= endDateValue,
+      expense.expenseDate >= startDateValue &&
+      expense.expenseDate <= endDateValue,
   );
 }
 
@@ -100,6 +101,43 @@ function getBudgetRangeAmount(budget, selectedDayCount) {
   );
 
   return Math.round((Number(budget.amount) * selectedDayCount) / totalBudgetDays);
+}
+
+function buildEmptySnapshot(selectedDate, selectedPeriod) {
+  const { startDate, endDate } = getPeriodRange(selectedDate, selectedPeriod);
+
+  return {
+    budgetSummary: {
+      amount: "0 VND",
+      period: selectedPeriod,
+      duration: `${formatDisplayDate(toDateString(startDate))} - ${formatDisplayDate(toDateString(endDate))}`,
+      warningThreshold: 80,
+      usedPercent: 0,
+      spent: "0 VND",
+      remaining: "0 VND",
+    },
+    budgetUsage: [{ name: "Đã dùng", value: 0, fill: "#059669" }],
+    mealSummary: {
+      totalMeals: 0,
+      totalCalories: "0 kcal",
+      helperText:
+        selectedPeriod === "Hôm nay"
+          ? "Bữa ăn trong ngày đã chọn"
+          : `Bữa ăn trong ${selectedPeriod.toLowerCase()}`,
+    },
+    expenseSummary: {
+      totalExpenses: 0,
+      totalAmount: "0 VND",
+      helperText:
+        selectedPeriod === "Hôm nay"
+          ? "Khoản chi trong ngày đã chọn"
+          : `Khoản chi trong ${selectedPeriod.toLowerCase()}`,
+    },
+    mealTrend: [],
+    expenseTrend: [],
+    meals: [],
+    expenses: [],
+  };
 }
 
 function buildDashboardSnapshotFromApi({
@@ -224,10 +262,7 @@ async function fetchDashboardSummary(selectedPeriod) {
         : null;
 
   if (!endpoint) {
-    return {
-      data: null,
-      error: null,
-    };
+    return { data: null, error: null };
   }
 
   try {
@@ -244,11 +279,10 @@ async function fetchDashboardSummary(selectedPeriod) {
 }
 
 export function getDashboardData(selectedDate, selectedPeriod) {
-  return getDashboardSnapshot(selectedDate, selectedPeriod);
+  return buildEmptySnapshot(selectedDate, selectedPeriod);
 }
 
 export async function fetchDashboardData(selectedDate, selectedPeriod) {
-  const fallback = getDashboardData(selectedDate, selectedPeriod);
   const [summaryResult, mealResult, expenseResult, budgetResult] =
     await Promise.all([
       fetchDashboardSummary(selectedPeriod),
@@ -275,13 +309,13 @@ export async function fetchDashboardData(selectedDate, selectedPeriod) {
     };
   } catch {
     return {
-      data: fallback,
+      data: buildEmptySnapshot(selectedDate, selectedPeriod),
       error:
         summaryResult.error ||
         mealResult.error ||
         expenseResult.error ||
         budgetResult.error ||
-        "Không thể tải dashboard. Đang dùng dữ liệu mẫu.",
+        "Không thể tải dashboard.",
     };
   }
 }
@@ -289,14 +323,13 @@ export async function fetchDashboardData(selectedDate, selectedPeriod) {
 export async function getAiRecommendations() {
   try {
     const list = unwrapApiData(await api.get("/api/ai/recommendations"));
-    return list.map(rec => ({
+    return list.map((rec) => ({
       id: rec.id,
       content: rec.content,
       type: rec.type,
-      tone: rec.tone
+      tone: rec.tone,
     }));
-  } catch (error) {
-    console.error("Failed to fetch AI recommendations, using mock fallback", error);
-    return aiRecommendations;
+  } catch {
+    return aiRecommendations; // empty array
   }
 }

@@ -31,19 +31,19 @@ const Hero = () => {
 
             {/* Headline */}
             <Reveal delay={0.1}>
-              <h1 className="text-5xl sm:text-[64px] font-normal tracking-[-0.04em] leading-[0.95] text-gray-950 mb-6">
-                <span className="whitespace-nowrap">Chụp ảnh.{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400">
+              <h1 className="text-4xl sm:text-[64px] font-normal tracking-[-0.04em] leading-[1.05] sm:leading-[0.95] text-gray-950 mb-6">
+                <span>Chụp ảnh.{" "}</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400 block sm:inline">
                   Hiểu ngay
-                </span></span>
-                <br />
+                </span>
+                <br className="hidden sm:inline" />{" "}
                 sức khỏe & ví tiền.
               </h1>
             </Reveal>
 
             {/* Sub-copy */}
             <Reveal delay={0.2}>
-              <p className="text-[17px] text-gray-500 leading-[1.7] mb-10 font-light">
+              <p className="text-[16px] sm:text-[17px] text-gray-500 leading-[1.7] mb-10 font-light pr-4 sm:pr-0">
                 AI phân tích món ăn, calories và chi tiêu chỉ trong vài giây.
                 Một ứng dụng duy nhất cho cả dinh dưỡng lẫn ngân sách.
               </p>

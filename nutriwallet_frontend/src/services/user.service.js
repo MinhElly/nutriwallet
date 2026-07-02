@@ -7,57 +7,51 @@ import api, {
 } from "./api";
 import { mapCurrentUser } from "./auth.service";
 import { uploadImage } from "./storage.service";
-import {
-  applyProfileDataUpdates,
-  profileData as fallbackProfileData,
-} from "../data/accountData";
+import { applyProfileDataUpdates } from "../data/accountData";
 
-function mapStoredUserToProfileUser(storedUser, fallbackUser = {}) {
+function mapStoredUserToProfileUser(storedUser) {
   if (!storedUser) {
-    return fallbackUser;
+    return null;
   }
 
   return {
-    ...fallbackUser,
-    id: storedUser.id ?? fallbackUser.id,
-    fullName: storedUser.fullName ?? fallbackUser.fullName,
-    email: storedUser.email ?? fallbackUser.email,
-    avatarUrl: storedUser.avatarUrl ?? fallbackUser.avatarUrl,
-    role: storedUser.rawRole ?? storedUser.role ?? fallbackUser.role,
-    status: storedUser.status ?? fallbackUser.status,
-    provider: storedUser.provider ?? fallbackUser.provider,
-    createdAt: storedUser.createdAt ?? fallbackUser.createdAt,
-    updatedAt: storedUser.updatedAt ?? fallbackUser.updatedAt,
+    id: storedUser.id,
+    fullName: storedUser.fullName ?? storedUser.full_name ?? "",
+    email: storedUser.email ?? "",
+    avatarUrl: storedUser.avatarUrl ?? storedUser.avatar_url ?? "",
+    role: storedUser.rawRole ?? storedUser.role ?? "USER",
+    status: storedUser.status ?? "ACTIVE",
+    provider: storedUser.provider ?? "LOCAL",
+    createdAt: storedUser.createdAt ?? null,
+    updatedAt: storedUser.updatedAt ?? null,
   };
 }
 
-function getFallbackProfileData() {
+function getEmptyProfile() {
   const storedUser = getStoredUser();
 
   return {
-    ...fallbackProfileData,
-    user: mapStoredUserToProfileUser(storedUser, {
-      ...fallbackProfileData.user,
-    }),
+    user: mapStoredUserToProfileUser(storedUser),
+    emailVerification: null,
+    chatbotProfile: null,
     stats: {
-      ...fallbackProfileData.stats,
+      mealCount: 0,
+      expenseCount: 0,
+      currentBudget: 0,
+      memberSince: "—",
     },
-    emailVerification: fallbackProfileData.emailVerification
-      ? { ...fallbackProfileData.emailVerification }
-      : null,
-    chatbotProfile: fallbackProfileData.chatbotProfile
-      ? { ...fallbackProfileData.chatbotProfile }
-      : null,
   };
 }
 
-function mergeProfileData(apiUser, fallback = getFallbackProfileData()) {
+function mergeProfileData(apiUser, fallback = getEmptyProfile()) {
   const user = fallback.user ?? {};
-  
-  const memberSince = apiUser?.createdAt ? new Date(apiUser.createdAt).toLocaleDateString("vi-VN", {
-    month: "2-digit",
-    year: "numeric"
-  }) : (fallback.stats?.memberSince || "02/2026");
+
+  const memberSince = apiUser?.createdAt
+    ? new Date(apiUser.createdAt).toLocaleDateString("vi-VN", {
+        month: "2-digit",
+        year: "numeric",
+      })
+    : fallback.stats?.memberSince || "—";
 
   return {
     ...fallback,
@@ -73,22 +67,24 @@ function mergeProfileData(apiUser, fallback = getFallbackProfileData()) {
       createdAt: apiUser?.createdAt ?? user.createdAt,
       updatedAt: apiUser?.updatedAt ?? user.updatedAt,
     },
-    chatbotProfile: apiUser?.chatbotProfile ? {
-      id: apiUser.chatbotProfile.id,
-      psid: apiUser.chatbotProfile.psid,
-      platform: apiUser.chatbotProfile.platform,
-      linkedAt: apiUser.chatbotProfile.linkedAt,
-      guestSessionCode: apiUser.chatbotProfile.guestSessionCode,
-    } : null,
+    chatbotProfile: apiUser?.chatbotProfile
+      ? {
+          id: apiUser.chatbotProfile.id,
+          psid: apiUser.chatbotProfile.psid,
+          platform: apiUser.chatbotProfile.platform,
+          linkedAt: apiUser.chatbotProfile.linkedAt,
+          guestSessionCode: apiUser.chatbotProfile.guestSessionCode,
+        }
+      : null,
     stats: {
       ...fallback.stats,
-      memberSince: memberSince,
-    }
+      memberSince,
+    },
   };
 }
 
 export function getProfileData() {
-  return getFallbackProfileData();
+  return getEmptyProfile();
 }
 
 export async function fetchProfileData() {
@@ -104,7 +100,7 @@ export async function fetchProfileData() {
   } catch (error) {
     return {
       data: fallback,
-      error: extractApiMessage(error, "Khong the tai ho so. Dang dung du lieu mau."),
+      error: extractApiMessage(error, "Không thể tải hồ sơ."),
     };
   }
 }
@@ -161,7 +157,7 @@ export async function updateCurrentUser(
   } catch (error) {
     return {
       data: currentProfile,
-      error: extractApiMessage(error, "Khong the cap nhat ho so luc nay."),
+      error: extractApiMessage(error, "Không thể cập nhật hồ sơ lúc này."),
     };
   }
 }
@@ -169,39 +165,6 @@ export async function updateCurrentUser(
 export async function getCurrentUser() {
   return unwrapApiData(await api.get("/api/users/me"));
 }
-
-const fallbackUsersList = [
-  {
-    id: 1,
-    fullName: "Nguyễn Văn A",
-    email: "vana@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=33",
-    role: "Người dùng",
-    rawRole: "USER",
-    status: "ACTIVE",
-    createdAt: "2026-06-01T09:00:00Z"
-  },
-  {
-    id: 2,
-    fullName: "Trần Thị B",
-    email: "thib@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=47",
-    role: "Người dùng",
-    rawRole: "USER",
-    status: "ACTIVE",
-    createdAt: "2026-06-15T14:30:00Z"
-  },
-  {
-    id: 3,
-    fullName: "Lê Văn Admin",
-    email: "admin@nutriwallet.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=12",
-    role: "Admin",
-    rawRole: "ADMIN",
-    status: "ACTIVE",
-    createdAt: "2026-05-20T08:00:00Z"
-  }
-];
 
 export async function fetchAllUsers() {
   try {
@@ -211,10 +174,10 @@ export async function fetchAllUsers() {
       error: null,
     };
   } catch (error) {
-    console.warn("API fetchAllUsers failed, using fallback mock data.", error);
+    console.warn("API fetchAllUsers failed.", error);
     return {
-      data: fallbackUsersList,
-      error: null,
+      data: [],
+      error: extractApiMessage(error, "Không thể tải danh sách người dùng."),
     };
   }
 }
