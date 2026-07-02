@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatbotMessageRepository extends JpaRepository<ChatbotMessage, Long> {
     List<ChatbotMessage> findAllByChatbotProfileIdOrderByCreatedAtDesc(Long chatbotProfileId);
+
+    long countByChatbotProfileIdAndIsFromUser(Long chatbotProfileId, boolean isFromUser);
 }
