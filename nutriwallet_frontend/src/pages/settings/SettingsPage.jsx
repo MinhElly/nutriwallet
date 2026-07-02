@@ -83,7 +83,9 @@ export default function SettingsPage() {
   // được quản lý riêng bởi ThemeContext và thay đổi ngay lập tức.
   const hasUnsavedChanges = (() => {
     if (!settingsState || !savedSettingsState) return false;
+    // eslint-disable-next-line no-unused-vars
     const { theme: _t1, ...rest1 } = settingsState;
+    // eslint-disable-next-line no-unused-vars
     const { theme: _t2, ...rest2 } = savedSettingsState;
     return JSON.stringify(rest1) !== JSON.stringify(rest2);
   })();

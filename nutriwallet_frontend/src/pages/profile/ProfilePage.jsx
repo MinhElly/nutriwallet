@@ -1,7 +1,6 @@
 import {
   BadgeCheck,
   Pencil,
-  Share2,
   Wallet,
   X,
 } from "lucide-react";
@@ -111,7 +110,6 @@ export default function ProfilePage() {
   const { user, stats } = profileData;
   const avatarPreviewUrlRef = useRef("");
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [shareLabel, setShareLabel] = useState("Chia sẻ");
   const [profileMeta, setProfileMeta] = useState(readProfileMeta);
   const [profileForm, setProfileForm] = useState(() =>
     createProfileForm(user, readProfileMeta()),
@@ -143,28 +141,6 @@ export default function ProfilePage() {
     profileMeta.interestThree,
   ].filter(Boolean);
 
-  async function handleShareProfile() {
-    const shareText = `${user.fullName}\n${user.email}\n${profileMeta.headline}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Hồ sơ ${user.fullName}`,
-          text: shareText,
-        });
-        setShareLabel("Đã chia sẻ");
-        window.setTimeout(() => setShareLabel("Chia sẻ"), 2000);
-        return;
-      }
-
-      await navigator.clipboard.writeText(shareText);
-      setShareLabel("Đã sao chép");
-      window.setTimeout(() => setShareLabel("Chia sẻ"), 2000);
-    } catch {
-      setShareLabel("Chưa chia sẻ");
-      window.setTimeout(() => setShareLabel("Chia sẻ"), 2000);
-    }
-  }
 
   function handleProfileFieldChange(event) {
     const { name, value } = event.target;

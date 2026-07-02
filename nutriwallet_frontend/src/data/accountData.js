@@ -48,8 +48,8 @@ function mapSettingsSection(section) {
   };
 }
 
-export function mapExpenseHistoryData(expenses = [], meals = []) {
-  return expenses.map((expense, index) => ({
+export function mapExpenseHistoryData(expenses = []) {
+  return expenses.map((expense) => ({
     id: expense.id,
     userId: expense.userId ?? null,
     mealRecordId: expense.mealRecordId ?? null,
