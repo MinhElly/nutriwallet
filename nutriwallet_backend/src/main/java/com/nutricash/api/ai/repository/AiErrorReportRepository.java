@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AiErrorReportRepository extends JpaRepository<AiErrorReport, Long> {
 
+    List<AiErrorReport> findAllByOrderByCreatedAtDesc();
+
     List<AiErrorReport> findAllByStatusOrderByCreatedAtDesc(AiErrorReportStatus status);
 
     List<AiErrorReport> findAllByMealRecordIdOrderByCreatedAtDesc(Long mealRecordId);

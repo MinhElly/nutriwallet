@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nutricash.api.ai.service.AiPromptBuilder;
 import com.nutricash.api.ai.service.AiProviderService;
+import com.nutricash.api.ai.repository.AiErrorReportRepository;
+import com.nutricash.api.ai.entity.AiErrorReport;
+import com.nutricash.api.common.enums.AiErrorReportStatus;
 import com.nutricash.api.common.enums.ChatbotMessageType;
 import com.nutricash.api.common.enums.ChatbotPlatform;
 import com.nutricash.api.common.enums.ExpenseCategory;
@@ -51,6 +54,7 @@ public class MessengerWebhookService {
     private final ExpenseRepository expenseRepository;
     private final AiProviderService aiProviderService;
     private final AiPromptBuilder aiPromptBuilder;
+    private final AiErrorReportRepository errorReports;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -236,17 +240,25 @@ public class MessengerWebhookService {
                 originalPrice = existingExpense.get().getAmount();
             }
 
-            String prompt = "You are an AI assistant parsing chatbot confirmation or updates for a logged meal.\n" +
+            String prompt = "You are an AI assistant parsing chatbot confirmation, updates, or error reports for a logged meal.\n" +
                     "The original logged meal is: Name = \"" + meal.getMealName() + "\", Price = " + originalPrice + " VND.\n" +
                     "The user's message is: \"" + userText + "\"\n\n" +
-                    "Determine if the user is confirming or updating the meal name or price.\n" +
-                    "- If they say something like \"ok\", \"chuẩn\", \"đúng rồi\", \"xác nhận\", \"đúng\", set confirmed = true.\n" +
-                    "- If they say something like \"cập nhật cơm tấm 45k\", \"sửa thành phở bò 50000\", \"cơm sườn 45000\", extract the updated details.\n\n" +
+                    "Determine if the user is:\n" +
+                    "1. Confirming or updating the meal name or price:\n" +
+                    "   - If they say something like \"ok\", \"chuẩn\", \"đúng rồi\", \"xác nhận\", \"đúng\", set confirmed = true.\n" +
+                    "   - If they say something like \"cập nhật cơm tấm 45k\", \"sửa thành phở bò 50000\", \"cơm sườn 45000\", extract the updated details.\n" +
+                    "2. Complaining or reporting that the AI made a mistake (e.g., \"sai rồi\", \"nhận diện sai\", \"không đúng\", \"calo bị sai\", \"tào lao\", \"báo lỗi\"):\n" +
+                    "   - Set isErrorReport = true.\n" +
+                    "   - Extract errorReason: a short description of the error category (e.g. \"WRONG_FOOD_NAME\", \"WRONG_NUTRITION\", \"WRONG_PRICE\", or \"OTHER\").\n" +
+                    "   - Extract errorDescription: the user's feedback detail.\n\n" +
                     "Return ONLY a JSON object with the following fields:\n" +
-                    "\"isUpdate\" (boolean, true if they want to confirm or update name/price, false otherwise),\n" +
+                    "\"isUpdate\" (boolean, true if they want to confirm/update name/price, false otherwise),\n" +
                     "\"confirmed\" (boolean, true if they explicitly confirm or update details, false otherwise),\n" +
                     "\"updatedFoodName\" (String or null, the new food name if they want to change it),\n" +
-                    "\"updatedPriceVnd\" (number or null, the new price in VND if they want to change/specify it).\n\n" +
+                    "\"updatedPriceVnd\" (number or null, the new price in VND if they want to change/specify it),\n" +
+                    "\"isErrorReport\" (boolean, true if they are reporting an error or complaining about AI accuracy),\n" +
+                    "\"errorReason\" (String or null, e.g., \"WRONG_FOOD_NAME\", \"WRONG_NUTRITION\", \"WRONG_PRICE\", \"OTHER\"),\n" +
+                    "\"errorDescription\" (String or null, detail of the error).\n\n" +
                     "Do not include any markdown format or additional text.";
 
             String rawResponse = aiProviderService.generate(prompt, userText);
@@ -256,8 +268,32 @@ public class MessengerWebhookService {
             JsonNode jsonNode = objectMapper.readTree(cleanJson);
 
             boolean isUpdate = jsonNode.has("isUpdate") && jsonNode.get("isUpdate").asBoolean();
-            if (!isUpdate) {
+            boolean isErrorReport = jsonNode.has("isErrorReport") && jsonNode.get("isErrorReport").asBoolean();
+
+            if (!isUpdate && !isErrorReport) {
                 return false;
+            }
+
+            if (isErrorReport) {
+                String reason = jsonNode.has("errorReason") && !jsonNode.get("errorReason").isNull() 
+                        ? jsonNode.get("errorReason").asText() : "CHATBOT_FEEDBACK_ERROR";
+                String desc = jsonNode.has("errorDescription") && !jsonNode.get("errorDescription").isNull() 
+                        ? jsonNode.get("errorDescription").asText() : userText;
+
+                AiErrorReport errorReport = AiErrorReport.builder()
+                        .user(profile.getUser())
+                        .mealRecord(meal)
+                        .reason(reason)
+                        .description("Báo lỗi từ Chatbot: " + desc)
+                        .status(AiErrorReportStatus.PENDING)
+                        .build();
+                errorReports.save(errorReport);
+
+                String errorMsg = "⚠️ **Đã ghi nhận phản hồi lỗi của bạn!**\n" +
+                        "Cảm ơn phản hồi từ bạn. Chúng tôi đã chuyển thông tin này cho đội ngũ phát triển để cải thiện chất lượng AI. 🛠️";
+                sendFacebookMessage(profile.getPsid(), errorMsg);
+                saveMessage(profile, ChatbotMessageType.TEXT, errorMsg, null, false);
+                return true;
             }
 
             boolean confirmed = jsonNode.has("confirmed") && jsonNode.get("confirmed").asBoolean();

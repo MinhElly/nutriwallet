@@ -1,11 +1,14 @@
 package com.nutricash.api.ai.repository;
 
+import com.nutricash.api.common.enums.AiAnalysisStatus;
 import com.nutricash.api.ai.entity.AiAnalysisLog;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AiAnalysisLogRepository extends JpaRepository<AiAnalysisLog, Long> {
+
+    List<AiAnalysisLog> findAllByStatusOrderByCreatedAtDesc(AiAnalysisStatus status);
 
     List<AiAnalysisLog> findAllByMealRecordIdOrderByCreatedAtDesc(Long mealRecordId);
 

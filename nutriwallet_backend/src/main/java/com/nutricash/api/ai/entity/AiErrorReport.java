@@ -39,8 +39,8 @@ public class AiErrorReport extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "meal_record_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "meal_record_id")
     private MealRecord mealRecord;
 
     @ManyToOne(fetch = FetchType.LAZY)
