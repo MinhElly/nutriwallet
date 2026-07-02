@@ -301,15 +301,6 @@ export default function ProfilePage() {
               <Pencil size={17} />
               Sửa hồ sơ
             </button>
-
-            <button
-              type="button"
-              onClick={handleShareProfile}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-            >
-              <Share2 size={17} />
-              {shareLabel}
-            </button>
           </div>
         </div>
 
