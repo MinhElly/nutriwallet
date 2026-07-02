@@ -1,4 +1,6 @@
 import {
+  Bell,
+  Bot,
   Check,
   Lock,
   Moon,
@@ -11,6 +13,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import AppShell from "../../components/layout/AppShell";
 import { useTheme } from "../../hooks/useTheme";
 import { useSettingsData } from "../../hooks/useSettingsData";
@@ -25,8 +28,10 @@ function formatSavedTime(date) {
 }
 
 export default function SettingsPage() {
+  const location = useLocation();
   const { settings, loading, error, saveSettings } = useSettingsData();
-  const { profileData, refetchProfile, linkAccount, unlinkAccount } = useProfileData();
+  const { profileData, refetchProfile, linkAccount, unlinkAccount } =
+    useProfileData();
   const { currentUser } = useAuth();
 
   const [linkCode, setLinkCode] = useState("");
@@ -51,7 +56,11 @@ export default function SettingsPage() {
   };
 
   const handleUnlinkMessenger = async () => {
-    if (window.confirm("Bạn có chắc chắn muốn hủy liên kết tài khoản Messenger không?")) {
+    if (
+      window.confirm(
+        "Bạn có chắc chắn muốn hủy liên kết tài khoản Messenger không?",
+      )
+    ) {
       setIsLinking(true);
       const res = await unlinkAccount();
       setIsLinking(false);
@@ -79,15 +88,26 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  // Tính toán thay đổi chưa lưu, bỏ qua trường "theme" vì theme
-  // được quản lý riêng bởi ThemeContext và thay đổi ngay lập tức.
+  useEffect(() => {
+    if (location.hash !== "#messenger-chatbot" || !settingsState) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("messenger-chatbot");
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [location.hash, settingsState]);
+
   const hasUnsavedChanges = (() => {
     if (!settingsState || !savedSettingsState) return false;
-    // eslint-disable-next-line no-unused-vars
-    const { theme: _t1, ...rest1 } = settingsState;
-    // eslint-disable-next-line no-unused-vars
-    const { theme: _t2, ...rest2 } = savedSettingsState;
-    return JSON.stringify(rest1) !== JSON.stringify(rest2);
+    const settingsSnapshot = { ...settingsState };
+    const savedSnapshot = { ...savedSettingsState };
+    delete settingsSnapshot.theme;
+    delete savedSnapshot.theme;
+    return JSON.stringify(settingsSnapshot) !== JSON.stringify(savedSnapshot);
   })();
 
   function handleChange(key, value) {
@@ -124,7 +144,9 @@ export default function SettingsPage() {
         <div className="flex h-[60vh] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500"></div>
-            <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-400">Đang tải cài đặt...</p>
+            <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Đang tải cài đặt...
+            </p>
           </div>
         </div>
       </AppShell>
@@ -135,7 +157,9 @@ export default function SettingsPage() {
     <AppShell pageLabel="Cài đặt">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold xl:text-4xl text-slate-950 dark:text-white">Cài đặt hệ thống</h1>
+          <h1 className="text-3xl font-bold xl:text-4xl text-slate-950 dark:text-white">
+            Cài đặt hệ thống
+          </h1>
         </div>
 
         <div className="flex items-center gap-3">
@@ -158,7 +182,11 @@ export default function SettingsPage() {
             ) : (
               <Check size={18} />
             )}
-            {isSaving ? "Đang lưu..." : hasUnsavedChanges ? "Lưu cấu hình" : "Đã lưu"}
+            {isSaving
+              ? "Đang lưu..."
+              : hasUnsavedChanges
+                ? "Lưu cấu hình"
+                : "Đã lưu"}
           </button>
         </div>
       </div>
@@ -191,13 +219,20 @@ export default function SettingsPage() {
                   </div>
 
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {profileData?.user?.email} {profileData?.chatbotProfile ? `• ${profileData.chatbotProfile.platform}` : ""}
+                    {profileData?.user?.email}{" "}
+                    {profileData?.chatbotProfile
+                      ? `• ${profileData.chatbotProfile.platform}`
+                      : ""}
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     <ProfilePill text="Email đã xác minh" />
-                    {profileData?.chatbotProfile && <ProfilePill text="Messenger đã kết nối" />}
-                    <ProfilePill text={`Provider ${profileData?.user?.provider || "LOCAL"}`} />
+                    {profileData?.chatbotProfile && (
+                      <ProfilePill text="Messenger đã kết nối" />
+                    )}
+                    <ProfilePill
+                      text={`Provider ${profileData?.user?.provider || "LOCAL"}`}
+                    />
                   </div>
                 </div>
               </div>
@@ -212,15 +247,22 @@ export default function SettingsPage() {
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
             {/* Health & Finance Profile Settings Card */}
-            <SettingsCard title="Hồ sơ Sức khỏe & Tài chính" icon={<Heart size={18} className="text-rose-500" />}>
+            <SettingsCard
+              title="Hồ sơ Sức khỏe & Tài chính"
+              icon={<Heart size={18} className="text-rose-500" />}
+            >
               <div className="space-y-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/30">
                   <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 mb-1">
                     <Sparkles size={16} className="text-emerald-500" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Phân tích cá nhân hóa bởi AI</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Phân tích cá nhân hóa bởi AI
+                    </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    AI sẽ dựa vào các thông số dưới đây để phân tích thể chất, dinh dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù hợp nhất cho bạn.
+                    AI sẽ dựa vào các thông số dưới đây để phân tích thể chất,
+                    dinh dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù
+                    hợp nhất cho bạn.
                   </p>
                 </div>
 
@@ -271,8 +313,14 @@ export default function SettingsPage() {
                   onChange={(val) => handleChange("activityLevel", val)}
                   options={[
                     { label: "Ít vận động (văn phòng)", value: "SEDENTARY" },
-                    { label: "Nhẹ nhàng (1-3 ngày/tuần)", value: "LIGHTLY_ACTIVE" },
-                    { label: "Vừa phải (3-5 ngày/tuần)", value: "MODERATELY_ACTIVE" },
+                    {
+                      label: "Nhẹ nhàng (1-3 ngày/tuần)",
+                      value: "LIGHTLY_ACTIVE",
+                    },
+                    {
+                      label: "Vừa phải (3-5 ngày/tuần)",
+                      value: "MODERATELY_ACTIVE",
+                    },
                     { label: "Tích cực (6-7 ngày/tuần)", value: "VERY_ACTIVE" },
                   ]}
                 />
@@ -328,10 +376,15 @@ export default function SettingsPage() {
               </SettingsCard>
 
               {/* Theme Settings Card */}
-              <SettingsCard title="Giao diện & Chủ đề" icon={<Palette size={18} />}>
+              <SettingsCard
+                title="Giao diện & Chủ đề"
+                icon={<Palette size={18} />}
+              >
                 <div className="space-y-3">
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                    <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Chế độ giao diện</p>
+                    <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Chế độ giao diện
+                    </p>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
@@ -362,20 +415,68 @@ export default function SettingsPage() {
                 </div>
               </SettingsCard>
 
-              <SettingsCard title="Bảo mật và kết nối" icon={<Lock size={18} />}>
+              <SettingsCard title="Thông báo" icon={<Bell size={18} />}>
+                <div className="space-y-3">
+                  <ToggleRow
+                    label="Email khi AI phân tích xong"
+                    value={settingsState.email_analysis_ready}
+                    onToggle={() =>
+                      handleChange(
+                        "email_analysis_ready",
+                        !settingsState.email_analysis_ready,
+                      )
+                    }
+                  />
+                  <ToggleRow
+                    label="Cảnh báo khi gần vượt ngân sách"
+                    value={settingsState.budget_warning_push}
+                    onToggle={() =>
+                      handleChange(
+                        "budget_warning_push",
+                        !settingsState.budget_warning_push,
+                      )
+                    }
+                  />
+                </div>
+              </SettingsCard>
+
+              <SettingsCard title="Tự động hóa" icon={<Bot size={18} />}>
+                <div className="space-y-3">
+                  <ToggleRow
+                    label="Tự tạo khoản chi từ bữa ăn"
+                    value={settingsState.auto_create_expense}
+                    onToggle={() =>
+                      handleChange(
+                        "auto_create_expense",
+                        !settingsState.auto_create_expense,
+                      )
+                    }
+                  />
+                </div>
+              </SettingsCard>
+
+              <SettingsCard
+                id="messenger-chatbot"
+                title="Bảo mật và kết nối"
+                icon={<Lock size={18} />}
+              >
                 <div className="space-y-3">
                   <ReadOnlyRow label="Email" value={profileData?.user?.email} />
                   <ReadOnlyRow
                     label="Trạng thái email"
-                    value={profileData?.emailVerification?.verifiedAt ? "Đã xác minh" : "Đã xác minh"}
+                    value={
+                      profileData?.emailVerification?.verifiedAt
+                        ? "Đã xác minh"
+                        : "Đã xác minh"
+                    }
                   />
                   {profileData?.chatbotProfile ? (
                     <div className="space-y-3">
-                      <ReadOnlyRow label="Nền tảng Chatbot" value={profileData.chatbotProfile.platform} />
                       <ReadOnlyRow
-                        label="Trạng thái"
-                        value="Đã liên kết"
+                        label="Nền tảng Chatbot"
+                        value={profileData.chatbotProfile.platform}
                       />
+                      <ReadOnlyRow label="Trạng thái" value="Đã liên kết" />
                       <button
                         type="button"
                         onClick={handleUnlinkMessenger}
@@ -389,10 +490,14 @@ export default function SettingsPage() {
                     <div className="mt-2 rounded-2xl border border-slate-200 bg-emerald-50/30 p-4 dark:border-slate-800 dark:bg-emerald-950/10">
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                         <MessageCircle size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wider">Messenger Chatbot</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Messenger Chatbot
+                        </span>
                       </div>
                       <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                        Kết nối với chatbot của chúng tôi trên Messenger để có thể theo dõi nhanh thực đơn ăn uống của bạn qua hình ảnh.
+                        Kết nối với chatbot của chúng tôi trên Messenger để có
+                        thể theo dõi nhanh thực đơn ăn uống của bạn qua hình
+                        ảnh.
                       </p>
 
                       <div className="mt-4 space-y-2">
@@ -404,7 +509,9 @@ export default function SettingsPage() {
                           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
                         />
                         {linkError && (
-                          <p className="text-[10px] font-semibold text-red-500">{linkError}</p>
+                          <p className="text-[10px] font-semibold text-red-500">
+                            {linkError}
+                          </p>
                         )}
                         <button
                           type="button"
@@ -417,7 +524,9 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="relative my-3 flex items-center justify-center">
-                        <span className="absolute bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:bg-slate-900">hoặc</span>
+                        <span className="absolute bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:bg-slate-900">
+                          hoặc
+                        </span>
                         <div className="w-full border-t border-slate-100 dark:border-slate-800" />
                       </div>
 
@@ -450,14 +559,19 @@ function ProfilePill({ text }) {
   );
 }
 
-function SettingsCard({ title, icon, children }) {
+function SettingsCard({ id, title, icon, children }) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div
+      id={id}
+      className="scroll-mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+    >
       <div className="mb-5 flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100">
           {icon}
         </div>
-        <h2 className="text-xl font-bold text-slate-950 dark:text-white">{title}</h2>
+        <h2 className="text-xl font-bold text-slate-950 dark:text-white">
+          {title}
+        </h2>
       </div>
 
       {children}
@@ -465,11 +579,21 @@ function SettingsCard({ title, icon, children }) {
   );
 }
 
-function SettingsInput({ label, type = "text", value, onChange, options, suffix, placeholder }) {
+function SettingsInput({
+  label,
+  type = "text",
+  value,
+  onChange,
+  options,
+  suffix,
+  placeholder,
+}) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {label}
+        </p>
 
         <div className="relative w-full sm:max-w-[220px]">
           {type === "select" ? (
@@ -491,8 +615,9 @@ function SettingsInput({ label, type = "text", value, onChange, options, suffix,
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
-                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${suffix ? "pr-12" : ""
-                  }`}
+                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${
+                  suffix ? "pr-12" : ""
+                }`}
               />
               {suffix && (
                 <span className="absolute right-4 text-xs font-bold text-slate-400 dark:text-slate-500">
@@ -507,11 +632,39 @@ function SettingsInput({ label, type = "text", value, onChange, options, suffix,
   );
 }
 
+function ToggleRow({ label, value, onToggle }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {label}
+      </p>
+
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full border transition-colors ${
+          value
+            ? "border-slate-950 bg-slate-950 dark:border-emerald-500 dark:bg-emerald-600"
+            : "border-slate-300 bg-slate-200 dark:border-slate-700 dark:bg-slate-800"
+        }`}
+      >
+        <span
+          className={`absolute h-6 w-6 rounded-full bg-white transition-transform ${
+            value ? "translate-x-7" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 function ReadOnlyRow({ label, value }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
       <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{value || "N/A"}</p>
+      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+        {value || "N/A"}
+      </p>
     </div>
   );
 }
