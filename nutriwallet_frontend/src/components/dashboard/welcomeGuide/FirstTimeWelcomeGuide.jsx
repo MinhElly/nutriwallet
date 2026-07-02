@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Heart, MessageCircleMore, X } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { welcomeGuideContent } from "../../../data/welcomeGuideContent";
@@ -37,8 +37,8 @@ function BrandHeader() {
 
 function HighlightedTitle({ title, nowrap = false }) {
   const highlighted = title
-    .replace(" AI", " <span class=\"text-emerald-500\">AI</span>")
-    .replace(" Messenger", " <span class=\"text-emerald-500\">Messenger</span>");
+    .replace(" AI", ' <span class="text-emerald-500">AI</span>')
+    .replace(" Messenger", ' <span class="text-emerald-500">Messenger</span>');
 
   return (
     <h2
@@ -119,40 +119,53 @@ export default function FirstTimeWelcomeGuide({
     : currentUser?.email
       ? `${GUIDE_STORAGE_PREFIX}:${currentUser.email}`
       : GUIDE_STORAGE_PREFIX;
-  const [isOpen, setIsOpen] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
+  const [dismissedKey, setDismissedKey] = useState(null);
 
-  useEffect(() => {
-    if (!defaultOpen || isLoading || !currentUser) {
-      setIsOpen(false);
-      return;
-    }
-
-    const hasSeenGuide = window.localStorage.getItem(storageKey) === "1";
-    setIsOpen(!hasSeenGuide);
-    setStepIndex(0);
-  }, [defaultOpen, isLoading, currentUser, storageKey]);
+  const hasSeenGuide =
+    typeof window !== "undefined" &&
+    window.localStorage.getItem(storageKey) === "1";
+  const isOpen =
+    defaultOpen &&
+    !isLoading &&
+    !!currentUser &&
+    dismissedKey !== storageKey &&
+    !hasSeenGuide;
 
   const markGuideAsSeen = () => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(storageKey, "1");
     }
 
-    setIsOpen(false);
+    setDismissedKey(storageKey);
   };
 
   if (!isOpen) {
     return null;
   }
 
+  return (
+    <GuideDialog
+      key={storageKey}
+      content={content}
+      onDismiss={markGuideAsSeen}
+      onGoToSettings={() => {
+        markGuideAsSeen();
+        navigate("/settings#messenger-chatbot");
+      }}
+    />
+  );
+}
+
+function GuideDialog({ content, onDismiss, onGoToSettings }) {
   const steps = content.steps;
+  const [stepIndex, setStepIndex] = useState(0);
   const currentStep = steps[stepIndex];
   const isFirstStep = stepIndex === 0;
   const isLastStep = stepIndex === steps.length - 1;
 
   const handleSecondaryAction = () => {
     if (isFirstStep) {
-      markGuideAsSeen();
+      onDismiss();
       return;
     }
 
@@ -161,16 +174,11 @@ export default function FirstTimeWelcomeGuide({
 
   const handlePrimaryAction = () => {
     if (isLastStep) {
-      markGuideAsSeen();
+      onDismiss();
       return;
     }
 
     setStepIndex((currentIndex) => Math.min(currentIndex + 1, steps.length - 1));
-  };
-
-  const handleGoToSettings = () => {
-    markGuideAsSeen();
-    navigate("/settings#messenger-chatbot");
   };
 
   return (
@@ -194,7 +202,7 @@ export default function FirstTimeWelcomeGuide({
           <button
             type="button"
             aria-label="Đóng hướng dẫn"
-            onClick={markGuideAsSeen}
+            onClick={onDismiss}
             className="absolute right-5 top-5 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
           >
             <X size={18} strokeWidth={2} />
@@ -213,7 +221,7 @@ export default function FirstTimeWelcomeGuide({
                   step={currentStep}
                   stepIndex={stepIndex}
                   totalSteps={steps.length}
-                  onGoToSettings={handleGoToSettings}
+                  onGoToSettings={onGoToSettings}
                 />
               </motion.div>
             </AnimatePresence>

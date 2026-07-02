@@ -632,6 +632,32 @@ function SettingsInput({
   );
 }
 
+function ToggleRow({ label, value, onToggle }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {label}
+      </p>
+
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full border transition-colors ${
+          value
+            ? "border-slate-950 bg-slate-950 dark:border-emerald-500 dark:bg-emerald-600"
+            : "border-slate-300 bg-slate-200 dark:border-slate-700 dark:bg-slate-800"
+        }`}
+      >
+        <span
+          className={`absolute h-6 w-6 rounded-full bg-white transition-transform ${
+            value ? "translate-x-7" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 function ReadOnlyRow({ label, value }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
