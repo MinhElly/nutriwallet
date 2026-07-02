@@ -63,7 +63,7 @@ export default function UploadCard({ onAnalyzeSuccess }) {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/jpg,image/heic"
+        accept="image/png,image/jpeg,image/jpg,image/gif,image/heic"
         onChange={handleFileChange}
         className="hidden"
       />
@@ -139,7 +139,7 @@ export default function UploadCard({ onAnalyzeSuccess }) {
             </h2>
 
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              Hỗ trợ JPG, PNG, HEIC. Dung lượng tối đa 10MB.
+              Hỗ trợ JPG, PNG, GIF, HEIC. Dung lượng tối đa 10MB.
             </p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-4">

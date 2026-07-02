@@ -97,8 +97,8 @@ app:
     from: ${MAIL_FROM:${MAIL_USERNAME:}}
   ai:
     provider: ${AI_PROVIDER:GEMINI}
-    api-key: ${AI_API_KEY}
-    model: ${AI_MODEL}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gemini-2.5-flash-lite}
     base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com}
     retry:
       max-attempts: ${AI_RETRY_MAX_ATTEMPTS:3}
@@ -119,12 +119,12 @@ facebook:
   app-secret: ${FACEBOOK_CLIENT_SECRET:123456789012345}
 
 gemini:
-  api-key: ${GEMINI_API_KEY:}
-  model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
-  fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-2.5-flash}
-  max-output-tokens: ${GEMINI_MAX_OUTPUT_TOKENS:512}
+  api-key: ${AI_API_KEY:}
+  model: ${AI_MODEL:gemini-2.5-flash-lite}
+  fallback-model: ${AI_FALLBACK_MODEL:gemini-2.5-flash}
+  max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:512}
   retry:
-    max-attempts: ${GEMINI_RETRY_MAX_ATTEMPTS:3}
-    initial-delay-ms: ${GEMINI_RETRY_INITIAL_DELAY_MS:2000}
-    multiplier: ${GEMINI_RETRY_MULTIPLIER:2}
-    max-delay-ms: ${GEMINI_RETRY_MAX_DELAY_MS:8000}
+    max-attempts: ${AI_RETRY_MAX_ATTEMPTS:3}
+    initial-delay-ms: ${AI_RETRY_INITIAL_DELAY_MS:2000}
+    multiplier: ${AI_RETRY_MULTIPLIER:2}
+    max-delay-ms: ${AI_RETRY_MAX_DELAY_MS:8000}

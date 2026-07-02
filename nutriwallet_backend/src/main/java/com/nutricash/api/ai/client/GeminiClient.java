@@ -35,13 +35,13 @@ public class GeminiClient implements LlmClient {
     private final double retryMultiplier;
     private final long maxDelayMs;
 
-    private final ThreadLocal<String> lastModelUsed = ThreadLocal.withInitial(() -> "gemini-2.5-flash");
+    private final ThreadLocal<String> lastModelUsed = ThreadLocal.withInitial(() -> "gemini-2.5-flash-lite");
 
     public GeminiClient(RestClient.Builder builder,
             @Value("${app.ai.base-url:https://generativelanguage.googleapis.com}") String baseUrl,
             @Value("${gemini.api-key:}") String key,
-            @Value("${gemini.model:gemini-2.5-flash}") String model,
-            @Value("${gemini.fallback-model:gemini-2.5-flash-lite}") String fallbackModel,
+            @Value("${gemini.model:gemini-2.5-flash-lite}") String model,
+            @Value("${gemini.fallback-model:gemini-2.5-flash}") String fallbackModel,
             @Value("${gemini.max-output-tokens:512}") int maxOutputTokens,
             @Value("${gemini.retry.max-attempts:3}") int maxAttempts,
             @Value("${gemini.retry.initial-delay-ms:2000}") long initialDelayMs,
@@ -76,9 +76,14 @@ public class GeminiClient implements LlmClient {
 
         byte[] imageBytes = null;
         String mimeType = "image/jpeg";
-        if (userPrompt.contains("Image URL: ")) {
-            int urlIdx = userPrompt.indexOf("Image URL: ");
-            String imageUrl = userPrompt.substring(urlIdx + 11).trim();
+        String lowerPrompt = userPrompt.toLowerCase();
+        int urlIdx = lowerPrompt.indexOf("image url:");
+        if (urlIdx != -1) {
+            int start = urlIdx + 10;
+            while (start < userPrompt.length() && Character.isWhitespace(userPrompt.charAt(start))) {
+                start++;
+            }
+            String imageUrl = userPrompt.substring(start).trim();
             if (!imageUrl.equalsIgnoreCase("null") && !imageUrl.isBlank()) {
                 try {
                     imageBytes = RestClient.create().get().uri(imageUrl).retrieve().body(byte[].class);

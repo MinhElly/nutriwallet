@@ -16,7 +16,7 @@ public enum ErrorCode {
 
     FILE_EMPTY("FILE_EMPTY", "File is empty"),
     FILE_TOO_LARGE("FILE_TOO_LARGE", "File exceeds the 10 MB limit"),
-    FILE_TYPE_NOT_ALLOWED("FILE_TYPE_NOT_ALLOWED", "Only JPEG, PNG, WebP and HEIC images are allowed"),
+    FILE_TYPE_NOT_ALLOWED("FILE_TYPE_NOT_ALLOWED", "Only JPEG, PNG, WebP, GIF and HEIC images are allowed"),
     FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "Could not upload image"),
     FILE_DELETE_FAILED("FILE_DELETE_FAILED", "Could not delete image"),
 

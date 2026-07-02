@@ -18,7 +18,7 @@ public class CloudinaryStorageService implements FileStorageService {
 
     private static final long MAX_IMAGE_BYTES = 10L * 1024 * 1024;
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"
+            "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/gif"
     );
     private static final String ROOT_FOLDER = "nutriwallet/users/";
 

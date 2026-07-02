@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,11 +54,21 @@ public class MessengerWebhookService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private final Map<String, Boolean> processedMessageIds = Collections.synchronizedMap(new LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+            return size() > 1000;
+        }
+    });
+
     @Value("${app.messenger.verify-token:my_messenger_verify_token}")
     private String verifyToken;
 
     @Value("${app.messenger.page-access-token:}")
     private String pageAccessToken;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     public boolean verifyToken(String mode, String token) {
         return "subscribe".equals(mode) && verifyToken.equals(token);
@@ -80,6 +92,14 @@ public class MessengerWebhookService {
                 var message = messaging.message();
                 if (message == null) {
                     continue;
+                }
+
+                String mid = message.mid();
+                if (mid != null) {
+                    if (processedMessageIds.putIfAbsent(mid, Boolean.TRUE) != null) {
+                        log.info("Duplicate message detected and skipped: {}", mid);
+                        continue;
+                    }
                 }
 
                 try {
@@ -109,6 +129,48 @@ public class MessengerWebhookService {
 
         saveMessage(profile, ChatbotMessageType.TEXT, incomingText, imageUrl, true);
 
+        // Kiểm tra câu hỏi đặc biệt về mã liên kết hoặc tính năng của chatbot
+        if (incomingText != null && !incomingText.isBlank()) {
+            String normalized = normalizeText(incomingText);
+            if (isAskingForLinkCode(normalized)) {
+                if (profile.getUser() == null) {
+                    String msg = "🔑 **Mã liên kết tài khoản Messenger của bạn là:**\n" +
+                            "👉 **" + profile.getGuestSessionCode() + "**\n\n" +
+                            "Vui lòng đăng nhập vào NutriWallet, đi tới phần **Cài đặt** -> **Bảo mật và kết nối** để nhập mã này nhé!\n" +
+                            "🔗 Đăng nhập tại: " + frontendUrl + "/login";
+                    sendFacebookMessage(psid, msg);
+                    saveMessage(profile, ChatbotMessageType.TEXT, msg, null, false);
+                } else {
+                    String msg = "✅ Tài khoản Messenger của bạn đã được liên kết thành công với tài khoản NutriWallet rồi nhé!";
+                    sendFacebookMessage(psid, msg);
+                    saveMessage(profile, ChatbotMessageType.TEXT, msg, null, false);
+                }
+                return;
+            }
+
+            if (isAskingForCapabilities(normalized)) {
+                String msg;
+                if (profile.getUser() == null) {
+                    msg = "🤖 **Mình là trợ lý NutriWallet, mình có thể giúp bạn:**\n\n" +
+                            "1. **Phân tích dinh dưỡng từ ảnh**: Chỉ cần gửi ảnh chụp bữa ăn của bạn 📸\n" +
+                            "2. **Tự động ghi nhật ký ăn uống và chi tiêu**: Tự động ước lượng dinh dưỡng & giá tiền 🍽️💰\n" +
+                            "3. **Giải đáp thắc mắc**: Trả lời các câu hỏi về dinh dưỡng, sức khỏe và tài chính 💬\n\n" +
+                            "👉 Để đồng bộ dữ liệu vào tài khoản của bạn, vui lòng liên kết tài khoản Messenger bằng mã:\n" +
+                            "👉 **" + profile.getGuestSessionCode() + "**\n\n" +
+                            "🔗 Đăng nhập tại: " + frontendUrl + "/login";
+                } else {
+                    msg = "🤖 **Mình là trợ lý NutriWallet, mình có thể giúp bạn:**\n\n" +
+                            "1. **Phân tích dinh dưỡng từ ảnh**: Gửi ảnh bữa ăn để mình phân tích calo, protein, carb, fat 📸\n" +
+                            "2. **Tự động ghi nhật ký**: Các món ăn bạn chụp sẽ tự động lưu vào tài khoản NutriWallet của bạn 🍽️\n" +
+                            "3. **Tự động theo dõi chi tiêu**: Ước lượng và ghi nhận chi tiêu ăn uống tương ứng 💰\n" +
+                            "4. **Giải đáp thắc mắc**: Trả lời các câu hỏi về dinh dưỡng, sức khỏe và tài chính dựa trên dữ liệu cá nhân của bạn hôm nay 💬";
+                }
+                sendFacebookMessage(psid, msg);
+                saveMessage(profile, ChatbotMessageType.TEXT, msg, null, false);
+                return;
+            }
+        }
+
         // 2. Kiểm tra trạng thái liên kết của khách (Guest)
         if (profile.getUser() == null) {
             long sentCount = chatbotMessageRepository.countByChatbotProfileIdAndIsFromUser(profile.getId(), true);
@@ -116,7 +178,7 @@ public class MessengerWebhookService {
                 String blockMsg = "Bạn đã dùng hết 10 lượt nhắn tin/phân tích miễn phí dành cho khách hàng. 🛑\n\n" +
                         "Vui lòng đăng nhập hoặc đăng ký tài khoản NutriWallet và liên kết tài khoản bằng mã sau để tiếp tục sử dụng:\n" +
                         "👉 **" + profile.getGuestSessionCode() + "**\n\n" +
-                        "🔗 Đăng ký tại: http://localhost:5173/register";
+                        "🔗 Đăng nhập tại: " + frontendUrl + "/login";
                 sendFacebookMessage(psid, blockMsg);
                 saveMessage(profile, ChatbotMessageType.TEXT, blockMsg, null, false);
                 return;
@@ -131,7 +193,7 @@ public class MessengerWebhookService {
 
             if (incomingText != null && !incomingText.isBlank()) {
                 String aiResponse = generateAiResponse(null, incomingText);
-                aiResponse += "\n\n👉 Đăng ký tài khoản NutriWallet ngay tại đây để lưu trữ nhật ký dài hạn: http://localhost:5173/register";
+                aiResponse += "\n\n👉 Đăng nhập tài khoản NutriWallet ngay tại đây để liên kết và lưu trữ nhật ký lâu dài: " + frontendUrl + "/login";
                 sendFacebookMessage(psid, aiResponse);
                 saveMessage(profile, ChatbotMessageType.TEXT, aiResponse, null, false);
             }
@@ -291,11 +353,8 @@ public class MessengerWebhookService {
 
     private void analyzeAndSaveMeal(ChatbotProfile profile, User user, String imageUrl) {
         try {
-            String systemPrompt = "You are an expert nutritionist. Analyze this meal image. Return ONLY a JSON object with the following fields: " +
-                    "foodName (String), calories (number), proteinGram (number), carbGram (number), fatGram (number), " +
-                    "estimatedPriceVnd (number, estimated price in Vietnamese Dong for a typical serving at a local restaurant or street food stall). " +
-                    "Do not include any markdown format (like ```json) or additional text.";
-            String userPrompt = "Meal image URL: " + imageUrl;
+            String systemPrompt = aiPromptBuilder.meal();
+            String userPrompt = "Image URL: " + imageUrl;
 
             String rawResponse = aiProviderService.generate(systemPrompt, userPrompt);
             log.info("AI Analysis Response for chatbot: {}", rawResponse);
@@ -366,7 +425,7 @@ public class MessengerWebhookService {
                         "💡 *Nếu muốn cập nhật lại thông tin (tên món, số tiền), hãy nhắn tin trả lời ví dụ: \"Cập nhật cơm tấm 45k\" hoặc \"Cập nhật cơm sườn 45000\".*";
             } else {
                 responseMsg += "Đăng ký tài khoản và liên kết Messenger để ghi nhận tự động bữa ăn vào nhật ký NutriWallet của bạn! 📝\n" +
-                        "👉 Đăng ký ngay tại: http://localhost:5173/register";
+                        "👉 Đăng nhập ngay tại: " + frontendUrl + "/login";
             }
 
             sendFacebookMessage(profile.getPsid(), responseMsg);
@@ -451,5 +510,45 @@ public class MessengerWebhookService {
         } catch (Exception e) {
             log.error("Failed to send HTTP message response to Facebook Graph API for PSID: {}", recipientId, e);
         }
+    }
+
+    private String normalizeText(String text) {
+        if (text == null) return "";
+        return text.toLowerCase()
+                .replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a")
+                .replaceAll("[èéẹẻẽêềếệểễ]", "e")
+                .replaceAll("[ìíịỉĩ]", "i")
+                .replaceAll("[òóọỏõôồốộổỗơờớợởỡ]", "o")
+                .replaceAll("[ùúụủũưừứựửữ]", "u")
+                .replaceAll("[ỳýỵỷỹ]", "y")
+                .replaceAll("đ", "d")
+                .replaceAll("[^a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private boolean isAskingForLinkCode(String normalizedText) {
+        return normalizedText.contains("ma lien ket") ||
+               normalizedText.contains("ma ket noi") ||
+               normalizedText.contains("code lien ket") ||
+               normalizedText.contains("code ket noi") ||
+               normalizedText.contains("lay ma") ||
+               normalizedText.contains("xin ma") ||
+               normalizedText.contains("ma cua toi") ||
+               normalizedText.contains("link code") ||
+               normalizedText.contains("connect code");
+    }
+
+    private boolean isAskingForCapabilities(String normalizedText) {
+        return normalizedText.contains("lam duoc gi") ||
+               normalizedText.contains("co the lam gi") ||
+               normalizedText.contains("chuc nang") ||
+               normalizedText.contains("tinh nang") ||
+               normalizedText.contains("giup gi") ||
+               normalizedText.contains("huong dan") ||
+               normalizedText.contains("su dung the nao") ||
+               normalizedText.contains("su dung nhu the nao") ||
+               normalizedText.contains("su dung nhu nao") ||
+               normalizedText.contains("huong dan su dung");
     }
 }
