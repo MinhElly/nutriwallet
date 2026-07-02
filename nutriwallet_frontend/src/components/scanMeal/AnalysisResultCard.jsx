@@ -249,13 +249,23 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
             />
           </div>
 
-          <NutritionCard
-            icon={Wallet}
-            label="Giá ước tính"
-            value={displayResult.estimatedPrice.toLocaleString("vi-VN")}
-            unit={displayResult.currency}
-            color="text-emerald-600 dark:text-emerald-400"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <NutritionCard
+              icon={Wallet}
+              label="Giá ước tính"
+              value={displayResult.estimatedPrice.toLocaleString("vi-VN")}
+              unit={displayResult.currency}
+              color="text-emerald-600 dark:text-emerald-400"
+            />
+
+            <NutritionCard
+              icon={MEAL_TYPE_META[displayResult.mealType]?.icon || Coffee}
+              label="Loại bữa ăn"
+              value={MEAL_TYPE_META[displayResult.mealType]?.label || "Chưa xác định"}
+              unit=""
+              color="text-sky-600 dark:text-sky-400"
+            />
+          </div>
         </div>
       )}
 
@@ -279,6 +289,11 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
           <DetailRow
             label="Độ tin cậy"
             value={`${displayResult.ai.confidence}%`}
+          />
+
+          <DetailRow
+            label="Loại bữa ăn"
+            value={MEAL_TYPE_META[displayResult.mealType]?.label || "Chưa xác định"}
           />
 
           <DetailRow

@@ -6,6 +6,7 @@ import com.nutricash.api.ai.service.AiPromptBuilder;
 import com.nutricash.api.ai.service.AiProviderService;
 import com.nutricash.api.common.enums.ChatbotMessageType;
 import com.nutricash.api.common.enums.ChatbotPlatform;
+import com.nutricash.api.common.enums.ExpenseCategory;
 import com.nutricash.api.expense.entity.ExpenseRecord;
 import com.nutricash.api.expense.repository.ExpenseRepository;
 import com.nutricash.api.meal.entity.MealRecord;
@@ -108,31 +109,152 @@ public class MessengerWebhookService {
 
         saveMessage(profile, ChatbotMessageType.TEXT, incomingText, imageUrl, true);
 
-        // 2. Kiểm tra trạng thái liên kết
+        // 2. Kiểm tra trạng thái liên kết của khách (Guest)
         if (profile.getUser() == null) {
-            String welcomeMsg = "Chào mừng bạn đến với NutriWallet AI Advisor! 👋\n\n" +
-                    "Tài khoản Messenger của bạn chưa được liên kết với NutriWallet.\n" +
-                    "Hãy đăng nhập vào website NutriWallet và nhập mã liên kết này để bắt đầu đồng bộ dữ liệu: \n\n" +
-                    "👉 **" + profile.getGuestSessionCode() + "**";
-            sendFacebookMessage(psid, welcomeMsg);
-            saveMessage(profile, ChatbotMessageType.TEXT, welcomeMsg, null, false);
+            long sentCount = chatbotMessageRepository.countByChatbotProfileIdAndIsFromUser(profile.getId(), true);
+            if (sentCount > 10) {
+                String blockMsg = "Bạn đã dùng hết 10 lượt nhắn tin/phân tích miễn phí dành cho khách hàng. 🛑\n\n" +
+                        "Vui lòng đăng nhập hoặc đăng ký tài khoản NutriWallet và liên kết tài khoản bằng mã sau để tiếp tục sử dụng:\n" +
+                        "👉 **" + profile.getGuestSessionCode() + "**\n\n" +
+                        "🔗 Đăng ký tại: http://localhost:5173/register";
+                sendFacebookMessage(psid, blockMsg);
+                saveMessage(profile, ChatbotMessageType.TEXT, blockMsg, null, false);
+                return;
+            }
+
+            // Dưới 10 tin nhắn, cho phép khách sử dụng
+            if (imageUrl != null) {
+                sendFacebookMessage(psid, "Đang phân tích hình ảnh bữa ăn của bạn dưới vai trò Khách, vui lòng đợi một chút... ⏳");
+                analyzeAndSaveMeal(profile, null, imageUrl);
+                return;
+            }
+
+            if (incomingText != null && !incomingText.isBlank()) {
+                String aiResponse = generateAiResponse(null, incomingText);
+                aiResponse += "\n\n👉 Đăng ký tài khoản NutriWallet ngay tại đây để lưu trữ nhật ký dài hạn: http://localhost:5173/register";
+                sendFacebookMessage(psid, aiResponse);
+                saveMessage(profile, ChatbotMessageType.TEXT, aiResponse, null, false);
+            }
             return;
         }
 
         User user = profile.getUser();
 
-        // 3. Xử lý tin nhắn ảnh (Phân tích bữa ăn)
+        // 3. Xử lý tin nhắn ảnh (Phân tích bữa ăn) cho người dùng đã liên kết
         if (imageUrl != null) {
             sendFacebookMessage(psid, "Đang phân tích hình ảnh bữa ăn của bạn, vui lòng đợi một chút... ⏳");
             analyzeAndSaveMeal(profile, user, imageUrl);
             return;
         }
 
-        // 4. Xử lý tin nhắn văn bản bằng AI kết hợp ngữ cảnh
+        // 4. Xử lý tin nhắn văn bản bằng AI kết hợp ngữ cảnh hoặc xác nhận/cập nhật bữa ăn
         if (incomingText != null && !incomingText.isBlank()) {
+            List<MealRecord> meals = mealRepository.findAllByChatbotProfileIdOrderByMealTimeDesc(profile.getId());
+            if (!meals.isEmpty()) {
+                MealRecord lastMeal = meals.get(0);
+                if (!lastMeal.isConfirmedByUser() && lastMeal.getMealTime().isAfter(LocalDateTime.now().minusMinutes(5))) {
+                    boolean handled = tryHandleMealConfirmation(profile, lastMeal, incomingText);
+                    if (handled) {
+                        return;
+                    }
+                }
+            }
+
             String aiResponse = generateAiResponse(user, incomingText);
             sendFacebookMessage(psid, aiResponse);
             saveMessage(profile, ChatbotMessageType.TEXT, aiResponse, null, false);
+        }
+    }
+
+    private boolean tryHandleMealConfirmation(ChatbotProfile profile, MealRecord meal, String userText) {
+        try {
+            BigDecimal originalPrice = BigDecimal.ZERO;
+            Optional<ExpenseRecord> existingExpense = expenseRepository.findByMealRecordId(meal.getId());
+            if (existingExpense.isPresent()) {
+                originalPrice = existingExpense.get().getAmount();
+            }
+
+            String prompt = "You are an AI assistant parsing chatbot confirmation or updates for a logged meal.\n" +
+                    "The original logged meal is: Name = \"" + meal.getMealName() + "\", Price = " + originalPrice + " VND.\n" +
+                    "The user's message is: \"" + userText + "\"\n\n" +
+                    "Determine if the user is confirming or updating the meal name or price.\n" +
+                    "- If they say something like \"ok\", \"chuẩn\", \"đúng rồi\", \"xác nhận\", \"đúng\", set confirmed = true.\n" +
+                    "- If they say something like \"cập nhật cơm tấm 45k\", \"sửa thành phở bò 50000\", \"cơm sườn 45000\", extract the updated details.\n\n" +
+                    "Return ONLY a JSON object with the following fields:\n" +
+                    "\"isUpdate\" (boolean, true if they want to confirm or update name/price, false otherwise),\n" +
+                    "\"confirmed\" (boolean, true if they explicitly confirm or update details, false otherwise),\n" +
+                    "\"updatedFoodName\" (String or null, the new food name if they want to change it),\n" +
+                    "\"updatedPriceVnd\" (number or null, the new price in VND if they want to change/specify it).\n\n" +
+                    "Do not include any markdown format or additional text.";
+
+            String rawResponse = aiProviderService.generate(prompt, userText);
+            log.info("Gemini Confirmation Parsing Response: {}", rawResponse);
+
+            String cleanJson = rawResponse.replace("```json", "").replace("```", "").trim();
+            JsonNode jsonNode = objectMapper.readTree(cleanJson);
+
+            boolean isUpdate = jsonNode.has("isUpdate") && jsonNode.get("isUpdate").asBoolean();
+            if (!isUpdate) {
+                return false;
+            }
+
+            boolean confirmed = jsonNode.has("confirmed") && jsonNode.get("confirmed").asBoolean();
+            String updatedFoodName = jsonNode.has("updatedFoodName") && !jsonNode.get("updatedFoodName").isNull() ? jsonNode.get("updatedFoodName").asText() : null;
+            BigDecimal updatedPriceVnd = jsonNode.has("updatedPriceVnd") && !jsonNode.get("updatedPriceVnd").isNull() ? jsonNode.get("updatedPriceVnd").decimalValue() : null;
+
+            if (updatedFoodName != null) {
+                meal.setMealName(updatedFoodName);
+            }
+            if (confirmed) {
+                meal.setConfirmedByUser(true);
+            }
+            mealRepository.save(meal);
+
+            BigDecimal finalPrice = updatedPriceVnd != null ? updatedPriceVnd : originalPrice;
+            String finalFoodName = updatedFoodName != null ? updatedFoodName : meal.getMealName();
+
+            ExpenseRecord expense;
+            if (existingExpense.isPresent()) {
+                expense = existingExpense.get();
+                expense.setAmount(finalPrice);
+                expense.setNote("Tự động cập nhật từ Chatbot: " + finalFoodName);
+                expenseRepository.save(expense);
+            } else {
+                int hour = LocalDateTime.now().getHour();
+                ExpenseCategory category;
+                if (hour < 11) {
+                    category = ExpenseCategory.BREAKFAST;
+                } else if (hour < 16) {
+                    category = ExpenseCategory.LUNCH;
+                } else if (hour < 21) {
+                    category = ExpenseCategory.DINNER;
+                } else {
+                    category = ExpenseCategory.SNACK;
+                }
+
+                expense = ExpenseRecord.builder()
+                        .user(profile.getUser())
+                        .mealRecord(meal)
+                        .amount(finalPrice)
+                        .currency("VND")
+                        .category(category)
+                        .expenseDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+                        .note("Tự động tạo từ Chatbot: " + finalFoodName)
+                        .build();
+                expenseRepository.save(expense);
+            }
+
+            String confirmationMsg = "✅ **Đã ghi nhận thay đổi!**\n" +
+                    "- Món ăn: " + finalFoodName + "\n" +
+                    "- Chi phí: " + finalPrice + " VND\n" +
+                    "Nhật ký bữa ăn và chi tiêu của bạn đã được cập nhật thành công! 🍽️💰";
+            sendFacebookMessage(profile.getPsid(), confirmationMsg);
+            saveMessage(profile, ChatbotMessageType.TEXT, confirmationMsg, null, false);
+            return true;
+
+        } catch (Exception e) {
+            log.error("Failed to parse meal confirmation/update from user text: {}", userText, e);
+            return false;
         }
     }
 
@@ -170,7 +292,8 @@ public class MessengerWebhookService {
     private void analyzeAndSaveMeal(ChatbotProfile profile, User user, String imageUrl) {
         try {
             String systemPrompt = "You are an expert nutritionist. Analyze this meal image. Return ONLY a JSON object with the following fields: " +
-                    "foodName (String), calories (number), proteinGram (number), carbGram (number), fatGram (number). " +
+                    "foodName (String), calories (number), proteinGram (number), carbGram (number), fatGram (number), " +
+                    "estimatedPriceVnd (number, estimated price in Vietnamese Dong for a typical serving at a local restaurant or street food stall). " +
                     "Do not include any markdown format (like ```json) or additional text.";
             String userPrompt = "Meal image URL: " + imageUrl;
 
@@ -186,30 +309,65 @@ public class MessengerWebhookService {
             BigDecimal protein = jsonNode.has("proteinGram") ? jsonNode.get("proteinGram").decimalValue() : BigDecimal.ZERO;
             BigDecimal carb = jsonNode.has("carbGram") ? jsonNode.get("carbGram").decimalValue() : BigDecimal.ZERO;
             BigDecimal fat = jsonNode.has("fatGram") ? jsonNode.get("fatGram").decimalValue() : BigDecimal.ZERO;
+            BigDecimal estimatedPriceVnd = jsonNode.has("estimatedPriceVnd") ? jsonNode.get("estimatedPriceVnd").decimalValue() : BigDecimal.ZERO;
 
-            // Lưu vào MealRecord
-            MealRecord mealRecord = MealRecord.builder()
-                    .user(user)
-                    .chatbotProfile(profile)
-                    .mealName(foodName)
-                    .imageUrl(imageUrl)
-                    .mealTime(LocalDateTime.now())
-                    .totalCalories(calories)
-                    .proteinGram(protein)
-                    .carbGram(carb)
-                    .fatGram(fat)
-                    .aiEstimated(true)
-                    .confirmedByUser(false)
-                    .build();
-            mealRepository.save(mealRecord);
+            if (user != null) {
+                // Lưu vào MealRecord cho người dùng đã liên kết
+                MealRecord mealRecord = MealRecord.builder()
+                        .user(user)
+                        .chatbotProfile(profile)
+                        .mealName(foodName)
+                        .imageUrl(imageUrl)
+                        .mealTime(LocalDateTime.now())
+                        .totalCalories(calories)
+                        .proteinGram(protein)
+                        .carbGram(carb)
+                        .fatGram(fat)
+                        .aiEstimated(true)
+                        .confirmedByUser(false)
+                        .build();
+                mealRecord = mealRepository.save(mealRecord);
+
+                // Tạo ExpenseRecord tự động với số tiền ước tính
+                int hour = LocalDateTime.now().getHour();
+                ExpenseCategory category;
+                if (hour < 11) {
+                    category = ExpenseCategory.BREAKFAST;
+                } else if (hour < 16) {
+                    category = ExpenseCategory.LUNCH;
+                } else if (hour < 21) {
+                    category = ExpenseCategory.DINNER;
+                } else {
+                    category = ExpenseCategory.SNACK;
+                }
+
+                ExpenseRecord expenseRecord = ExpenseRecord.builder()
+                        .user(user)
+                        .mealRecord(mealRecord)
+                        .amount(estimatedPriceVnd)
+                        .currency("VND")
+                        .category(category)
+                        .expenseDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+                        .note("Tự động tạo từ Chatbot: " + foodName)
+                        .build();
+                expenseRepository.save(expenseRecord);
+            }
 
             String responseMsg = "🍽️ **Kết quả phân tích dinh dưỡng:**\n" +
-                    "- Món ăn: " + foodName + "\n" +
-                    "- Năng lượng: " + calories + " kcal\n" +
-                    "- Chất đạm (Protein): " + protein + "g\n" +
-                    "- Chất bột đường (Carbs): " + carb + "g\n" +
-                    "- Chất béo (Fat): " + fat + "g\n\n" +
-                    "Bữa ăn này đã được ghi nhận tự động vào nhật ký NutriWallet của bạn! ✅";
+                    "Món: " + foodName + "\n" +
+                    "Calo: " + calories + " kcal\n" +
+                    "Đạm: " + protein + "g\n" +
+                    "Carb: " + carb + "g\n" +
+                    "Béo: " + fat + "g\n" +
+                    "Tiền: " + estimatedPriceVnd + " VND\n\n";
+
+            if (user != null) {
+                responseMsg += "Bữa ăn này đã được ghi nhận tự động vào nhật ký NutriWallet của bạn! ✅\n" +
+                        "💡 *Nếu muốn cập nhật lại thông tin (tên món, số tiền), hãy nhắn tin trả lời ví dụ: \"Cập nhật cơm tấm 45k\" hoặc \"Cập nhật cơm sườn 45000\".*";
+            } else {
+                responseMsg += "Đăng ký tài khoản và liên kết Messenger để ghi nhận tự động bữa ăn vào nhật ký NutriWallet của bạn! 📝\n" +
+                        "👉 Đăng ký ngay tại: http://localhost:5173/register";
+            }
 
             sendFacebookMessage(profile.getPsid(), responseMsg);
             saveMessage(profile, ChatbotMessageType.TEXT, responseMsg, null, false);
@@ -222,6 +380,10 @@ public class MessengerWebhookService {
 
     private String generateAiResponse(User user, String userText) {
         try {
+            if (user == null) {
+                return aiProviderService.generate(aiPromptBuilder.chat(), userText);
+            }
+
             // Lấy ngữ cảnh hôm nay của người dùng
             ZoneId zoneId = ZoneId.of("Asia/Ho_Chi_Minh");
             LocalDate today = LocalDate.now(zoneId);

@@ -28,9 +28,43 @@ function formatSavedTime(date) {
 
 export default function SettingsPage() {
   const { settings, loading, error, saveSettings } = useSettingsData();
-  const { profileData, refetchProfile } = useProfileData();
+  const { profileData, refetchProfile, linkAccount, unlinkAccount } = useProfileData();
   const { currentUser } = useAuth();
-  
+
+  const [linkCode, setLinkCode] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [isLinking, setIsLinking] = useState(false);
+
+  const handleLinkMessenger = async () => {
+    if (!linkCode.trim()) {
+      setLinkError("Vui lòng nhập mã liên kết.");
+      return;
+    }
+    setLinkError("");
+    setIsLinking(true);
+    const res = await linkAccount(linkCode.trim());
+    setIsLinking(false);
+    if (res.error) {
+      setLinkError(res.error);
+    } else {
+      setLinkCode("");
+      alert("Liên kết tài khoản Messenger thành công!");
+    }
+  };
+
+  const handleUnlinkMessenger = async () => {
+    if (window.confirm("Bạn có chắc chắn muốn hủy liên kết tài khoản Messenger không?")) {
+      setIsLinking(true);
+      const res = await unlinkAccount();
+      setIsLinking(false);
+      if (res.error) {
+        alert(res.error);
+      } else {
+        alert("Hủy liên kết tài khoản Messenger thành công!");
+      }
+    }
+  };
+
   const [settingsState, setSettingsState] = useState(null);
   const [savedSettingsState, setSavedSettingsState] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(new Date());
@@ -294,11 +328,10 @@ export default function SettingsPage() {
                           setTheme("light");
                           handleChange("theme", "light");
                         }}
-                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
-                          theme === "light"
+                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${theme === "light"
                             ? "border-amber-500 bg-amber-50/60 text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-300"
                             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
-                        }`}
+                          }`}
                       >
                         <Sun size={18} className="text-amber-500" />
                         Giao diện Sáng
@@ -309,11 +342,10 @@ export default function SettingsPage() {
                           setTheme("dark");
                           handleChange("theme", "dark");
                         }}
-                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
-                          theme === "dark"
+                        className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${theme === "dark"
                             ? "border-emerald-500 bg-emerald-50/60 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800"
-                        }`}
+                          }`}
                       >
                         <Moon size={18} className="text-emerald-400" />
                         Giao diện Tối
@@ -356,13 +388,21 @@ export default function SettingsPage() {
                     value={profileData?.emailVerification?.verifiedAt ? "Đã xác minh" : "Đã xác minh"}
                   />
                   {profileData?.chatbotProfile ? (
-                    <>
+                    <div className="space-y-3">
                       <ReadOnlyRow label="Nền tảng Chatbot" value={profileData.chatbotProfile.platform} />
                       <ReadOnlyRow
-                        label="Mã kết nối khách"
-                        value={profileData.chatbotProfile.guestSessionCode}
+                        label="Trạng thái"
+                        value="Đã liên kết"
                       />
-                    </>
+                      <button
+                        type="button"
+                        onClick={handleUnlinkMessenger}
+                        disabled={isLinking}
+                        className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-50 active:scale-[0.98] dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/20"
+                      >
+                        Hủy liên kết Messenger
+                      </button>
+                    </div>
                   ) : (
                     <div className="mt-2 rounded-2xl border border-slate-200 bg-emerald-50/30 p-4 dark:border-slate-800 dark:bg-emerald-950/10">
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
@@ -372,14 +412,41 @@ export default function SettingsPage() {
                       <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                         Kết nối với chatbot của chúng tôi trên Messenger để có thể theo dõi nhanh thực đơn ăn uống của bạn qua hình ảnh.
                       </p>
+
+                      <div className="mt-4 space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Nhập mã liên kết (ví dụ: NW-ABCXYZ)"
+                          value={linkCode}
+                          onChange={(e) => setLinkCode(e.target.value)}
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+                        />
+                        {linkError && (
+                          <p className="text-[10px] font-semibold text-red-500">{linkError}</p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleLinkMessenger}
+                          disabled={isLinking}
+                          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-emerald-500 disabled:opacity-50"
+                        >
+                          Xác nhận liên kết
+                        </button>
+                      </div>
+
+                      <div className="relative my-3 flex items-center justify-center">
+                        <span className="absolute bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:bg-slate-900">hoặc</span>
+                        <div className="w-full border-t border-slate-100 dark:border-slate-800" />
+                      </div>
+
                       <a
                         href={`https://www.facebook.com/messages/t/${import.meta.env.VITE_MESSENGER_PAGE_ID || "61560946284698"}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-500 shadow-sm"
+                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-slate-50 shadow-sm dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                       >
                         <MessageCircle size={14} />
-                        Liên kết Messenger
+                        Nhắn tin cho Chatbot
                       </a>
                     </div>
                   )}
@@ -442,9 +509,8 @@ function SettingsInput({ label, type = "text", value, onChange, options, suffix,
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
-                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${
-                  suffix ? "pr-12" : ""
-                }`}
+                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${suffix ? "pr-12" : ""
+                  }`}
               />
               {suffix && (
                 <span className="absolute right-4 text-xs font-bold text-slate-400 dark:text-slate-500">
@@ -467,16 +533,14 @@ function ToggleRow({ label, value, onToggle }) {
       <button
         type="button"
         onClick={onToggle}
-        className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full border transition-colors ${
-          value
+        className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full border transition-colors ${value
             ? "border-slate-950 bg-slate-950 dark:border-emerald-500 dark:bg-emerald-600"
             : "border-slate-300 bg-slate-200 dark:border-slate-700 dark:bg-slate-800"
-        }`}
+          }`}
       >
         <span
-          className={`absolute h-6 w-6 rounded-full bg-white transition-transform ${
-            value ? "translate-x-7" : "translate-x-1"
-          }`}
+          className={`absolute h-6 w-6 rounded-full bg-white transition-transform ${value ? "translate-x-7" : "translate-x-1"
+            }`}
         />
       </button>
     </div>
