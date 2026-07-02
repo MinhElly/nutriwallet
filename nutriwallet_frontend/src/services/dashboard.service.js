@@ -286,6 +286,17 @@ export async function fetchDashboardData(selectedDate, selectedPeriod) {
   }
 }
 
-export function getAiRecommendations() {
-  return aiRecommendations;
+export async function getAiRecommendations() {
+  try {
+    const list = unwrapApiData(await api.get("/api/ai/recommendations"));
+    return list.map(rec => ({
+      id: rec.id,
+      content: rec.content,
+      type: rec.type,
+      tone: rec.tone
+    }));
+  } catch (error) {
+    console.error("Failed to fetch AI recommendations, using mock fallback", error);
+    return aiRecommendations;
+  }
 }

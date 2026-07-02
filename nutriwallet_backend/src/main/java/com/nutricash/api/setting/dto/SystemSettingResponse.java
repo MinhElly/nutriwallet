@@ -1,8 +1,11 @@
 package com.nutricash.api.setting.dto;
 
-/**
- * Skeleton type for the setting module.
- */
-public record SystemSettingResponse() {
-}
+import java.time.Instant;
 
+public record SystemSettingResponse(
+    Long id,
+    String settingKey,
+    String settingValue,
+    String description,
+    Instant updatedAt
+) {}

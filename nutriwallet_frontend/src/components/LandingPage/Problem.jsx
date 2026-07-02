@@ -1,3 +1,5 @@
+import Reveal from "../common/Reveal";
+
 const problems = [
   {
     num: "01",
@@ -31,35 +33,42 @@ const Problem = () => {
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         {/* Section header */}
         <div className="mb-16 max-w-xl">
-          <p className="text-xs font-semibold tracking-widest uppercase text-green-500 mb-4">
-            Vấn đề
-          </p>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-[-0.03em] text-gray-950 leading-[1.1] mb-5">
-            Bạn đang gặp vấn đề này?
-          </h2>
-          <p className="text-gray-500 text-[16px] leading-relaxed">
-            Hầu hết người trẻ đều gặp 3 vấn đề này mỗi tháng — và không tìm ra cách giải quyết.
-          </p>
+          <Reveal delay={0}>
+            <p className="text-[10px] font-medium tracking-widest uppercase text-green-500 mb-4">
+              Vấn đề
+            </p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[0.95] mb-5">
+              Bạn đang gặp vấn đề này?
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="text-gray-500 font-light text-[16px] leading-relaxed">
+              Hầu hết người trẻ đều gặp 3 vấn đề này mỗi tháng — và không tìm ra cách giải quyết.
+            </p>
+          </Reveal>
         </div>
 
         <div className="grid md:grid-cols-3 gap-5">
-          {problems.map((p) => (
-            <div
-              key={p.num}
-              className={`relative bg-white border border-gray-100 rounded-2xl p-7 overflow-hidden group hover:border-gray-200 hover:shadow-md transition-all duration-200`}
-            >
-              {/* Top accent bar */}
-              <div className={`absolute top-0 left-6 right-6 h-px ${p.accent} opacity-60`} />
-              
-              <div className="flex items-start justify-between mb-5">
-                <div className={`w-11 h-11 ${p.bgIcon} rounded-xl flex items-center justify-center text-xl`}>
-                  {p.icon}
+          {problems.map((p, idx) => (
+            <Reveal key={p.num} delay={0.3 + idx * 0.1}>
+              <div
+                className={`h-full relative bg-white border border-gray-100 rounded-2xl p-7 overflow-hidden group hover:border-gray-200 hover:shadow-md transition-all duration-200`}
+              >
+                {/* Top accent bar */}
+                <div className={`absolute top-0 left-6 right-6 h-px ${p.accent} opacity-60`} />
+                
+                <div className="flex items-start justify-between mb-5">
+                  <div className={`w-11 h-11 ${p.bgIcon} rounded-xl flex items-center justify-center text-xl`}>
+                    {p.icon}
+                  </div>
+                  <span className="text-4xl font-light text-gray-200 leading-none tracking-[-0.04em]">{p.num}</span>
                 </div>
-                <span className="text-3xl font-bold text-gray-200 leading-none tracking-tight">{p.num}</span>
+                <h3 className="text-[16px] font-medium tracking-[-0.02em] text-gray-900 mb-2.5 leading-snug">{p.title}</h3>
+                <p className="text-sm font-light text-gray-500 leading-relaxed">{p.desc}</p>
               </div>
-              <h3 className="text-[16px] font-semibold text-gray-900 mb-2.5 leading-snug">{p.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{p.desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

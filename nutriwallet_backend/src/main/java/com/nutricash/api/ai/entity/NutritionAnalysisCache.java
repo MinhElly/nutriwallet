@@ -30,6 +30,10 @@ public class NutritionAnalysisCache {
     private BigDecimal carbGram;
     @Column(name = "fat_gram", nullable = false, precision = 10, scale = 2)
     private BigDecimal fatGram;
+    @Column(name = "meal_type", length = 20)
+    private String mealType;
+    @Column(name = "estimated_price_vnd", precision = 12, scale = 0)
+    private BigDecimal estimatedPriceVnd;
     @Column(name = "model_name", length = 100)
     private String modelName;
     @Column(name = "use_count", nullable = false)

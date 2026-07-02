@@ -10,7 +10,15 @@ function formatMealDate(value) {
     return "";
   }
 
-  return new Date(value).toISOString().slice(0, 10);
+  if (value.includes("T")) {
+    return value.slice(0, 10);
+  }
+
+  try {
+    return new Date(value).toISOString().slice(0, 10);
+  } catch {
+    return String(value).slice(0, 10);
+  }
 }
 
 function formatMealTime(value) {
@@ -18,14 +26,32 @@ function formatMealTime(value) {
     return "";
   }
 
-  return new Date(value).toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (value.includes("T")) {
+    return value.slice(11, 16);
+  }
+
+  try {
+    return new Date(value).toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
 }
 
 function inferMealType(mealTime) {
-  const hour = new Date(mealTime).getHours();
+  let hour = 12;
+
+  if (mealTime && mealTime.includes("T")) {
+    hour = parseInt(mealTime.slice(11, 13), 10);
+  } else if (mealTime) {
+    try {
+      hour = new Date(mealTime).getHours();
+    } catch {
+      hour = 12;
+    }
+  }
 
   if (hour < 11) {
     return "Breakfast";
@@ -53,6 +79,7 @@ export function mapMealRecord(meal) {
     fatGram: Number(meal.fatGram ?? 0),
     aiStatus: meal.aiEstimated ? "ESTIMATED" : "COMPLETED",
     modelName: meal.aiEstimated ? "AI Estimate" : "NutriWallet",
+    source: meal.source || "WEB",
   };
 }
 

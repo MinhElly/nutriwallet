@@ -1,5 +1,6 @@
 import { Camera, FileImage, Loader2, UploadCloud, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { analyzeMealImage } from "../../services/scanMeal.service";
 
 export default function UploadCard({ onAnalyzeSuccess }) {
   const fileInputRef = useRef(null);
@@ -46,13 +47,15 @@ export default function UploadCard({ onAnalyzeSuccess }) {
 
     setIsAnalyzing(true);
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 1200);
-    });
-
-    onAnalyzeSuccess?.();
-
-    setIsAnalyzing(false);
+    try {
+      const result = await analyzeMealImage(selectedFile);
+      onAnalyzeSuccess?.(result);
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Không thể phân tích ảnh bữa ăn lúc này.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
