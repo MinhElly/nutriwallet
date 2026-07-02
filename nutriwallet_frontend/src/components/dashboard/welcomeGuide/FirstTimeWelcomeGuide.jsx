@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Heart, MessageCircleMore, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 import { welcomeGuideContent } from "../../../data/welcomeGuideContent";
 import ConnectionGuide from "./ConnectionGuide";
 import GuideFooter from "./GuideFooter";
 import MessengerPreview from "./MessengerPreview";
 import WelcomeModal from "./WelcomeModal";
+
+const GUIDE_STORAGE_PREFIX = "nutriwallet:first-time-welcome-guide-seen";
 
 const stepMotion = {
   initial: { opacity: 0, y: 16 },
@@ -110,8 +113,33 @@ export default function FirstTimeWelcomeGuide({
   content = welcomeGuideContent,
 }) {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const { currentUser, isLoading } = useAuth();
+  const storageKey = currentUser?.id
+    ? `${GUIDE_STORAGE_PREFIX}:${currentUser.id}`
+    : currentUser?.email
+      ? `${GUIDE_STORAGE_PREFIX}:${currentUser.email}`
+      : GUIDE_STORAGE_PREFIX;
+  const [isOpen, setIsOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!defaultOpen || isLoading || !currentUser) {
+      setIsOpen(false);
+      return;
+    }
+
+    const hasSeenGuide = window.localStorage.getItem(storageKey) === "1";
+    setIsOpen(!hasSeenGuide);
+    setStepIndex(0);
+  }, [defaultOpen, isLoading, currentUser, storageKey]);
+
+  const markGuideAsSeen = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(storageKey, "1");
+    }
+
+    setIsOpen(false);
+  };
 
   if (!isOpen) {
     return null;
@@ -124,7 +152,7 @@ export default function FirstTimeWelcomeGuide({
 
   const handleSecondaryAction = () => {
     if (isFirstStep) {
-      setIsOpen(false);
+      markGuideAsSeen();
       return;
     }
 
@@ -133,7 +161,7 @@ export default function FirstTimeWelcomeGuide({
 
   const handlePrimaryAction = () => {
     if (isLastStep) {
-      setIsOpen(false);
+      markGuideAsSeen();
       return;
     }
 
@@ -141,7 +169,7 @@ export default function FirstTimeWelcomeGuide({
   };
 
   const handleGoToSettings = () => {
-    setIsOpen(false);
+    markGuideAsSeen();
     navigate("/settings#messenger-chatbot");
   };
 
@@ -166,7 +194,7 @@ export default function FirstTimeWelcomeGuide({
           <button
             type="button"
             aria-label="Đóng hướng dẫn"
-            onClick={() => setIsOpen(false)}
+            onClick={markGuideAsSeen}
             className="absolute right-5 top-5 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
           >
             <X size={18} strokeWidth={2} />
