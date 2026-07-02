@@ -39,7 +39,10 @@ export function useSettingsData() {
   }, []);
 
   useEffect(() => {
-    fetchSettings();
+    const timer = setTimeout(() => {
+      fetchSettings();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchSettings]);
 
   const saveSettings = useCallback(async (state) => {

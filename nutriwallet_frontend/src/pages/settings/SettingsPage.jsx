@@ -38,8 +38,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (settings) {
-      setSettingsState(settings);
-      setSavedSettingsState(settings);
+      const timer = setTimeout(() => {
+        setSettingsState(settings);
+        setSavedSettingsState(settings);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [settings]);
 

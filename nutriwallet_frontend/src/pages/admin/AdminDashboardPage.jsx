@@ -42,6 +42,7 @@ export default function AdminDashboardPage() {
       navigate("/login");
       toast.success("Đã đăng xuất tài khoản admin");
     } catch (err) {
+      console.error(err);
       toast.error("Đăng xuất thất bại");
     }
   };
