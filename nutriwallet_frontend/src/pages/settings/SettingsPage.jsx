@@ -428,7 +428,7 @@ export default function SettingsPage() {
                       </div>
 
                       <a
-                        href={`https://www.facebook.com/messages/t/${import.meta.env.VITE_MESSENGER_PAGE_ID || "951984884671043"}`}
+                        href={`https://m.me/${import.meta.env.VITE_MESSENGER_PAGE_ID || "951984884671043"}?ref=REQUEST_LINK_CODE`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-slate-50 shadow-sm dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"

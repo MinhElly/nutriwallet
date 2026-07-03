@@ -24,6 +24,7 @@ public class MessengerAccountService {
 
     private final ChatbotProfileRepository chatbotProfileRepository;
     private final UserRepository userRepository;
+    private final MessengerReplyService messengerReplyService;
 
     @Transactional
     public void linkAccount(SecurityUser securityUser, LinkAccountRequest request) {
@@ -53,6 +54,7 @@ public class MessengerAccountService {
 
         List<ChatbotProfile> profiles = chatbotProfileRepository.findAllByUserId(securityUser.getId());
         for (ChatbotProfile profile : profiles) {
+            messengerReplyService.send(profile, "Tai khoan NutriWallet da huy lien ket. Ma lien ket moi se duoc tao cho lan ket noi tiep theo.");
             profile.setUser(null);
             profile.setLinkedAt(null);
             // Sinh mã guest code mới đề phòng họ muốn liên kết lại
