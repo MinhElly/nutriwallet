@@ -31,7 +31,9 @@ export function useExpenseHistoryData() {
   }, []);
 
   useEffect(() => {
-    loadExpenses();
+    queueMicrotask(() => {
+      loadExpenses();
+    });
   }, [loadExpenses]);
 
   const addExpense = useCallback(async (payload) => {

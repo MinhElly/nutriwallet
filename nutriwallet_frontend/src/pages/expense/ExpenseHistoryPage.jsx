@@ -212,7 +212,9 @@ export default function ExpenseHistoryPage() {
 
   // Reset page when search or filters change
   useEffect(() => {
-    setCurrentPage(1);
+    queueMicrotask(() => {
+      setCurrentPage(1);
+    });
   }, [searchQuery, selectedStartDate, selectedEndDate]);
 
   // Pagination calculation

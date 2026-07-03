@@ -1,6 +1,5 @@
 import {
   Bell,
-  Bot,
   Check,
   Lock,
   Moon,
@@ -8,8 +7,6 @@ import {
   Save,
   Sun,
   UserRound,
-  Heart,
-  Sparkles,
   MessageCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -475,59 +472,6 @@ function SettingsCard({ id, title, icon, children }) {
       </div>
 
       {children}
-    </div>
-  );
-}
-
-function SettingsInput({
-  label,
-  type = "text",
-  value,
-  onChange,
-  options,
-  suffix,
-  placeholder,
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-          {label}
-        </p>
-
-        <div className="relative w-full sm:max-w-[220px]">
-          {type === "select" ? (
-            <select
-              value={value}
-              onChange={(event) => onChange(event.target.value)}
-              className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-8 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500"
-            >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div className="relative flex items-center">
-              <input
-                type={type}
-                value={value}
-                placeholder={placeholder}
-                onChange={(event) => onChange(event.target.value)}
-                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${
-                  suffix ? "pr-12" : ""
-                }`}
-              />
-              {suffix && (
-                <span className="absolute right-4 text-xs font-bold text-slate-400 dark:text-slate-500">
-                  {suffix}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

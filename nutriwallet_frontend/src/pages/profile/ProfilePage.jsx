@@ -60,16 +60,6 @@ function normalizeProfileMeta(profileForm) {
   };
 }
 
-function formatDateTime(dateValue) {
-  return new Date(dateValue).toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function formatMoney(value) {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
 }
@@ -80,6 +70,15 @@ function formatJoinedDate(dateValue) {
     year: "numeric",
   });
 }
+
+const onboardingGoalMap = {
+  lose_weight: "Giảm cân",
+  gain_muscle: "Tăng cơ bắp",
+  maintain: "Duy trì cân nặng",
+  healthy: "Ăn uống lành mạnh",
+  save_money: "Tiết kiệm chi phí",
+  track_all: "Theo dõi tổng thể",
+};
 
 export default function ProfilePage() {
   const { profileData, updateProfile, loading, error } = useProfileData();
@@ -96,7 +95,6 @@ export default function ProfilePage() {
 
   const {
     settings,
-    loading: settingsLoading,
     saveSettings,
   } = useSettingsData();
   const [settingsState, setSettingsState] = useState(null);
@@ -105,7 +103,9 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (settings) {
-      setSettingsState(settings);
+      queueMicrotask(() => {
+        setSettingsState(settings);
+      });
     }
   }, [settings]);
 
@@ -147,15 +147,6 @@ export default function ProfilePage() {
     },
     [],
   );
-
-  const onboardingGoalMap = {
-    lose_weight: "Giảm cân",
-    gain_muscle: "Tăng cơ bắp",
-    maintain: "Duy trì cân nặng",
-    healthy: "Ăn uống lành mạnh",
-    save_money: "Tiết kiệm chi phí",
-    track_all: "Theo dõi tổng thể",
-  };
 
   const tags = useMemo(() => {
     if (!settings?.goal) return [];
@@ -620,32 +611,6 @@ function MiniInfoCard({ icon, label, value }) {
       <p className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100">
         {value}
       </p>
-    </div>
-  );
-}
-
-function InfoCard({ title, items }) {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-        {title}
-      </h2>
-
-      <div className="mt-5 overflow-hidden rounded-2xl border border-slate-100 divide-y divide-slate-100 dark:border-slate-800 dark:divide-slate-800">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-          >
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {item.label}
-            </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-200">
-              {item.value}
-            </p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

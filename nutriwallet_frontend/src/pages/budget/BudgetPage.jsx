@@ -388,7 +388,6 @@ function BudgetPage() {
     rangeBudgetAmount,
     selectedDayCount,
     dailySpendingData,
-    weeklyTrendData,
     categoryData,
     categoryTotalSpent,
   } = analytics;
@@ -1256,34 +1255,6 @@ function RecentExpenses({ expenses, onAddExpense, onViewAllExpenses }) {
   );
 }
 
-function WeeklyTrendChart({ data }) {
-  if (data.length === 0) {
-    return <EmptyChartState message="Chưa có xu hướng chi tiêu để hiển thị." />;
-  }
 
-  return (
-    <div className="h-[280px] w-full overflow-hidden">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-          <CartesianGrid stroke="#e2e8f0" vertical={false} />
-          <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={10} />
-          <YAxis
-            tickFormatter={(value) => `${Math.round(value / 1000)}k`}
-            tickLine={false}
-            axisLine={false}
-            width={58}
-          />
-          <Tooltip content={<ChartTooltip />} />
-          <Bar
-            dataKey="amount"
-            radius={[10, 10, 0, 0]}
-            fill="#059669"
-            barSize={42}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
 
 export default BudgetPage;
