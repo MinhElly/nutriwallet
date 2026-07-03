@@ -13,4 +13,3 @@ public interface AiErrorReportRepository extends JpaRepository<AiErrorReport, Lo
 
     List<AiErrorReport> findAllByMealRecordIdOrderByCreatedAtDesc(Long mealRecordId);
 }
-

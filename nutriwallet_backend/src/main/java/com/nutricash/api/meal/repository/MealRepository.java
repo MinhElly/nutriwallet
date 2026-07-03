@@ -13,8 +13,7 @@ public interface MealRepository extends JpaRepository<MealRecord, Long> {
     List<MealRecord> findAllByUserIdAndMealTimeBetweenOrderByMealTimeDesc(
             Long userId,
             LocalDateTime startTime,
-            LocalDateTime endTime
-    );
+            LocalDateTime endTime);
 
     Optional<MealRecord> findByIdAndUserId(Long id, Long userId);
 

@@ -5,4 +5,3 @@ package com.nutricash.api.admin.service;
  */
 public class AdminDashboardService {
 }
-
