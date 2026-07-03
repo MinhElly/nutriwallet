@@ -1,21 +1,21 @@
 import {
-  BadgeCheck,
   Pencil,
   Wallet,
   X,
+  Heart,
+  Sparkles,
+  Save,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import AppShell from "../../components/layout/AppShell";
 import { useProfileData } from "../../hooks/useProfileData";
 import { useAuth } from "../../hooks/useAuth";
 import { useBudgetData } from "../../hooks/useBudgetData";
+import { useSettingsData } from "../../hooks/useSettingsData";
 
 const PROFILE_META_STORAGE_KEY = "nw_profile_meta";
 const defaultProfileMeta = {
   headline: "Người dùng sức khỏe",
-  interestOne: "Kiểm soát chi tiêu",
-  interestTwo: "Ăn uống khoa học",
-  interestThree: "Đã liên kết Messenger",
 };
 
 function readProfileMeta() {
@@ -34,12 +34,6 @@ function readProfileMeta() {
 
     return {
       headline: parsedValue?.headline?.trim() || defaultProfileMeta.headline,
-      interestOne:
-        parsedValue?.interestOne?.trim() || defaultProfileMeta.interestOne,
-      interestTwo:
-        parsedValue?.interestTwo?.trim() || defaultProfileMeta.interestTwo,
-      interestThree:
-        parsedValue?.interestThree?.trim() || defaultProfileMeta.interestThree,
     };
   } catch {
     return { ...defaultProfileMeta };
@@ -64,21 +58,12 @@ function createProfileForm(user, profileMeta) {
     avatarUrl: user.avatarUrl ?? "",
     avatarFile: null,
     headline: profileMeta.headline,
-    interestOne: profileMeta.interestOne,
-    interestTwo: profileMeta.interestTwo,
-    interestThree: profileMeta.interestThree,
   };
 }
 
 function normalizeProfileMeta(profileForm) {
   return {
     headline: profileForm.headline.trim() || defaultProfileMeta.headline,
-    interestOne:
-      profileForm.interestOne.trim() || defaultProfileMeta.interestOne,
-    interestTwo:
-      profileForm.interestTwo.trim() || defaultProfileMeta.interestTwo,
-    interestThree:
-      profileForm.interestThree.trim() || defaultProfileMeta.interestThree,
   };
 }
 
@@ -115,6 +100,36 @@ export default function ProfilePage() {
     createProfileForm(user, readProfileMeta()),
   );
 
+  const { settings, loading: settingsLoading, saveSettings } = useSettingsData();
+  const [settingsState, setSettingsState] = useState(null);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      setSettingsState(settings);
+    }
+  }, [settings]);
+
+  function handleSettingsChange(key, value) {
+    setSettingsState((current) => ({
+      ...current,
+      [key]: value,
+    }));
+    setSaveSuccess(false);
+  }
+
+  async function handleSaveSettings() {
+    if (!settingsState) return;
+    setIsSavingSettings(true);
+    const res = await saveSettings(settingsState);
+    if (res.success) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+    setIsSavingSettings(false);
+  }
+
   function clearAvatarPreview() {
     if (!avatarPreviewUrlRef.current) {
       return;
@@ -135,12 +150,25 @@ export default function ProfilePage() {
     [],
   );
 
-  const tags = [
-    profileMeta.interestOne,
-    profileMeta.interestTwo,
-    profileMeta.interestThree,
-  ].filter(Boolean);
+  const onboardingGoalMap = {
+    lose_weight: "Giảm cân",
+    gain_muscle: "Tăng cơ bắp",
+    maintain: "Duy trì cân nặng",
+    healthy: "Ăn uống lành mạnh",
+    save_money: "Tiết kiệm chi phí",
+    track_all: "Theo dõi tổng thể",
+  };
 
+  const tags = useMemo(() => {
+    if (!settings?.goal) return [];
+    return settings.goal
+      .split(",")
+      .map((g) => {
+        const trimmed = g.trim();
+        return onboardingGoalMap[trimmed] || trimmed;
+      })
+      .filter(Boolean);
+  }, [settings?.goal]);
 
   function handleProfileFieldChange(event) {
     const { name, value } = event.target;
@@ -249,10 +277,6 @@ export default function ProfilePage() {
                 <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {user.fullName}
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                  <BadgeCheck size={14} />
-                  Thành viên Pro
-                </span>
               </div>
 
               <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -290,22 +314,128 @@ export default function ProfilePage() {
       </section>
 
       <section className="mt-6">
-        <InfoCard
-          title="Thông tin tài khoản"
-          items={[
-            { label: "ID người dùng", value: `#${user.id}` },
-            { label: "Tên hiển thị", value: user.fullName },
-            { label: "Email", value: user.email },
-            { label: "Vai trò", value: user.role },
-            { label: "Trạng thái", value: user.status },
-            { label: "Phương thức đăng nhập", value: user.provider },
-            { label: "Tạo lúc", value: formatDateTime(user.createdAt) },
-            {
-              label: "Cập nhật lần cuối",
-              value: formatDateTime(user.updatedAt),
-            },
-          ]}
-        />
+        <SettingsCard
+          title="Hồ sơ Sức khỏe & Tài chính"
+          icon={<Heart size={18} className="text-rose-500" />}
+        >
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/30">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 mb-1">
+                <Sparkles size={16} className="text-emerald-500" />
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Phân tích cá nhân hóa bởi AI
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                AI sẽ dựa vào các thông số dưới đây để phân tích thể chất,
+                dinh dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù
+                hợp nhất cho bạn.
+              </p>
+            </div>
+
+            {settingsState && (
+              <>
+                <SettingsInput
+                  label="Giới tính"
+                  type="select"
+                  value={settingsState.gender}
+                  onChange={(val) => handleSettingsChange("gender", val)}
+                  options={[
+                    { label: "Chọn giới tính", value: "" },
+                    { label: "Nam", value: "MALE" },
+                    { label: "Nữ", value: "FEMALE" },
+                    { label: "Khác", value: "OTHER" },
+                  ]}
+                />
+
+                <SettingsInput
+                  label="Tuổi"
+                  type="number"
+                  placeholder="Ví dụ: 25"
+                  value={settingsState.age}
+                  onChange={(val) => handleSettingsChange("age", val)}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <SettingsInput
+                    label="Chiều cao"
+                    type="number"
+                    placeholder="170"
+                    suffix="cm"
+                    value={settingsState.height}
+                    onChange={(val) => handleSettingsChange("height", val)}
+                  />
+                  <SettingsInput
+                    label="Cân nặng"
+                    type="number"
+                    placeholder="65"
+                    suffix="kg"
+                    value={settingsState.weight}
+                    onChange={(val) => handleSettingsChange("weight", val)}
+                  />
+                </div>
+
+                <SettingsInput
+                  label="Mức độ vận động"
+                  type="select"
+                  value={settingsState.activityLevel}
+                  onChange={(val) => handleSettingsChange("activityLevel", val)}
+                  options={[
+                    { label: "Ít vận động (văn phòng)", value: "SEDENTARY" },
+                    {
+                      label: "Nhẹ nhàng (1-3 ngày/tuần)",
+                      value: "LIGHTLY_ACTIVE",
+                    },
+                    {
+                      label: "Vừa phải (3-5 ngày/tuần)",
+                      value: "MODERATELY_ACTIVE",
+                    },
+                    { label: "Tích cực (6-7 ngày/tuần)", value: "VERY_ACTIVE" },
+                  ]}
+                />
+
+                <SettingsInput
+                  label="Chế độ ăn kiêng"
+                  type="text"
+                  placeholder="Ví dụ: Bình thường, Chay, Keto, Low-carb..."
+                  value={settingsState.diet}
+                  onChange={(val) => handleSettingsChange("diet", val)}
+                />
+
+                <SettingsInput
+                  label="Mục tiêu sử dụng"
+                  type="text"
+                  placeholder="Ví dụ: Giảm cân, Giữ dáng, Tiết kiệm tiền..."
+                  value={settingsState.goal}
+                  onChange={(val) => handleSettingsChange("goal", val)}
+                />
+
+                <SettingsInput
+                  label="Ngân sách chi tiêu tháng"
+                  type="number"
+                  placeholder="Ví dụ: 5000000"
+                  suffix="VND"
+                  value={settingsState.monthlyBudget}
+                  onChange={(val) => handleSettingsChange("monthlyBudget", val)}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSaveSettings}
+                  disabled={isSavingSettings}
+                  className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+                >
+                  {isSavingSettings ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  ) : (
+                    <Save size={18} />
+                  )}
+                  {isSavingSettings ? "Đang lưu..." : saveSuccess ? "Đã lưu thành công!" : "Lưu thông số sức khỏe & tài chính"}
+                </button>
+              </>
+            )}
+          </div>
+        </SettingsCard>
       </section>
     </AppShell>
   );
@@ -417,38 +547,6 @@ function EditProfileModal({
             />
           </Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Tag 1">
-              <input
-                type="text"
-                name="interestOne"
-                value={profileForm.interestOne}
-                onChange={onChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
-              />
-            </Field>
-
-            <Field label="Tag 2">
-              <input
-                type="text"
-                name="interestTwo"
-                value={profileForm.interestTwo}
-                onChange={onChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
-              />
-            </Field>
-
-            <Field label="Tag 3">
-              <input
-                type="text"
-                name="interestThree"
-                value={profileForm.interestThree}
-                onChange={onChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
-              />
-            </Field>
-          </div>
-
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -527,6 +625,79 @@ function InfoCard({ title, items }) {
             </p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function SettingsCard({ id, title, icon, children }) {
+  return (
+    <div
+      id={id}
+      className="scroll-mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+    >
+      <div className="mb-5 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100">
+          {icon}
+        </div>
+        <h2 className="text-xl font-bold text-slate-950 dark:text-white">
+          {title}
+        </h2>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+function SettingsInput({
+  label,
+  type = "text",
+  value,
+  onChange,
+  options,
+  suffix,
+  placeholder,
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {label}
+        </p>
+
+        <div className="relative w-full sm:max-w-[220px]">
+          {type === "select" ? (
+            <select
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-8 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500"
+            >
+              {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="relative flex items-center">
+              <input
+                type={type}
+                value={value || ""}
+                placeholder={placeholder}
+                onChange={(event) => onChange(event.target.value)}
+                className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-colors focus:border-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-emerald-500 ${
+                  suffix ? "pr-12" : ""
+                }`}
+              />
+              {suffix && (
+                <span className="absolute right-4 text-xs font-bold text-slate-400 dark:text-slate-500">
+                  {suffix}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

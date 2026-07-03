@@ -27,6 +27,17 @@ function formatSavedTime(date) {
   });
 }
 
+function formatDateTime(dateValue) {
+  if (!dateValue) return "";
+  return new Date(dateValue).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function SettingsPage() {
   const location = useLocation();
   const { settings, loading, error, saveSettings } = useSettingsData();
@@ -246,135 +257,7 @@ export default function SettingsPage() {
           </section>
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-            {/* Health & Finance Profile Settings Card */}
-            <SettingsCard
-              title="Hồ sơ Sức khỏe & Tài chính"
-              icon={<Heart size={18} className="text-rose-500" />}
-            >
-              <div className="space-y-3">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/30">
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 mb-1">
-                    <Sparkles size={16} className="text-emerald-500" />
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      Phân tích cá nhân hóa bởi AI
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    AI sẽ dựa vào các thông số dưới đây để phân tích thể chất,
-                    dinh dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù
-                    hợp nhất cho bạn.
-                  </p>
-                </div>
-
-                <SettingsInput
-                  label="Giới tính"
-                  type="select"
-                  value={settingsState.gender}
-                  onChange={(val) => handleChange("gender", val)}
-                  options={[
-                    { label: "Chọn giới tính", value: "" },
-                    { label: "Nam", value: "MALE" },
-                    { label: "Nữ", value: "FEMALE" },
-                    { label: "Khác", value: "OTHER" },
-                  ]}
-                />
-
-                <SettingsInput
-                  label="Tuổi"
-                  type="number"
-                  placeholder="Ví dụ: 25"
-                  value={settingsState.age}
-                  onChange={(val) => handleChange("age", val)}
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <SettingsInput
-                    label="Chiều cao"
-                    type="number"
-                    placeholder="170"
-                    suffix="cm"
-                    value={settingsState.height}
-                    onChange={(val) => handleChange("height", val)}
-                  />
-                  <SettingsInput
-                    label="Cân nặng"
-                    type="number"
-                    placeholder="65"
-                    suffix="kg"
-                    value={settingsState.weight}
-                    onChange={(val) => handleChange("weight", val)}
-                  />
-                </div>
-
-                <SettingsInput
-                  label="Mức độ vận động"
-                  type="select"
-                  value={settingsState.activityLevel}
-                  onChange={(val) => handleChange("activityLevel", val)}
-                  options={[
-                    { label: "Ít vận động (văn phòng)", value: "SEDENTARY" },
-                    {
-                      label: "Nhẹ nhàng (1-3 ngày/tuần)",
-                      value: "LIGHTLY_ACTIVE",
-                    },
-                    {
-                      label: "Vừa phải (3-5 ngày/tuần)",
-                      value: "MODERATELY_ACTIVE",
-                    },
-                    { label: "Tích cực (6-7 ngày/tuần)", value: "VERY_ACTIVE" },
-                  ]}
-                />
-
-                <SettingsInput
-                  label="Chế độ ăn kiêng"
-                  type="text"
-                  placeholder="Ví dụ: Bình thường, Chay, Keto, Low-carb..."
-                  value={settingsState.diet}
-                  onChange={(val) => handleChange("diet", val)}
-                />
-
-                <SettingsInput
-                  label="Mục tiêu sử dụng"
-                  type="text"
-                  placeholder="Ví dụ: Giảm cân, Giữ dáng, Tiết kiệm tiền..."
-                  value={settingsState.goal}
-                  onChange={(val) => handleChange("goal", val)}
-                />
-
-                <SettingsInput
-                  label="Ngân sách chi tiêu tháng"
-                  type="number"
-                  placeholder="Ví dụ: 5000000"
-                  suffix="VND"
-                  value={settingsState.monthlyBudget}
-                  onChange={(val) => handleChange("monthlyBudget", val)}
-                />
-              </div>
-            </SettingsCard>
-
-            {/* Other System Settings */}
             <div className="space-y-6">
-              <SettingsCard title="Tài khoản" icon={<UserRound size={18} />}>
-                <div className="space-y-3">
-                  <SettingsInput
-                    label="Tên hiển thị"
-                    type="text"
-                    value={settingsState.display_name}
-                    onChange={(val) => handleChange("display_name", val)}
-                  />
-                  <SettingsInput
-                    label="Ngôn ngữ"
-                    type="select"
-                    value={settingsState.language}
-                    onChange={(val) => handleChange("language", val)}
-                    options={[
-                      { label: "Tiếng Việt", value: "vi" },
-                      { label: "English", value: "en" },
-                    ]}
-                  />
-                </div>
-              </SettingsCard>
-
               {/* Theme Settings Card */}
               <SettingsCard
                 title="Giao diện & Chủ đề"
@@ -415,18 +298,9 @@ export default function SettingsPage() {
                 </div>
               </SettingsCard>
 
+              {/* Notifications Card */}
               <SettingsCard title="Thông báo" icon={<Bell size={18} />}>
                 <div className="space-y-3">
-                  <ToggleRow
-                    label="Email khi AI phân tích xong"
-                    value={settingsState.email_analysis_ready}
-                    onToggle={() =>
-                      handleChange(
-                        "email_analysis_ready",
-                        !settingsState.email_analysis_ready,
-                      )
-                    }
-                  />
                   <ToggleRow
                     label="Cảnh báo khi gần vượt ngân sách"
                     value={settingsState.budget_warning_push}
@@ -439,22 +313,42 @@ export default function SettingsPage() {
                   />
                 </div>
               </SettingsCard>
+            </div>
 
-              <SettingsCard title="Tự động hóa" icon={<Bot size={18} />}>
-                <div className="space-y-3">
-                  <ToggleRow
-                    label="Tự tạo khoản chi từ bữa ăn"
-                    value={settingsState.auto_create_expense}
-                    onToggle={() =>
-                      handleChange(
-                        "auto_create_expense",
-                        !settingsState.auto_create_expense,
-                      )
-                    }
-                  />
+            <div className="space-y-6">
+              {/* Account Info Card */}
+              <SettingsCard
+                title="Thông tin tài khoản"
+                icon={<UserRound size={18} />}
+              >
+                <div className="overflow-hidden rounded-2xl border border-slate-100 divide-y divide-slate-100 dark:border-slate-800 dark:divide-slate-800 bg-slate-50/30 dark:bg-slate-900/30">
+                  {[
+                    { label: "Tên hiển thị", value: profileData?.user?.fullName },
+                    { label: "Email", value: profileData?.user?.email },
+                    { label: "Vai trò", value: profileData?.user?.role },
+                    { label: "Trạng thái", value: profileData?.user?.status },
+                    { label: "Tạo lúc", value: formatDateTime(profileData?.user?.createdAt) },
+                    {
+                      label: "Cập nhật lần cuối",
+                      value: formatDateTime(profileData?.user?.updatedAt),
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 bg-white dark:bg-slate-900"
+                    >
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {item.label}
+                      </p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-200">
+                        {item.value || "N/A"}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </SettingsCard>
 
+              {/* Security Card */}
               <SettingsCard
                 id="messenger-chatbot"
                 title="Bảo mật và kết nối"
