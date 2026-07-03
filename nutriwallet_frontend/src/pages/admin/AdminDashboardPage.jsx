@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Bell } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import { fetchAllUsers } from "../../services/user.service";
+import {
+  fetchAdminUserDetail,
+  fetchAllUsers,
+  updateAdminUserStatus,
+} from "../../services/user.service";
 import toast from "react-hot-toast";
 
 // Import Custom Components
@@ -14,6 +18,7 @@ import ContentModerationTab from "../../components/admin/ContentModerationTab";
 import AnalyticsTab from "../../components/admin/AnalyticsTab";
 import SystemSettingsTab from "../../components/admin/SystemSettingsTab";
 import UserTable from "../../components/admin/UserTable";
+import UserDetailModal from "../../components/admin/UserDetailModal";
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -24,23 +29,32 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Navigation tab state: 'overview', 'users', or 'ai'
   const [currentTab, setCurrentTab] = useState("overview");
 
-  // Fetch Users data
+  // Fetch users from the admin API. Debounce search to avoid a request per keystroke.
   useEffect(() => {
-    async function loadData() {
+    let active = true;
+    const timer = setTimeout(async () => {
       setLoading(true);
-      const res = await fetchAllUsers();
-      if (res.error) {
-        toast.error(res.error);
-      }
+      const res = await fetchAllUsers({
+        query: searchQuery,
+        status: statusFilter,
+      });
+      if (!active) return;
+      if (res.error) toast.error(res.error);
       setUsers(res.data || []);
       setLoading(false);
-    }
-    loadData();
-  }, []);
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, statusFilter]);
 
   const handleLogout = async () => {
     try {
@@ -53,39 +67,30 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleToggleBlock = (userId, currentStatus) => {
+  const handleToggleBlock = async (userId, currentStatus) => {
     const nextStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
+    const result = await updateAdminUserStatus(userId, nextStatus);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
     setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u))
+      prev.map((user) => (user.id === userId ? result.data : user)),
     );
-    toast.success(
-      `Đã ${nextStatus === "ACTIVE" ? "mở khóa" : "khóa"} tài khoản thành công`
-    );
+    toast.success(nextStatus === "ACTIVE" ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản");
   };
 
-  const handlePromoteUser = (userId, currentRole) => {
-    const nextRole = currentRole === "Admin" ? "Người dùng" : "Admin";
-    const nextRawRole = currentRole === "Admin" ? "USER" : "ADMIN";
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId
-          ? { ...u, role: nextRole, rawRole: nextRawRole }
-          : u
-      )
-    );
-    toast.success(`Đã cập nhật vai trò thành công`);
+  const handleViewDetail = async (userId) => {
+    setDetailLoading(true);
+    setSelectedUser(null);
+    const result = await fetchAdminUserDetail(userId);
+    setDetailLoading(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setSelectedUser(result.data);
   };
-
-  // Filters & Search for Users Table
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch =
-      (u.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (u.email || "").toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (statusFilter === "ALL") return matchesSearch;
-    return matchesSearch && u.status === statusFilter;
-  });
-
   return (
     <div className="flex min-h-screen bg-[#0b091a] text-slate-100 font-sans antialiased">
       {/* Sidebar Admin */}
@@ -230,15 +235,24 @@ export default function AdminDashboardPage() {
 
               {/* UserTable Component */}
               <UserTable
-                users={filteredUsers}
+                users={users}
                 loading={loading}
-                onPromote={handlePromoteUser}
+                currentUserId={currentUser?.id}
                 onToggleBlock={handleToggleBlock}
+                onViewDetail={handleViewDetail}
               />
             </div>
           )}
         </div>
       </main>
+      <UserDetailModal
+        user={selectedUser}
+        loading={detailLoading}
+        onClose={() => {
+          setSelectedUser(null);
+          setDetailLoading(false);
+        }}
+      />
     </div>
   );
 }

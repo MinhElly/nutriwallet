@@ -56,11 +56,15 @@ export function mapCurrentUser(apiUser, fallbackUser = null) {
     emailVerifiedAt:
       fallbackUser?.emailVerifiedAt ||
       (status === "ACTIVE" ? formatDateTime(new Date()) : ""),
-    messengerPlatform: fallbackUser?.messengerPlatform ?? "Messenger",
-    messengerLinkedAt: fallbackUser?.messengerLinkedAt ?? "",
     provider: nextUser.provider ?? fallbackUser?.provider ?? null,
     createdAt: nextUser.createdAt ?? fallbackUser?.createdAt ?? null,
     updatedAt: nextUser.updatedAt ?? fallbackUser?.updatedAt ?? null,
+    messengerLinked:
+      nextUser.messengerLinked ?? fallbackUser?.messengerLinked ?? false,
+    messengerPlatform:
+      nextUser.messengerPlatform ?? fallbackUser?.messengerPlatform ?? null,
+    messengerLinkedAt:
+      nextUser.messengerLinkedAt ?? fallbackUser?.messengerLinkedAt ?? null,
   };
 }
 
