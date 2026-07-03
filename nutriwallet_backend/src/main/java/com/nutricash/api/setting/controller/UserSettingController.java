@@ -57,6 +57,7 @@ public class UserSettingController {
                 setting.isEmailAnalysisReady(),
                 setting.isBudgetWarningPush(),
                 setting.isAutoCreateExpense(),
+                setting.isAiRecommendationsEnabled(),
                 setting.getTheme()
         );
     }

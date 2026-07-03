@@ -1,5 +1,6 @@
 package com.nutricash.api.setting.service;
 
+import com.nutricash.api.budget.service.BudgetService;
 import com.nutricash.api.setting.dto.UpdateUserSettingRequest;
 import com.nutricash.api.setting.entity.UserSetting;
 import com.nutricash.api.setting.repository.UserSettingRepository;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserSettingService {
 
     private final UserSettingRepository userSettingRepository;
+    private final BudgetService budgetService;
 
     @Transactional
     public UserSetting getOrCreateUserSetting(User user) {
@@ -25,6 +27,7 @@ public class UserSettingService {
                             .emailAnalysisReady(true)
                             .budgetWarningPush(true)
                             .autoCreateExpense(false)
+                            .aiRecommendationsEnabled(true)
                             .theme("light")
                             .monthlyBudget(BigDecimal.ZERO)
                             .build();
@@ -35,6 +38,8 @@ public class UserSettingService {
     @Transactional
     public UserSetting updateUserSetting(User user, UpdateUserSettingRequest request) {
         UserSetting setting = getOrCreateUserSetting(user);
+        boolean budgetChanged = request.monthlyBudget() != null
+                && request.monthlyBudget().compareTo(setting.getMonthlyBudget()) != 0;
 
         if (request.gender() != null) setting.setGender(request.gender());
         if (request.weight() != null) setting.setWeight(request.weight());
@@ -48,8 +53,13 @@ public class UserSettingService {
         if (request.emailAnalysisReady() != null) setting.setEmailAnalysisReady(request.emailAnalysisReady());
         if (request.budgetWarningPush() != null) setting.setBudgetWarningPush(request.budgetWarningPush());
         if (request.autoCreateExpense() != null) setting.setAutoCreateExpense(request.autoCreateExpense());
+        if (request.aiRecommendationsEnabled() != null) setting.setAiRecommendationsEnabled(request.aiRecommendationsEnabled());
         if (request.theme() != null) setting.setTheme(request.theme());
 
-        return userSettingRepository.save(setting);
+        UserSetting saved = userSettingRepository.save(setting);
+        if (budgetChanged && request.monthlyBudget().signum() > 0) {
+            budgetService.replaceMonthlyBudget(user, request.monthlyBudget());
+        }
+        return saved;
     }
 }

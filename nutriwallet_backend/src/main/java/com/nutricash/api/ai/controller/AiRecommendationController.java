@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/ai/recommendations")
 @RequiredArgsConstructor
-@Tag(name = "AI Recommendations", description = "APIs for dynamic AI health and finance recommendations")
+@Tag(name = "AI Recommendations", description = "APIs for profile-driven AI health and finance recommendations")
 @SecurityRequirement(name = "bearerAuth")
 public class AiRecommendationController {
 
     private final AiRecommendationService aiRecommendationService;
 
-    @Operation(summary = "Get AI recommendations", description = "Retrieve list of dynamic health and budget recommendations from AI.")
+    @Operation(summary = "Get AI recommendations", description = "Retrieve profile-driven health and budget recommendations for the current user.")
     @GetMapping
     public ApiResponse<List<AiRecommendationResponse>> getRecommendations(@AuthenticationPrincipal SecurityUser currentUser) {
         List<AiRecommendationResponse> list = aiRecommendationService.getRecommendations(currentUser.getUser()).stream()

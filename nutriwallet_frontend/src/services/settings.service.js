@@ -19,12 +19,10 @@ export async function getUserSettings() {
  * @param {Record<string, unknown>} settings
  */
 export async function saveUserSettings(settings) {
-  // Cập nhật tên hiển thị nếu có thay đổi
   if (settings.display_name !== undefined) {
     await api.patch("/api/users/me", { fullName: settings.display_name });
   }
 
-  // Chuẩn hóa dữ liệu cập nhật
   const payload = {
     gender: settings.gender || null,
     weight: settings.weight ? parseFloat(settings.weight) : null,
@@ -38,6 +36,7 @@ export async function saveUserSettings(settings) {
     emailAnalysisReady: settings.email_analysis_ready !== undefined ? settings.email_analysis_ready : true,
     budgetWarningPush: settings.budget_warning_push !== undefined ? settings.budget_warning_push : true,
     autoCreateExpense: settings.auto_create_expense !== undefined ? settings.auto_create_expense : false,
+    aiRecommendationsEnabled: settings.ai_recommendations_enabled !== undefined ? settings.ai_recommendations_enabled : true,
     theme: settings.theme || "light",
   };
 

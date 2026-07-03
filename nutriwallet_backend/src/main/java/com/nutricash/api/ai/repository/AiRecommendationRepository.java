@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AiRecommendationRepository extends JpaRepository<AiRecommendation, Long> {
     List<AiRecommendation> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    void deleteByUserId(Long userId);
 }
