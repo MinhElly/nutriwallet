@@ -1,263 +1,217 @@
+﻿import { useEffect, useState } from "react";
+import { AlertCircle, Brain, Loader2, Salad, Users } from "lucide-react";
+import toast from "react-hot-toast";
 import {
-  Users,
-  DollarSign,
-  Brain,
-  AlertCircle
-} from "lucide-react";
-
-// Import Custom Components
-import SummaryCard from "./SummaryCard";
-import RecentEvents from "./RecentEvents";
-
-// Import Recharts
-import {
-  ResponsiveContainer,
-  ComposedChart,
   Bar,
-  Line,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell
 } from "recharts";
+import {
+  fetchAdminActivities,
+  fetchAdminDashboardOverview,
+} from "../../services/dashboard.service";
+import RecentEvents from "./RecentEvents";
+import SummaryCard from "./SummaryCard";
+
+const emptyOverview = {
+  totalUsers: 0,
+  activeUsers: 0,
+  totalMeals: 0,
+  totalAiAnalyses: 0,
+  aiRequestsToday: 0,
+  aiErrorRateToday: 0,
+  pendingAiReports: 0,
+  sevenDayTrend: [],
+};
+
+const trendConfig = [
+  { key: "newUsers", label: "User mới", color: "#8b5cf6" },
+  { key: "meals", label: "Bữa ăn", color: "#10b981" },
+  { key: "aiRequests", label: "AI requests", color: "#3b82f6" },
+];
+
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="min-w-44 rounded-2xl border border-white/10 bg-[#120f28]/95 px-4 py-3 shadow-2xl backdrop-blur">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+        {label}
+      </p>
+      <div className="mt-3 space-y-2">
+        {payload.map((entry) => (
+          <div key={entry.dataKey} className="flex items-center justify-between gap-4 text-sm">
+            <div className="flex items-center gap-2 text-slate-200">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span>{entry.name}</span>
+            </div>
+            <span className="font-semibold text-white">
+              {Number(entry.value || 0).toLocaleString("vi-VN")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function OverviewTab() {
-  // Recharts Data
-  const revenueData = [
-    { name: "T8", revenue: 85, activeUsers: 420 },
-    { name: "T9", revenue: 98, activeUsers: 450 },
-    { name: "T10", revenue: 110, activeUsers: 540 },
-    { name: "T11", revenue: 102, activeUsers: 520 },
-    { name: "T12", revenue: 124, activeUsers: 640 },
-    { name: "T1", revenue: 138, activeUsers: 680 },
-  ];
+  const [overview, setOverview] = useState(emptyOverview);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const planData = [
-    { name: "Free", value: 68, color: "#5b5975" },
-    { name: "Pro", value: 27, color: "#8b5cf6" },
-    { name: "Business", value: 5, color: "#f59e0b" },
-  ];
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetchAdminDashboardOverview(),
+      fetchAdminActivities({ size: 8 }),
+    ]).then(([overviewResult, activityResult]) => {
+      if (!active) return;
+      if (overviewResult.error) toast.error(overviewResult.error);
+      if (activityResult.error) toast.error(activityResult.error);
+      setOverview(overviewResult.data || emptyOverview);
+      setActivities(activityResult.data?.content || []);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const trend = overview.sevenDayTrend.map((item) => ({
+    ...item,
+    day: new Date(`${item.date}T00:00:00`).toLocaleDateString("vi-VN", {
+      weekday: "short",
+    }),
+  }));
+
+  const trendTotals = trend.reduce(
+    (result, item) => ({
+      newUsers: result.newUsers + (item.newUsers || 0),
+      meals: result.meals + (item.meals || 0),
+      aiRequests: result.aiRequests + (item.aiRequests || 0),
+    }),
+    { newUsers: 0, meals: 0, aiRequests: 0 },
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-80 items-center justify-center text-purple-400">
+        <Loader2 className="animate-spin" size={34} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-
-      {/* Overview Title and Banner Status */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">
-            System Overview
-          </h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-white">Tổng quan hệ thống</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Tổng quan hệ thống NutriWallet AI • 15/01/2024
+            Dữ liệu cập nhật từ NutriWallet API • {new Date().toLocaleDateString("vi-VN")}
           </p>
         </div>
-
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-950/30 border border-emerald-900/30 px-3 py-1.5 text-xs text-emerald-400 font-semibold w-fit">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-900/30 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-400">
           <span className="h-2 w-2 rounded-full bg-emerald-400" />
-          <span>All Systems Operational</span>
+          Hệ thống đang hoạt động
         </div>
       </div>
 
-      {/* Stats Grid of 4 Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard
-          title="Total Users"
-          value="50,284"
-          trend="↗ +1,247 tuần này"
-          isImprovement={true}
-          icon={Users}
-          iconBg="bg-purple-950/50"
-          iconColor="text-purple-400"
-        />
-        <SummaryCard
-          title="Monthly Revenue"
-          value="138M đ"
-          trend="↗ +11.3% vs tháng trước"
-          isImprovement={true}
-          icon={DollarSign}
-          iconBg="bg-emerald-950/50"
-          iconColor="text-emerald-400"
-        />
-        <SummaryCard
-          title="AI Requests Today"
-          value="12,847"
-          trend="↗ +8.2% vs hôm qua"
-          isImprovement={true}
-          icon={Brain}
-          iconBg="bg-blue-950/50"
-          iconColor="text-blue-400"
-        />
-        <SummaryCard
-          title="Error Rate"
-          value="0.32%"
-          trend="↘ ↓ 0.08% cải thiện"
-          isImprovement={true}
-          icon={AlertCircle}
-          iconBg="bg-amber-950/50"
-          iconColor="text-amber-400"
-        />
+        <SummaryCard title="Tổng người dùng" value={overview.totalUsers.toLocaleString("vi-VN")} trend={`${overview.activeUsers} đang hoạt động`} isImprovement icon={Users} />
+        <SummaryCard title="Bữa ăn đã ghi nhận" value={overview.totalMeals.toLocaleString("vi-VN")} trend="Toàn hệ thống" isImprovement icon={Salad} iconColor="text-emerald-400" />
+        <SummaryCard title="Lượt phân tích AI" value={overview.totalAiAnalyses.toLocaleString("vi-VN")} trend={`${overview.aiRequestsToday} lượt hôm nay`} isImprovement icon={Brain} iconColor="text-blue-400" />
+        <SummaryCard title="Tỷ lệ lỗi AI hôm nay" value={`${overview.aiErrorRateToday}%`} trend={`${overview.pendingAiReports} báo cáo đang chờ`} isImprovement={overview.aiErrorRateToday === 0} icon={AlertCircle} iconColor="text-amber-400" />
       </div>
 
-      {/* Charts Dashboard Layout */}
-      <div className="space-y-6">
-
-        {/* Chart 1: Revenue Composed Chart (Full Width) */}
-        <div className="rounded-[24px] border border-[#25214d] bg-[#171530] p-6 shadow-md">
-          <div className="flex items-center justify-between mb-6">
+      <div className="overflow-hidden rounded-[28px] border border-[#25214d] bg-[#171530] shadow-md">
+        <div className="border-b border-white/6 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(139,92,246,0.22),_transparent_32%),linear-gradient(180deg,_rgba(23,21,48,1)_0%,_rgba(18,16,40,1)_100%)] p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">
-                Revenue 6 tháng gần nhất
-              </h3>
-              <span className="text-xs text-slate-400 block mt-1">
-                Triệu đồng
+              <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">
+                7 ngày gần nhất
               </span>
+              <h3 className="mt-4 text-xl font-bold text-white">Nhịp tăng trưởng hệ thống</h3>
+              <p className="mt-1 text-sm text-slate-400">
+                Theo dõi user mới, bữa ăn được ghi nhận và số lượt phân tích AI theo từng ngày.
+              </p>
             </div>
-            <span className="rounded-full bg-emerald-950/60 border border-emerald-900/40 px-3 py-1 text-xs font-bold text-emerald-400">
-              +15% MoM
-            </span>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {trendConfig.map((item) => (
+                <div
+                  key={item.key}
+                  className="min-w-40 rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3"
+                >
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    {item.label}
+                  </div>
+                  <div className="mt-2 text-2xl font-black tracking-tight text-white">
+                    {trendTotals[item.key].toLocaleString("vi-VN")}
+                  </div>
+                  <div className="text-xs text-slate-500">Tổng trong 7 ngày</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-5 flex flex-wrap gap-3">
+            {trendConfig.map((item) => (
+              <div
+                key={item.key}
+                className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-[#100e24] px-3 py-1.5 text-xs text-slate-300"
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                {item.label}
+              </div>
+            ))}
           </div>
 
-          <div className="h-80 w-full">
+          <div className="h-[22rem]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={revenueData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 10 }}
-              >
-                <CartesianGrid stroke="#25214d" strokeDasharray="3 3" vertical={false} />
+              <BarChart data={trend} barCategoryGap="22%" margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <CartesianGrid stroke="rgba(148,163,184,0.14)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
-                  dataKey="name"
-                  stroke="#64748b"
+                  dataKey="day"
+                  stroke="#94a3b8"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  yAxisId="left"
                   stroke="#64748b"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  domain={[0, 140]}
+                  allowDecimals={false}
                 />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="#64748b"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  domain={[0, 800]}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#171530",
-                    borderColor: "#25214d",
-                    borderRadius: "16px",
-                    color: "#fff",
-                  }}
-                  itemStyle={{ fontSize: 13 }}
-                  labelStyle={{ fontWeight: "bold", marginBottom: 4 }}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="revenue"
-                  fill="#8b5cf6"
-                  radius={[6, 6, 0, 0]}
-                  barSize={50}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="activeUsers"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: "#10b981", strokeWidth: 0 }}
-                  activeDot={{ r: 7 }}
-                />
-              </ComposedChart>
+                <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} content={<CustomTooltip />} />
+                <Bar name="User mới" dataKey="newUsers" fill="#8b5cf6" radius={[8, 8, 0, 0]} maxBarSize={22} />
+                <Bar name="Bữa ăn" dataKey="meals" fill="#10b981" radius={[8, 8, 0, 0]} maxBarSize={22} />
+                <Bar name="AI requests" dataKey="aiRequests" fill="#3b82f6" radius={[8, 8, 0, 0]} maxBarSize={22} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-
-        {/* Grid for Plan Distribution & Recent System Events */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-
-          {/* Plan Distribution (Donut Chart) */}
-          <div className="rounded-[24px] border border-[#25214d] bg-[#171530] p-6 shadow-md lg:col-span-7 flex flex-col justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-white mb-1">
-                Plan Distribution
-              </h3>
-              <span className="text-xs text-slate-400 block mb-6">
-                Tỷ lệ phân bổ gói dịch vụ
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-4">
-              {/* Donut Pie */}
-              <div className="h-44 w-44 flex items-center justify-center relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={planData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {planData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => `${value}%`}
-                      contentStyle={{
-                        backgroundColor: "#171530",
-                        borderColor: "#25214d",
-                        borderRadius: "12px",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                {/* Center label */}
-                <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-white">68%</span>
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Free</span>
-                </div>
-              </div>
-
-              {/* Legend detail list */}
-              <div className="space-y-3.5 w-full sm:w-auto min-w-[150px]">
-                {planData.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-slate-300 font-medium">{item.name}</span>
-                    </div>
-                    <span className="font-bold text-white">{item.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent System Events */}
-          <div className="lg:col-span-5">
-            <RecentEvents />
-          </div>
-        </div>
-
       </div>
 
+      <RecentEvents events={activities} />
     </div>
   );
 }
