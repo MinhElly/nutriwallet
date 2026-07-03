@@ -42,6 +42,9 @@ public class Budget extends BaseEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "daily_amount", nullable = false, precision = 19, scale = 4)
+    private BigDecimal dailyAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BudgetPeriodType period;
@@ -60,4 +63,3 @@ public class Budget extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 }
-

@@ -15,5 +15,6 @@ public record UpdateUserSettingRequest(
     Boolean emailAnalysisReady,
     Boolean budgetWarningPush,
     Boolean autoCreateExpense,
+    Boolean aiRecommendationsEnabled,
     String theme
 ) {}

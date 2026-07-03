@@ -686,6 +686,7 @@ function SettingsInput({
 
 function EditBudgetModal({ budget, onClose, onSubmit }) {
   const [amount, setAmount] = useState(budget?.amount || 0);
+  const [period, setPeriod] = useState(budget?.period || "MONTHLY");
   const [warningThreshold, setWarningThreshold] = useState(budget?.warningThresholdPercent || 80);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -698,12 +699,17 @@ function EditBudgetModal({ budget, onClose, onSubmit }) {
     }
     setIsSaving(true);
     try {
+      const today = new Date();
+      const startDate = today.toISOString().slice(0, 10);
+      const end = new Date(today);
+      if (period === "WEEKLY") end.setDate(today.getDate() + 6);
+      if (period === "MONTHLY") end.setMonth(today.getMonth() + 1, 0);
       await onSubmit({
         amount: Number(amount),
         warningThresholdPercent: Number(warningThreshold),
-        period: "MONTHLY",
-        startDate: budget?.startDate || new Date().toISOString().slice(0, 10),
-        endDate: budget?.endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+        period,
+        startDate,
+        endDate: period === "DAILY" ? startDate : end.toISOString().slice(0, 10),
         currency: budget?.currency || "VND",
         active: true,
       });
@@ -740,6 +746,17 @@ function EditBudgetModal({ budget, onClose, onSubmit }) {
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Ky ngan sach
+            </span>
+            <select value={period} onChange={(event) => setPeriod(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100">
+              <option value="DAILY">Theo ngay</option>
+              <option value="WEEKLY">Theo tuan</option>
+              <option value="MONTHLY">Theo thang</option>
+            </select>
+          </label>
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
               Số tiền (VND)

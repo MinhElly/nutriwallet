@@ -18,13 +18,15 @@ export async function saveOnboarding(data) {
     "active": "VERY_ACTIVE"
   };
 
+  const now = new Date();
+  const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   let monthlyBudget = 0;
-  if (data.budget === "saving") monthlyBudget = 30000 * 30;
-  else if (data.budget === "normal") monthlyBudget = 75000 * 30;
-  else if (data.budget === "comfortable") monthlyBudget = 150000 * 30;
-  else if (data.budget === "premium") monthlyBudget = 300000 * 30;
+  if (data.budget === "saving") monthlyBudget = 30000 * daysInCurrentMonth;
+  else if (data.budget === "normal") monthlyBudget = 75000 * daysInCurrentMonth;
+  else if (data.budget === "comfortable") monthlyBudget = 150000 * daysInCurrentMonth;
+  else if (data.budget === "premium") monthlyBudget = 300000 * daysInCurrentMonth;
   else if (data.budget === "custom" && data.customBudgetRaw) {
-    monthlyBudget = parseFloat(data.customBudgetRaw) * 30;
+    monthlyBudget = parseFloat(data.customBudgetRaw) * daysInCurrentMonth;
   }
 
   const goalStr = Array.isArray(data.selectedGoals) ? data.selectedGoals.join(",") : "";

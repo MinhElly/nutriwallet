@@ -64,6 +64,7 @@ function mapBudgetRecord(apiPayload, expenses) {
   return {
     id: rawBudget.id ?? 0,
     amount,
+    dailyAmount: Number(rawBudget.dailyAmount ?? rawBudget.daily_amount ?? 0),
     spentAmount,
     remainingAmount,
     usagePercent,

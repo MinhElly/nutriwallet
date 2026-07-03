@@ -16,5 +16,6 @@ public record UserSettingResponse(
     boolean emailAnalysisReady,
     boolean budgetWarningPush,
     boolean autoCreateExpense,
+    boolean aiRecommendationsEnabled,
     String theme
 ) {}
