@@ -17,8 +17,12 @@ function buildExpenseDescription(expense, mealsById) {
     ? mealsById.get(expense.mealRecordId)
     : null;
 
+  const noteText = expense.note?.trim();
+  const hasNote = noteText && noteText !== "Không có ghi chú";
+
   return (
     linkedMeal?.mealName ??
+    (hasNote ? noteText : null) ??
     expenseCategoryLabelMap[expense.category] ??
     expense.category ??
     "Chi tiêu"

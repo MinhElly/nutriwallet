@@ -470,12 +470,11 @@ export default function ExpenseHistoryPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-4">Ngày chi</th>
                 <th className="px-5 py-4">Danh mục</th>
                 <th className="px-5 py-4">Mô tả</th>
-                <th className="px-5 py-4">Ghi chú</th>
                 <th className="px-5 py-4">Số tiền</th>
                 <th className="px-5 py-4">Tiền tệ</th>
               </tr>
@@ -496,7 +495,6 @@ export default function ExpenseHistoryPage() {
                     <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">
                       {record.description}
                     </td>
-                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400">{record.note}</td>
                     <td className="px-5 py-4 font-bold text-slate-900 dark:text-slate-100">
                       {formatMoney(record.amount)}
                     </td>
@@ -506,7 +504,7 @@ export default function ExpenseHistoryPage() {
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400"
                   >
                     Không có khoản chi nào phù hợp với bộ lọc hiện tại.

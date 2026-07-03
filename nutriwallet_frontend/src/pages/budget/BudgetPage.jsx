@@ -36,24 +36,30 @@ import {
 } from "../../utils/date";
 
 const categoryLabelMap = {
-  GROCERIES: "Tạp hóa",
-  DINING_OUT: "Ăn ngoài",
-  HEALTH: "Sức khỏe",
-  TRANSPORTATION: "Di chuyển",
+  BREAKFAST: "Bữa sáng",
+  LUNCH: "Bữa trưa",
+  DINNER: "Bữa tối",
+  SNACK: "Bữa phụ",
+  DRINK: "Đồ uống",
+  OTHER: "Khác",
 };
 
 const categoryColorMap = {
-  GROCERIES: "#059669",
-  DINING_OUT: "#2563eb",
-  HEALTH: "#f97316",
-  TRANSPORTATION: "#8b5cf6",
+  BREAKFAST: "#f59e0b",
+  LUNCH: "#3b82f6",
+  DINNER: "#6366f1",
+  SNACK: "#ec4899",
+  DRINK: "#06b6d4",
+  OTHER: "#64748b",
 };
 
 const categoryOptions = [
-  { value: "GROCERIES", label: "Tạp hóa" },
-  { value: "DINING_OUT", label: "Ăn ngoài" },
-  { value: "HEALTH", label: "Sức khỏe" },
-  { value: "TRANSPORTATION", label: "Di chuyển" },
+  { value: "BREAKFAST", label: "Bữa sáng" },
+  { value: "LUNCH", label: "Bữa trưa" },
+  { value: "DINNER", label: "Bữa tối" },
+  { value: "SNACK", label: "Bữa phụ" },
+  { value: "DRINK", label: "Đồ uống" },
+  { value: "OTHER", label: "Khác" },
 ];
 
 const periodLabelMap = {
@@ -462,10 +468,13 @@ function BudgetPage() {
   function handleExpenseFormChange(event) {
     const { name, value } = event.target;
 
-    setExpenseForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setExpenseForm((current) => {
+      const updated = { ...current, [name]: value };
+      if (name === "note") {
+        updated.description = value;
+      }
+      return updated;
+    });
   }
 
   async function handleAddExpenseSubmit(event) {
@@ -884,7 +893,7 @@ function AddExpenseModal({
 
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Danh mục
+                Bữa ăn
               </span>
               <select
                 name="category"
@@ -900,20 +909,6 @@ function AddExpenseModal({
               </select>
             </label>
           </div>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-slate-700">
-              Mô tả
-            </span>
-            <input
-              type="text"
-              name="description"
-              value={expenseForm.description}
-              onChange={onChange}
-              placeholder="Ví dụ: Ăn trưa với nhóm"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500"
-            />
-          </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-slate-700">
@@ -933,14 +928,14 @@ function AddExpenseModal({
 
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-slate-700">
-              Ghi chú
+              Mô tả chi tiết / Ghi chú
             </span>
             <textarea
               name="note"
               rows="3"
               value={expenseForm.note}
               onChange={onChange}
-              placeholder="Thêm ghi chú nếu cần"
+              placeholder="Ví dụ: Ăn trưa với nhóm, mua phở bò..."
               className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500"
             />
           </label>
@@ -1167,7 +1162,6 @@ function RecentExpenses({ expenses, onViewAllExpenses }) {
               <th className="px-4 py-3">Mô tả</th>
               <th className="px-4 py-3">Số tiền</th>
               <th className="px-4 py-3">Tiền tệ</th>
-              <th className="px-4 py-3">Ghi chú</th>
             </tr>
           </thead>
 
@@ -1184,13 +1178,12 @@ function RecentExpenses({ expenses, onViewAllExpenses }) {
                     {formatMoney(expense.amount)}
                   </td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{expense.currency}</td>
-                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{expense.note}</td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
                   Không có khoản chi nào trong khoảng ngày đang chọn.
