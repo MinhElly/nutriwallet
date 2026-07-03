@@ -226,7 +226,10 @@ public class MessengerWebhookService {
 
             if (incomingText != null && !incomingText.isBlank()) {
                 String aiResponse = generateAiResponse(profile, null, incomingText);
-                aiResponse += "\n\n👉 Đăng nhập tài khoản NutriWallet ngay tại đây để liên kết và lưu trữ nhật ký lâu dài: " + frontendUrl + "/login";
+                String loginUrl = frontendUrl + "/login";
+                if (!aiResponse.contains(loginUrl)) {
+                    aiResponse += "\n\n👉 Đăng nhập tài khoản NutriWallet ngay tại đây để liên kết và lưu trữ nhật ký lâu dài: " + loginUrl;
+                }
                 sendFacebookMessage(psid, aiResponse);
                 saveMessage(profile, ChatbotMessageType.TEXT, aiResponse, null, false);
             }
@@ -674,6 +677,7 @@ public class MessengerWebhookService {
         Collections.reverse(recent);
         String history = recent.stream().filter(m -> m.getMessageText() != null && m.getAttachmentUrl() == null)
                 .filter(m -> !m.getMessageText().contains("NW-") && !m.getMessageText().toLowerCase().contains("ma lien ket"))
+                .filter(m -> !m.getMessageText().contains(frontendUrl + "/login"))
                 .map(m -> (m.isFromUser() ? "User: " : "Assistant: ") + m.getMessageText()).collect(Collectors.joining("\n"));
         return history.isBlank() ? "" : "\n\nHoi thoai gan day (toi da 6 cap):\n" + history;
     }
