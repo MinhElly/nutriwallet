@@ -163,7 +163,6 @@ public class MessengerWebhookService {
 
         // Kiểm tra câu hỏi đặc biệt về mã liên kết hoặc tính năng của chatbot
         if (incomingText != null && !incomingText.isBlank()) {
-            if (tryHandleBudgetCommand(profile, user, incomingText)) return;
             String normalized = normalizeText(incomingText);
             if (ChatbotTextRules.asksForLinkCode(incomingText)) {
                 if (profile.getUser() == null) {
@@ -235,6 +234,8 @@ public class MessengerWebhookService {
         }
 
         User user = profile.getUser();
+        if (incomingText != null && !incomingText.isBlank()
+                && tryHandleBudgetCommand(profile, user, incomingText)) return;
 
         // 3. Xử lý tin nhắn ảnh (Phân tích bữa ăn) cho người dùng đã liên kết
         if (imageUrl != null) {
