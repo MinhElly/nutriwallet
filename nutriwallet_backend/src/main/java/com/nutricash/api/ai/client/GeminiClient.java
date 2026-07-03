@@ -212,11 +212,13 @@ public class GeminiClient implements LlmClient {
         String responseBody = exception.getResponseBodyAsString();
         log.warn("Gemini HTTP error: status={} body={}", status.value(), responseBody);
 
+        String customMsg = "Gemini API HTTP " + status.value() + ": " + responseBody;
+
         if (status.value() == 400) {
-            return new GeminiBadRequestException();
+            return new GeminiApiException(ErrorCode.AI_BAD_REQUEST, customMsg, exception);
         }
         if (status.value() == 401 || status.value() == 403) {
-            return new GeminiAuthException();
+            return new GeminiApiException(ErrorCode.AI_AUTH_FAILED, customMsg, exception);
         }
         if (status.value() == 429) {
             return new GeminiRateLimitException(retryAfter(exception));
@@ -224,7 +226,7 @@ public class GeminiClient implements LlmClient {
         if (status.value() == 500 || status.value() == 503 || status.value() == 504) {
             return new GeminiTemporaryUnavailableException(retryAfter(exception));
         }
-        return new GeminiApiException(ErrorCode.AI_PROVIDER_UNAVAILABLE);
+        return new GeminiApiException(ErrorCode.AI_PROVIDER_UNAVAILABLE, customMsg, exception);
     }
 
     private Duration retryAfter(RestClientResponseException e) {
