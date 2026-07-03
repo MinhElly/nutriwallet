@@ -8,9 +8,6 @@ import {
   Loader2,
   Calendar,
   User as UserIcon,
-  BookOpen,
-  MessageSquare,
-  Sparkles
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -46,6 +43,8 @@ export default function AiErrorLogsTab() {
   };
 
   useEffect(() => {
+    // Initial API hydration is intentionally performed once on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, []);
 

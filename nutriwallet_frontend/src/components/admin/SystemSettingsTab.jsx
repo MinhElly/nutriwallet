@@ -3,9 +3,6 @@ import {
   Server,
   Key,
   AlertTriangle,
-  Database,
-  Cpu,
-  Activity,
   HardDrive
 } from "lucide-react";
 import toast from "react-hot-toast";

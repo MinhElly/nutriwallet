@@ -4,7 +4,6 @@ import {
   Check,
   Trash2,
   AlertTriangle,
-  Ban,
   FileText,
   Heart,
   MessageSquare
@@ -16,7 +15,7 @@ export default function ContentModerationTab() {
   const [flagPending, setFlagPending] = useState(4);
   const [approvedToday, setApprovedToday] = useState(127);
   const [deletedToday, setDeletedToday] = useState(8);
-  const [totalReports, setTotalReports] = useState(312);
+  const [totalReports] = useState(312);
 
   // Moderation tab state: 'reported', 'all', 'deleted'
   const [subTab, setSubTab] = useState("reported");

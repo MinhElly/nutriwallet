@@ -92,7 +92,10 @@ export default function AIConsoleTab() {
   };
 
   useEffect(() => {
+    // Initial API hydration is intentionally performed once on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Log Actions

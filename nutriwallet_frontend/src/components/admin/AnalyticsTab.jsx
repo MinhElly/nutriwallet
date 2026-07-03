@@ -4,7 +4,6 @@ import {
   FileText,
   Building,
   MapPin,
-  Compass,
   Map
 } from "lucide-react";
 import toast from "react-hot-toast";
