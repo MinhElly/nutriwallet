@@ -333,3 +333,35 @@ export async function getAiRecommendations() {
     return aiRecommendations; // empty array
   }
 }
+
+export async function fetchAdminDashboardOverview() {
+  try {
+    return {
+      data: unwrapApiData(await api.get("/api/admin/dashboard/overview")),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: extractApiMessage(error, "Không thể tải tổng quan hệ thống."),
+    };
+  }
+}
+
+export async function fetchAdminActivities({ page = 0, size = 10 } = {}) {
+  try {
+    return {
+      data: unwrapApiData(
+        await api.get("/api/admin/dashboard/activities", {
+          params: { page, size },
+        }),
+      ),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: { content: [], page: 0, totalElements: 0, totalPages: 0 },
+      error: extractApiMessage(error, "Không thể tải hoạt động quản trị."),
+    };
+  }
+}

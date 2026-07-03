@@ -3,6 +3,7 @@ package com.nutricash.api.ai.entity;
 import com.nutricash.api.common.enums.AiAnalysisStatus;
 import com.nutricash.api.common.enums.AiInputType;
 import com.nutricash.api.common.enums.AiAnalysisSource;
+import com.nutricash.api.common.enums.AiLogEvaluationStatus;
 import com.nutricash.api.meal.entity.MealRecord;
 import com.nutricash.api.user.entity.User;
 import jakarta.persistence.CascadeType;
@@ -113,6 +114,11 @@ public class AiAnalysisLog {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AiAnalysisStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "evaluation_status", nullable = false, length = 20)
+    @Builder.Default
+    private AiLogEvaluationStatus evaluationStatus = AiLogEvaluationStatus.PENDING;
 
     @Lob
     @Column(name = "error_message", columnDefinition = "TEXT")

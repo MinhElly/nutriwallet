@@ -36,6 +36,7 @@ public class AiAnalysisService {
     private final AiPromptBuilder prompts;
     private final AiJobPublisher publisher;
     private final AiWorkerRateLimiter limiter;
+    private final AiErrorReportRepository errorReports;
     private final ObjectMapper mapper = new ObjectMapper();
     @Value("${app.ai.cache.ttl-days:30}")
     private long ttl;
@@ -109,31 +110,73 @@ public class AiAnalysisService {
         log.error("Handling fatal job processing failure for analysis log: id={}", id, t);
         AiAnalysisLog l = logs.findById(id).orElse(null);
         if (l == null) return;
+        String details = formatErrorMessage(t);
         l.setStatus(AiAnalysisStatus.FAILED);
-        l.setErrorMessage("AI_TEMPORARILY_UNAVAILABLE");
+        l.setErrorMessage(details);
         l.setCompletedAt(Instant.now());
         logs.save(l);
+
+        try {
+            AiErrorReport report = AiErrorReport.builder()
+                .user(l.getUser())
+                .aiAnalysisLog(l)
+                .mealRecord(null)
+                .reason("SYSTEM_ERROR")
+                .description(details)
+                .status(AiErrorReportStatus.PENDING)
+                .build();
+            errorReports.save(report);
+        } catch (Exception ex) {
+            log.error("Failed to automatically save AiErrorReport for fatal failure log {}", l.getId(), ex);
+        }
+    }
+
+    private String formatErrorMessage(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        if (t instanceof AppException a) {
+            ErrorCode code = a.getErrorCode();
+            sb.append("Error Code: ").append(code.name()).append(" (").append(code.code()).append(")\n");
+        } else {
+            sb.append("Error Code: UNEXPECTED_FAILURE\n");
+        }
+        sb.append("Exception: ").append(t.getClass().getName()).append("\n");
+        sb.append("Message: ").append(t.getMessage()).append("\n");
+        if (t.getCause() != null) {
+            sb.append("Cause: ").append(t.getCause().toString()).append("\n");
+        }
+        sb.append("Stack Trace:\n");
+        StackTraceElement[] trace = t.getStackTrace();
+        for (int i = 0; i < Math.min(trace.length, 10); i++) {
+            sb.append("\tat ").append(trace[i].toString()).append("\n");
+        }
+        return sb.toString();
     }
 
     private void fail(AiAnalysisLog l, Exception e) {
         ErrorCode c = e instanceof AppException a ? a.getErrorCode() : ErrorCode.AI_INVALID_RESPONSE;
         log.warn("Job execution failed: logId={}, errorCode={}", l.getId(), c.name(), e);
         
-        // If temporary unavailability or rate limiting happens, fail immediately with AI_TEMPORARILY_UNAVAILABLE
-        if (c == ErrorCode.AI_PROVIDER_UNAVAILABLE || c == ErrorCode.AI_RATE_LIMITED) {
-            l.setStatus(AiAnalysisStatus.FAILED);
-            l.setErrorMessage("AI_TEMPORARILY_UNAVAILABLE");
-            l.setCompletedAt(Instant.now());
-            logs.save(l);
-            publisher.deadLetter(l.getId());
-            return;
-        }
-
-        // For standard/permanent failures
+        String details = formatErrorMessage(e);
+        
         l.setStatus(AiAnalysisStatus.FAILED);
-        l.setErrorMessage(c.code());
+        l.setErrorMessage(details);
         l.setCompletedAt(Instant.now());
         logs.save(l);
+
+        try {
+            AiErrorReport report = AiErrorReport.builder()
+                .user(l.getUser())
+                .aiAnalysisLog(l)
+                .mealRecord(null)
+                .reason("SYSTEM_ERROR")
+                .description(details)
+                .status(AiErrorReportStatus.PENDING)
+                .build();
+            errorReports.save(report);
+        } catch (Exception ex) {
+            log.error("Failed to automatically save AiErrorReport for failed log {}", l.getId(), ex);
+        }
+
         publisher.deadLetter(l.getId());
     }
 
@@ -182,10 +225,34 @@ public class AiAnalysisService {
     private AiAnalyzeMealResponse response(AiAnalysisLog l, String m) {
         if (m == null) {
             if (l.getStatus() == AiAnalysisStatus.FAILED) {
-                if ("AI_TEMPORARILY_UNAVAILABLE".equals(l.getErrorMessage())) {
+                String errMsg = l.getErrorMessage();
+                if ("AI_TEMPORARILY_UNAVAILABLE".equals(errMsg) ||
+                        (errMsg != null && (errMsg.contains("AI_PROVIDER_UNAVAILABLE") || errMsg.contains("AI_RATE_LIMITED")))) {
                     m = "AI đang quá tải, vui lòng thử lại sau ít phút.";
+                } else if (errMsg != null) {
+                    // Extract the first non-empty line or the exception type + message for user display
+                    String[] lines = errMsg.split("\n");
+                    String displayErr = "";
+                    for (String line : lines) {
+                        if (line.startsWith("Message: ")) {
+                            displayErr = line.substring(9).trim();
+                            break;
+                        }
+                    }
+                    if (displayErr.isEmpty()) {
+                        for (String line : lines) {
+                            if (line.startsWith("Error Code: ")) {
+                                displayErr = line.substring(12).trim();
+                                break;
+                            }
+                        }
+                    }
+                    if (displayErr.isEmpty() && lines.length > 0) {
+                        displayErr = lines[0].trim();
+                    }
+                    m = "Phân tích thất bại: " + (displayErr.isEmpty() ? "Lỗi không xác định" : displayErr);
                 } else {
-                    m = "Phân tích thất bại: " + l.getErrorMessage();
+                    m = "Phân tích thất bại: Lỗi không xác định";
                 }
             } else if (l.getStatus() == AiAnalysisStatus.SUCCESS) {
                 m = "Analysis complete";
@@ -293,5 +360,22 @@ public class AiAnalysisService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         return users.findByIdAndDeletedAtIsNull(p.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AiAnalysisErrorResponse> findFailedLogs() {
+        return logs.findAllByStatusOrderByCreatedAtDesc(AiAnalysisStatus.FAILED)
+                .stream()
+                .map(logItem -> new AiAnalysisErrorResponse(
+                        logItem.getId(),
+                        logItem.getUser() != null ? logItem.getUser().getEmail() : "Anonymous",
+                        logItem.getInputType() != null ? logItem.getInputType().name() : "UNKNOWN",
+                        logItem.getInputText(),
+                        logItem.getInputImageUrl(),
+                        logItem.getErrorMessage(),
+                        logItem.getModelName(),
+                        logItem.getCreatedAt()
+                ))
+                .toList();
     }
 }

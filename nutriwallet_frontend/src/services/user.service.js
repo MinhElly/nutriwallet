@@ -166,18 +166,59 @@ export async function getCurrentUser() {
   return unwrapApiData(await api.get("/api/users/me"));
 }
 
-export async function fetchAllUsers() {
+export async function fetchAllUsers({
+  query = "",
+  status = "ALL",
+  page = 0,
+  size = 100,
+} = {}) {
   try {
-    const users = unwrapApiData(await api.get("/api/users"));
+    const params = { page, size };
+    if (query.trim()) params.query = query.trim();
+    if (status !== "ALL") params.status = status;
+
+    const result = unwrapApiData(await api.get("/api/admin/users", { params }));
     return {
-      data: users.map((u) => mapCurrentUser(u)),
+      data: (result.content ?? []).map((u) => mapCurrentUser(u)),
+      pagination: {
+        page: result.page ?? 0,
+        size: result.size ?? size,
+        totalElements: result.totalElements ?? 0,
+        totalPages: result.totalPages ?? 0,
+      },
       error: null,
     };
   } catch (error) {
-    console.warn("API fetchAllUsers failed.", error);
     return {
       data: [],
+      pagination: null,
       error: extractApiMessage(error, "Không thể tải danh sách người dùng."),
+    };
+  }
+}
+
+export async function updateAdminUserStatus(id, status) {
+  try {
+    const user = unwrapApiData(
+      await api.patch(`/api/admin/users/${id}/status`, { status }),
+    );
+    return { data: mapCurrentUser(user), error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: extractApiMessage(error, "Không thể cập nhật trạng thái người dùng."),
+    };
+  }
+}
+
+export async function fetchAdminUserDetail(id) {
+  try {
+    const user = unwrapApiData(await api.get(`/api/admin/users/${id}`));
+    return { data: mapCurrentUser(user), error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: extractApiMessage(error, "Không thể tải chi tiết người dùng."),
     };
   }
 }
