@@ -27,6 +27,7 @@ export function useSettingsData() {
         email_analysis_ready: data.emailAnalysisReady !== false,
         budget_warning_push: data.budgetWarningPush !== false,
         auto_create_expense: data.autoCreateExpense === true,
+        ai_recommendations_enabled: data.aiRecommendationsEnabled !== false,
         theme: data.theme || "light",
       };
       setSettings(mapped);

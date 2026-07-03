@@ -7,6 +7,7 @@ import java.time.LocalDate;
 public record BudgetResponse(
         Long id,
         BigDecimal amount,
+        BigDecimal dailyAmount,
         BudgetPeriodType period,
         LocalDate startDate,
         LocalDate endDate,

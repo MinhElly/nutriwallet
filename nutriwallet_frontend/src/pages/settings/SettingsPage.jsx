@@ -125,7 +125,6 @@ export default function SettingsPage() {
     }));
   }
 
-  // Đổi theme ngay lập tức (không cần nhấn Lưu)
   function handleThemeChange(newTheme) {
     setTheme(newTheme);
     setSettingsState((curr) => ({ ...curr, theme: newTheme }));
@@ -227,10 +226,7 @@ export default function SettingsPage() {
                   </div>
 
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {profileData?.user?.email}{" "}
-                    {profileData?.chatbotProfile
-                      ? `• ${profileData.chatbotProfile.platform}`
-                      : ""}
+                    {profileData?.user?.email} {profileData?.chatbotProfile ? `• ${profileData.chatbotProfile.platform}` : ""}
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -255,7 +251,6 @@ export default function SettingsPage() {
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
             <div className="space-y-6">
-              {/* Theme Settings Card */}
               <SettingsCard
                 title="Giao diện & Chủ đề"
                 icon={<Palette size={18} />}
@@ -295,7 +290,6 @@ export default function SettingsPage() {
                 </div>
               </SettingsCard>
 
-              {/* Notifications Card */}
               <SettingsCard title="Thông báo" icon={<Bell size={18} />}>
                 <div className="space-y-3">
                   <ToggleRow
@@ -308,12 +302,21 @@ export default function SettingsPage() {
                       )
                     }
                   />
+                  <ToggleRow
+                    label="Gợi ý AI theo hồ sơ"
+                    value={settingsState.ai_recommendations_enabled}
+                    onToggle={() =>
+                      handleChange(
+                        "ai_recommendations_enabled",
+                        !settingsState.ai_recommendations_enabled,
+                      )
+                    }
+                  />
                 </div>
               </SettingsCard>
             </div>
 
             <div className="space-y-6">
-              {/* Account Info Card */}
               <SettingsCard
                 title="Thông tin tài khoản"
                 icon={<UserRound size={18} />}
@@ -351,7 +354,6 @@ export default function SettingsPage() {
                 </div>
               </SettingsCard>
 
-              {/* Security Card */}
               <SettingsCard
                 id="messenger-chatbot"
                 title="Bảo mật và kết nối"

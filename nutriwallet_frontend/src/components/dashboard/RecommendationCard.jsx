@@ -36,27 +36,33 @@ export default function RecommendationCard({ items = [] }) {
   return (
     <SectionCard title="Gợi ý AI" icon={Brain} compact hideViewAll>
       <div className="flex h-full flex-col gap-2.5">
-        {items.map((item) => {
-          const tone = toneClasses[item.tone] ?? toneClasses.info;
-          const Icon = iconMap[item.icon] ?? Lightbulb;
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+            Chưa có gợi ý AI cho hồ sơ hiện tại. Bạn có thể bật tính năng này trong Cài đặt.
+          </div>
+        ) : (
+          items.map((item) => {
+            const tone = toneClasses[item.tone] ?? toneClasses.info;
+            const Icon = iconMap[item.type] ?? Lightbulb;
 
-          return (
-            <div
-              key={item.id}
-              className={`flex items-start gap-2.5 rounded-2xl border px-3 py-2.5 ${tone.container}`}
-            >
+            return (
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}`}
+                key={item.id}
+                className={`flex items-start gap-2.5 rounded-2xl border px-3 py-2.5 ${tone.container}`}
               >
-                <Icon size={16} strokeWidth={1.9} />
-              </div>
+                <div
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}`}
+                >
+                  <Icon size={16} strokeWidth={1.9} />
+                </div>
 
-              <p className="pt-0.5 text-[13px] font-medium leading-5 text-slate-700 sm:text-sm dark:text-slate-200">
-                {item.content}
-              </p>
-            </div>
-          );
-        })}
+                <p className="pt-0.5 text-[13px] font-medium leading-5 text-slate-700 sm:text-sm dark:text-slate-200">
+                  {item.content}
+                </p>
+              </div>
+            );
+          })
+        )}
       </div>
     </SectionCard>
   );

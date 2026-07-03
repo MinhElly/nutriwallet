@@ -10,6 +10,7 @@ public class BudgetMapper {
         return new BudgetResponse(
                 budget.getId(),
                 budget.getAmount(),
+                budget.getDailyAmount(),
                 budget.getPeriod(),
                 budget.getStartDate(),
                 budget.getEndDate(),

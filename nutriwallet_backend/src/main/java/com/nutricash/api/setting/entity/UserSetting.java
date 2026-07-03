@@ -1,6 +1,7 @@
 package com.nutricash.api.setting.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nutricash.api.budget.entity.Budget;
 import com.nutricash.api.common.entity.BaseEntity;
 import com.nutricash.api.user.entity.User;
 import jakarta.persistence.Column;
@@ -59,6 +60,11 @@ public class UserSetting extends BaseEntity {
     @Builder.Default
     private BigDecimal monthlyBudget = BigDecimal.ZERO;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "current_budget_id", unique = true)
+    @JsonIgnore
+    private Budget currentBudget;
+
     @Column(length = 10)
     @Builder.Default
     private String language = "vi";
@@ -74,6 +80,14 @@ public class UserSetting extends BaseEntity {
     @Column(name = "auto_create_expense")
     @Builder.Default
     private boolean autoCreateExpense = false;
+
+    @Column(name = "ai_recommendations_enabled")
+    @Builder.Default
+    private Boolean aiRecommendationsEnabled = true;
+
+    public boolean isAiRecommendationsEnabled() {
+        return aiRecommendationsEnabled == null || aiRecommendationsEnabled;
+    }
 
     @Column(length = 20)
     @Builder.Default

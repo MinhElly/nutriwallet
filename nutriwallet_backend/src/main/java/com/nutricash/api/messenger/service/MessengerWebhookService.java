@@ -6,6 +6,9 @@ import com.nutricash.api.ai.service.AiPromptBuilder;
 import com.nutricash.api.ai.service.AiProviderService;
 import com.nutricash.api.ai.repository.AiErrorReportRepository;
 import com.nutricash.api.ai.entity.AiErrorReport;
+import com.nutricash.api.budget.service.BudgetService;
+import com.nutricash.api.budget.service.BudgetAlertService;
+import com.nutricash.api.common.enums.BudgetPeriodType;
 import com.nutricash.api.common.enums.AiErrorReportStatus;
 import com.nutricash.api.common.enums.ChatbotMessageType;
 import com.nutricash.api.common.enums.ChatbotActionStatus;
@@ -46,6 +49,9 @@ import java.util.Random;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
+import java.text.Normalizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +66,8 @@ public class MessengerWebhookService {
     private final AiProviderService aiProviderService;
     private final AiPromptBuilder aiPromptBuilder;
     private final AiErrorReportRepository errorReports;
+    private final BudgetService budgetService;
+    private final BudgetAlertService budgetAlertService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -155,6 +163,7 @@ public class MessengerWebhookService {
 
         // Kiểm tra câu hỏi đặc biệt về mã liên kết hoặc tính năng của chatbot
         if (incomingText != null && !incomingText.isBlank()) {
+            if (tryHandleBudgetCommand(profile, user, incomingText)) return;
             String normalized = normalizeText(incomingText);
             if (ChatbotTextRules.asksForLinkCode(incomingText)) {
                 if (profile.getUser() == null) {
@@ -338,6 +347,7 @@ public class MessengerWebhookService {
                 expense.setAmount(finalPrice);
                 expense.setNote("Tự động cập nhật từ Chatbot: " + finalFoodName);
                 expenseRepository.save(expense);
+                budgetAlertService.recalculate(profile.getUser().getId());
             } else {
                 int hour = LocalDateTime.now().getHour();
                 ExpenseCategory category;
@@ -361,6 +371,7 @@ public class MessengerWebhookService {
                         .note("Tự động tạo từ Chatbot: " + finalFoodName)
                         .build();
                 expenseRepository.save(expense);
+                budgetAlertService.recalculate(profile.getUser().getId());
             }
 
             String confirmationMsg = "✅ **Đã ghi nhận thay đổi!**\n" +
@@ -376,6 +387,103 @@ public class MessengerWebhookService {
             return false;
         }
     }
+
+    private boolean tryHandleBudgetCommand(ChatbotProfile profile, User user, String userText) {
+        String normalized = normalizeBudgetText(userText);
+        Optional<ChatbotPendingAction> pending = pendingActionRepository
+                .findFirstByChatbotProfileIdAndStatusInOrderByCreatedAtDesc(profile.getId(),
+                        List.of(ChatbotActionStatus.AWAITING_CONFIRMATION))
+                .filter(a -> a.getType() == ChatbotActionType.BUDGET_UPDATE);
+        if (pending.isPresent()) {
+            ChatbotPendingAction action = pending.get();
+            if (action.getExpiresAt() == null || action.getExpiresAt().isBefore(Instant.now())) {
+                action.setStatus(ChatbotActionStatus.CANCELLED);
+                pendingActionRepository.save(action);
+                sendBudgetMessage(profile, "Yeu cau cap nhat ngan sach da het han. Vui long gui lai.");
+                return true;
+            }
+            if (isBudgetConfirmation(normalized)) {
+                try {
+                    JsonNode payload = objectMapper.readTree(action.getPayloadJson());
+                    BigDecimal amount = payload.get("amount").decimalValue();
+                    BudgetPeriodType period = BudgetPeriodType.valueOf(payload.get("period").asText());
+                    budgetService.replaceForUser(user, amount, period);
+                    action.setStatus(ChatbotActionStatus.COMPLETED);
+                    pendingActionRepository.save(action);
+                    sendBudgetMessage(profile, "Da cap nhat ngan sach " + amount.toPlainString() + " VND theo "
+                            + period.name().toLowerCase() + ".");
+                } catch (Exception e) {
+                    action.setStatus(ChatbotActionStatus.FAILED);
+                    pendingActionRepository.save(action);
+                    sendBudgetMessage(profile, "Khong the cap nhat ngan sach. Vui long thu lai.");
+                }
+                return true;
+            }
+            if (normalized.matches(".*\\b(huy|khong|cancel)\\b.*")) {
+                action.setStatus(ChatbotActionStatus.CANCELLED);
+                pendingActionRepository.save(action);
+                sendBudgetMessage(profile, "Da huy cap nhat ngan sach.");
+                return true;
+            }
+        }
+        if (!normalized.contains("ngan sach")) return false;
+        BudgetCommand command = parseBudgetCommand(normalized);
+        if (command == null) {
+            sendBudgetMessage(profile, "Vui long ghi ro so tien va ky, vi du: ngan sach thang 3000000.");
+            return true;
+        }
+        try {
+            String payload = objectMapper.writeValueAsString(Map.of(
+                    "amount", command.amount(), "period", command.period().name()));
+            pendingActionRepository.save(ChatbotPendingAction.builder().chatbotProfile(profile)
+                    .type(ChatbotActionType.BUDGET_UPDATE).status(ChatbotActionStatus.AWAITING_CONFIRMATION)
+                    .payloadJson(payload).expiresAt(Instant.now().plusSeconds(300)).build());
+            BigDecimal daily = command.amount().divide(BigDecimal.valueOf(periodDays(command.period())),
+                    0, java.math.RoundingMode.HALF_UP);
+            sendBudgetMessage(profile, "Xac nhan ngan sach " + command.amount().toPlainString() + " VND theo "
+                    + command.period().name().toLowerCase() + " (xap xi " + daily.toPlainString()
+                    + " VND/ngay). Tra loi 'xac nhan' trong 5 phut.");
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to create budget pending action", e);
+            return false;
+        }
+    }
+
+    private BudgetCommand parseBudgetCommand(String text) {
+        Matcher matcher = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(trieu|m|k|nghin)?").matcher(text);
+        if (!matcher.find()) return null;
+        BigDecimal amount = new BigDecimal(matcher.group(1).replace(',', '.'));
+        String unit = matcher.group(2);
+        if ("trieu".equals(unit) || "m".equals(unit)) amount = amount.multiply(BigDecimal.valueOf(1_000_000));
+        else if ("k".equals(unit) || "nghin".equals(unit)) amount = amount.multiply(BigDecimal.valueOf(1_000));
+        if (amount.signum() <= 0) return null;
+        BudgetPeriodType period = text.contains("ngay") ? BudgetPeriodType.DAILY
+                : text.contains("tuan") ? BudgetPeriodType.WEEKLY : BudgetPeriodType.MONTHLY;
+        return new BudgetCommand(amount.setScale(0, java.math.RoundingMode.HALF_UP), period);
+    }
+
+    private int periodDays(BudgetPeriodType period) {
+        return period == BudgetPeriodType.DAILY ? 1 : period == BudgetPeriodType.WEEKLY ? 7
+                : LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).lengthOfMonth();
+    }
+
+    private boolean isBudgetConfirmation(String text) {
+        return text.matches(".*\\b(xac nhan|dong y|ok|yes)\\b.*");
+    }
+
+    private String normalizeBudgetText(String text) {
+        return Normalizer.normalize(text == null ? "" : text.toLowerCase(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").replace('', 'd').replaceAll("[^a-z0-9.,\\s]", " ")
+                .replaceAll("\\s+", " ").trim();
+    }
+
+    private void sendBudgetMessage(ChatbotProfile profile, String text) {
+        sendFacebookMessage(profile.getPsid(), text);
+        saveMessage(profile, ChatbotMessageType.TEXT, text, null, false);
+    }
+
+    private record BudgetCommand(BigDecimal amount, BudgetPeriodType period) {}
 
     private ChatbotProfile createGuestProfile(String psid) {
         String code = "NW-" + generateRandomCode(6);
