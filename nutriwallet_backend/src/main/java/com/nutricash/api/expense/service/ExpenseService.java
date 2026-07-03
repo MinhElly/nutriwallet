@@ -1,5 +1,6 @@
 package com.nutricash.api.expense.service;
 
+import com.nutricash.api.budget.service.BudgetAlertService;
 import com.nutricash.api.common.exception.AppException;
 import com.nutricash.api.common.exception.ErrorCode;
 import com.nutricash.api.expense.dto.CreateExpenseRequest;
@@ -27,6 +28,7 @@ public class ExpenseService {
     private final MealRepository mealRepository;
     private final UserRepository userRepository;
     private final ExpenseMapper expenseMapper;
+    private final BudgetAlertService budgetAlertService;
 
     @Transactional
     public ExpenseResponse create(SecurityUser currentUser, CreateExpenseRequest request) {
@@ -40,7 +42,9 @@ public class ExpenseService {
                 .expenseDate(request.expenseDate() == null ? LocalDate.now() : request.expenseDate())
                 .note(request.note())
                 .build();
-        return expenseMapper.toResponse(expenseRepository.save(expense));
+        ExpenseResponse response = expenseMapper.toResponse(expenseRepository.save(expense));
+        budgetAlertService.recalculate(user.getId());
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -62,13 +66,17 @@ public class ExpenseService {
         if (request.category() != null) expense.setCategory(request.category());
         if (request.expenseDate() != null) expense.setExpenseDate(request.expenseDate());
         if (request.note() != null) expense.setNote(request.note());
-        return expenseMapper.toResponse(expenseRepository.save(expense));
+        ExpenseResponse response = expenseMapper.toResponse(expenseRepository.save(expense));
+        budgetAlertService.recalculate(user.getId());
+        return response;
     }
 
     @Transactional
     public void delete(SecurityUser currentUser, Long id) {
         User user = getCurrentUser(currentUser);
         expenseRepository.delete(getOwnedExpense(id, user.getId()));
+        expenseRepository.flush();
+        budgetAlertService.recalculate(user.getId());
     }
 
     private MealRecord resolveMeal(Long userId, Long mealRecordId) {
