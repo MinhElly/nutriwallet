@@ -1,6 +1,5 @@
 import { Wallet } from "lucide-react";
 import { useDashboardData } from "../../hooks/useDashboardData";
-import AccountCard from "../../components/dashboard/AccountCard";
 import BudgetUsageCard from "../../components/dashboard/BudgetUsageCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import ExpenseSummaryCard from "../../components/dashboard/ExpenseSummaryCard";
@@ -8,14 +7,15 @@ import ExpenseTable from "../../components/dashboard/ExpenseTable";
 import MealSummaryCard from "../../components/dashboard/MealSummaryCard";
 import MealTable from "../../components/dashboard/MealTable";
 import RecommendationCard from "../../components/dashboard/RecommendationCard";
+import FirstTimeWelcomeGuide from "../../components/dashboard/welcomeGuide/FirstTimeWelcomeGuide";
 import AppShell from "../../components/layout/AppShell";
 
 export default function DashboardPage() {
   const {
     selectedDate,
-    setSelectedDate,
+    onDateChange: setSelectedDate,
     selectedPeriod,
-    setSelectedPeriod,
+    onPeriodChange: setSelectedPeriod,
     snapshot: dashboardSnapshot,
     aiRecommendations,
     loading,
@@ -48,19 +48,12 @@ export default function DashboardPage() {
         </p>
       )}
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="group flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 xl:p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-start justify-between">
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 sm:h-10 sm:w-10 dark:bg-emerald-950/50 dark:text-emerald-400">
               <Wallet size={18} strokeWidth={1.9} />
             </div>
-
-            <button
-              type="button"
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            >
-              ...
-            </button>
           </div>
 
           <h3 className="mt-3 text-[14px] font-semibold text-slate-900 sm:text-[15px] dark:text-slate-100">
@@ -102,7 +95,7 @@ export default function DashboardPage() {
 
                 <div className="mt-1.5 h-1 rounded-full bg-slate-100 dark:bg-slate-800">
                   <div
-                    className="h-full rounded-full bg-emerald-500"
+                     className="h-full rounded-full bg-emerald-500"
                     style={{ width: `${budgetSummary.warningThreshold}%` }}
                   />
                 </div>
@@ -131,9 +124,7 @@ export default function DashboardPage() {
         <RecommendationCard items={aiRecommendations} />
       </div>
 
-      <div className="mt-3">
-        <AccountCard />
-      </div>
+      <FirstTimeWelcomeGuide />
     </AppShell>
   );
 }

@@ -156,7 +156,7 @@ export default function ResetPasswordForm() {
 
         <div className="absolute bottom-[7%] left-1/2 hidden h-[170px] w-[480px] -translate-x-1/2 rounded-[50%] bg-[#BBF7D0]/45 blur-2xl lg:block" />
 
-        <div className="login-card relative w-full max-w-[420px] rounded-[30px] border border-white/80 px-9 py-8 shadow-[0_30px_100px_rgba(15,23,42,0.14)]">
+        <div className="login-card relative w-full max-w-[420px] rounded-2xl sm:rounded-[30px] border-0 sm:border border-white/80 px-6 py-6 sm:px-9 sm:py-8 shadow-none sm:shadow-[0_30px_100px_rgba(15,23,42,0.14)] bg-white/60 sm:bg-white/82">
           <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/80 bg-white/80 text-[#16A34A] shadow-[0_16px_35px_rgba(15,23,42,0.12)]">
             <Sprout size={30} strokeWidth={2.4} />
           </div>

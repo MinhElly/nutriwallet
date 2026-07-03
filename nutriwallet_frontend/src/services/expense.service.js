@@ -1,18 +1,8 @@
 import api, { createApiError, extractApiMessage, unwrapApiData } from "./api";
 import { mapMealRecord } from "./meal.service";
-import {
-  expenseCategoryLabelMap,
-  expenseHistoryData as fallbackExpenseHistoryData,
-} from "../data/accountData";
+import { expenseCategoryLabelMap } from "../data/accountData";
 
 export { expenseCategoryLabelMap };
-
-function getFallbackExpenseHistory() {
-  return {
-    expenses: [...fallbackExpenseHistoryData],
-    categoryLabelMap: expenseCategoryLabelMap,
-  };
-}
 
 function formatExpenseDate(value) {
   if (!value) {
@@ -27,8 +17,12 @@ function buildExpenseDescription(expense, mealsById) {
     ? mealsById.get(expense.mealRecordId)
     : null;
 
+  const noteText = expense.note?.trim();
+  const hasNote = noteText && noteText !== "Không có ghi chú";
+
   return (
     linkedMeal?.mealName ??
+    (hasNote ? noteText : null) ??
     expenseCategoryLabelMap[expense.category] ??
     expense.category ??
     "Chi tiêu"
@@ -42,7 +36,7 @@ export function mapExpenseRecord(expense, mealsById = new Map()) {
 
   return {
     id: expense.id,
-    userId: 1,
+    userId: expense.userId ?? null,
     mealRecordId: expense.mealRecordId ?? null,
     mealName: expense.mealRecordId
       ? mealsById.get(expense.mealRecordId)?.mealName ?? null
@@ -59,12 +53,10 @@ export function mapExpenseRecord(expense, mealsById = new Map()) {
 }
 
 export function getExpenseHistory() {
-  return getFallbackExpenseHistory();
+  return { expenses: [], categoryLabelMap: expenseCategoryLabelMap };
 }
 
 export async function fetchExpenseHistory() {
-  const fallback = getExpenseHistory();
-
   try {
     const [expensesResponse, mealsResponse] = await Promise.all([
       api.get("/api/expenses"),
@@ -82,18 +74,15 @@ export async function fetchExpenseHistory() {
       data: {
         expenses: Array.isArray(expenses)
           ? expenses.map((expense) => mapExpenseRecord(expense, mealsById))
-          : fallback.expenses,
+          : [],
         categoryLabelMap: expenseCategoryLabelMap,
       },
       error: null,
     };
   } catch (error) {
     return {
-      data: fallback,
-      error: extractApiMessage(
-        error,
-        "Không thể tải chi tiêu. Đang dùng dữ liệu mẫu.",
-      ),
+      data: { expenses: [], categoryLabelMap: expenseCategoryLabelMap },
+      error: extractApiMessage(error, "Không thể tải chi tiêu."),
     };
   }
 }

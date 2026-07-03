@@ -58,7 +58,7 @@ const HowItWorks = () => {
             <p className="text-[10px] font-medium tracking-widest uppercase text-green-500 mb-4">Cách hoạt động</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[0.95] mb-4">
+            <h2 className="text-3xl sm:text-[56px] font-normal tracking-[-0.04em] text-gray-950 leading-[1.1] sm:leading-[0.95] mb-4">
               5 bước, hoàn toàn tự động
             </h2>
           </Reveal>
@@ -75,7 +75,9 @@ const HowItWorks = () => {
             <Reveal
               key={idx}
               delay={0.3 + idx * 0.1}
-              className="group relative flex flex-col items-center text-center"
+              className={`group relative flex flex-col items-center text-center ${
+                idx === 4 ? "col-span-2 md:col-span-1" : ""
+              }`}
             >
               {/* Arrow connector (desktop only, not on last) */}
               {idx < steps.length - 1 && (

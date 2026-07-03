@@ -1,8 +1,6 @@
 package com.nutricash.api.admin.repository;
 
-/**
- * Skeleton type for the admin module.
- */
-public interface AdminAuditLogRepository {
-}
+import com.nutricash.api.admin.entity.AdminAuditLog;
+import org.springframework.data.jpa.repository.JpaRepository;
 
+public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Long> {}

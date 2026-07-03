@@ -6,7 +6,7 @@ import api, { unwrapApiData } from "./api";
 export async function getUserSettings() {
   const userSettings = unwrapApiData(await api.get("/api/settings/user"));
   const currentUser = unwrapApiData(await api.get("/api/users/me"));
-  
+
   return {
     ...userSettings,
     display_name: currentUser.fullName,
@@ -23,7 +23,7 @@ export async function saveUserSettings(settings) {
   if (settings.display_name !== undefined) {
     await api.patch("/api/users/me", { fullName: settings.display_name });
   }
-  
+
   // Chuẩn hóa dữ liệu cập nhật
   const payload = {
     gender: settings.gender || null,
@@ -40,6 +40,6 @@ export async function saveUserSettings(settings) {
     autoCreateExpense: settings.auto_create_expense !== undefined ? settings.auto_create_expense : false,
     theme: settings.theme || "light",
   };
-  
+
   return unwrapApiData(await api.patch("/api/settings/user", payload));
 }

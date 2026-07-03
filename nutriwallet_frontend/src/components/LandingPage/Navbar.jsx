@@ -35,8 +35,8 @@ const Navbar = () => {
       <nav
         className={`pointer-events-auto relative flex justify-center overflow-hidden ${trans} ${
           isScrolled
-            ? "mt-[15px] h-[70px] w-[90vw] max-w-[1240px] rounded-full bg-white/75 backdrop-blur-[24px] border border-gray-200/50 shadow-[0_18px_50px_rgba(0,0,0,0.12)] px-6"
-            : "mt-0 h-[90px] w-full max-w-none rounded-none bg-white/90 backdrop-blur-xl border-b border-gray-200/60 shadow-none px-12"
+            ? "mt-[15px] h-[70px] w-[90vw] max-w-[1240px] rounded-full bg-white/75 backdrop-blur-[24px] border border-gray-200/50 shadow-[0_18px_50px_rgba(0,0,0,0.12)] px-4 sm:px-6"
+            : "mt-0 h-[90px] w-full max-w-none rounded-none bg-white/90 backdrop-blur-xl border-b border-gray-200/60 shadow-none px-4 sm:px-12"
         }`}
       >
         <div className="w-full max-w-6xl flex items-center justify-between h-full relative">
@@ -47,7 +47,7 @@ const Navbar = () => {
           </div>
           <div
             className={`whitespace-nowrap overflow-hidden ${trans} ${
-              isScrolled ? "max-w-0 opacity-0 -translate-x-4" : "max-w-[200px] opacity-100 translate-x-0"
+              isScrolled ? "max-w-0 opacity-0 -translate-x-4" : "hidden min-[400px]:block max-w-[200px] opacity-100 translate-x-0"
             }`}
           >
             <span

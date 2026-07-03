@@ -6,8 +6,8 @@ export default function MealTable({ meals }) {
 
   return (
     <SectionCard title="Các bữa ăn gần đây" icon={Utensils} viewAllTo="/meal-history">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+        <table className="w-full min-w-[500px] text-sm">
           <thead className="bg-slate-50/80 dark:bg-slate-800/50">
             <tr>
               <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">

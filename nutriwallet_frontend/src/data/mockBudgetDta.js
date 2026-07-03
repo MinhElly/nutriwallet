@@ -1,76 +1,7 @@
 /**
- * Mock response mô phỏng payload backend.
- * Sau này chỉ cần thay bằng:
- *
- * const response = await axios.get("/api/budget");
- * const budgetData = mapBudgetResponse(response.data);
+ * Mapper functions cho budget/expense API response.
+ * Mock data đã được xóa — dữ liệu thực lấy từ backend.
  */
-
-export const budgetResponse = {
-  success: true,
-  message: "Get budget successfully",
-  data: {
-    budget: {
-      id: 1,
-      amount: 3200000,
-      spent_amount: 1145000,
-      remaining_amount: 2055000,
-      usage_percent: 35.78,
-      period: "MONTH",
-      start_date: "2024-10-01",
-      end_date: "2024-10-31",
-      warning_threshold_percent: 95,
-      currency: "VND",
-    },
-    expenses: [
-      {
-        id: 1,
-        expense_date: "2024-10-24",
-        category: "GROCERIES",
-        description: "Big C - Weekly groceries",
-        amount: 450000,
-        currency: "VND",
-        note: "Vegetables, fruits, meat",
-      },
-      {
-        id: 2,
-        expense_date: "2024-10-23",
-        category: "DINING_OUT",
-        description: "Lunch with team",
-        amount: 180000,
-        currency: "VND",
-        note: "Restaurant",
-      },
-      {
-        id: 3,
-        expense_date: "2024-10-23",
-        category: "HEALTH",
-        description: "Gym membership",
-        amount: 300000,
-        currency: "VND",
-        note: "Monthly fee",
-      },
-      {
-        id: 4,
-        expense_date: "2024-10-22",
-        category: "TRANSPORTATION",
-        description: "Grab transportation",
-        amount: 65000,
-        currency: "VND",
-        note: "Ride to office",
-      },
-      {
-        id: 5,
-        expense_date: "2024-10-21",
-        category: "GROCERIES",
-        description: "VinMart - Snacks",
-        amount: 150000,
-        currency: "VND",
-        note: "Snacks & drinks",
-      },
-    ],
-  },
-};
 
 function unwrapBudgetPayload(response) {
   if (response?.data?.budget && Array.isArray(response?.data?.expenses)) {
@@ -129,4 +60,19 @@ export function mapBudgetResponse(response) {
   };
 }
 
-export const budgetData = mapBudgetResponse(budgetResponse);
+/** Empty fallback — hiển thị trạng thái trống khi API thất bại */
+export const budgetData = {
+  budget: {
+    id: 0,
+    amount: 0,
+    spentAmount: 0,
+    remainingAmount: 0,
+    usagePercent: 0,
+    period: "MONTHLY",
+    startDate: null,
+    endDate: null,
+    warningThresholdPercent: 80,
+    currency: "VND",
+  },
+  expenses: [],
+};

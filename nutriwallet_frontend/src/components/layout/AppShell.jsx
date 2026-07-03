@@ -43,11 +43,11 @@ export default function AppShell({ pageLabel, children }) {
           </div>
         )}
 
-        <main className="min-w-0 flex-1 px-4 py-4 xl:py-5 xl:px-6">
+        <main className="min-w-0 flex-1 px-3 py-3 sm:px-4 sm:py-4 xl:py-5 xl:px-6">
           <div className="mb-4 flex items-center justify-between px-2">
-            <div className="flex items-center gap-2.5 xl:hidden">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-200/70 dark:shadow-none">
-                <Leaf size={18} strokeWidth={1.9} />
+            <div className="flex items-center gap-2 xl:hidden">
+              <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-200/70 dark:shadow-none">
+                <Leaf size={16} strokeWidth={1.9} />
               </div>
               <div>
                 <p className="text-[15px] font-semibold tracking-tight text-slate-900 dark:text-slate-100" style={{ fontFamily: "Psionic" }}>
@@ -57,24 +57,24 @@ export default function AppShell({ pageLabel, children }) {
               </div>
             </div>
 
-            <div className="ml-auto flex items-center gap-2.5">
+            <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"
                 aria-label="Đổi giao diện"
                 onClick={toggleTheme}
                 title={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-amber-500 shadow-sm transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-amber-400 dark:hover:bg-slate-800"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-amber-500 shadow-sm transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-amber-400 dark:hover:bg-slate-800"
               >
-                {theme === "dark" ? <Sun size={18} strokeWidth={1.9} /> : <Moon size={18} strokeWidth={1.9} />}
+                {theme === "dark" ? <Sun size={16} strokeWidth={1.9} /> : <Moon size={16} strokeWidth={1.9} />}
               </button>
 
               <button
                 type="button"
                 aria-label="Mở menu"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 xl:hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 xl:hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                <Menu size={18} strokeWidth={1.9} />
+                <Menu size={16} strokeWidth={1.9} />
               </button>
             </div>
           </div>

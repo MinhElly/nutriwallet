@@ -1,19 +1,30 @@
 import api, { createApiError, extractApiMessage, unwrapApiData } from "./api";
 import { fetchExpenseHistory, getExpenseHistory } from "./expense.service";
-import { budgetData as fallbackBudgetData } from "../data/mockBudgetDta";
 
-function getFallbackBudgetData() {
+function getEmptyBudget() {
+  const today = new Date();
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
   return {
-    budget: {
-      ...fallbackBudgetData.budget,
-    },
-    expenses: [...fallbackBudgetData.expenses],
+    id: 0,
+    amount: 0,
+    spentAmount: 0,
+    remainingAmount: 0,
+    usagePercent: 0,
+    period: "MONTHLY",
+    startDate: startOfMonth.toISOString().slice(0, 10),
+    endDate: endOfMonth.toISOString().slice(0, 10),
+    warningThresholdPercent: 80,
+    currency: "VND",
+    active: false,
   };
 }
 
 function isExpenseWithinBudget(expense, budget) {
   return (
-    expense.expenseDate >= budget.startDate && expense.expenseDate <= budget.endDate
+    expense.expenseDate >= budget.startDate &&
+    expense.expenseDate <= budget.endDate
   );
 }
 
@@ -21,28 +32,14 @@ function mapBudgetRecord(apiPayload, expenses) {
   const rawBudget = apiPayload?.budget || apiPayload;
 
   if (!rawBudget) {
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return {
-      id: 0,
-      amount: 0,
-      spentAmount: 0,
-      remainingAmount: 0,
-      usagePercent: 0,
-      period: "MONTH",
-      startDate: startOfMonth.toISOString().slice(0, 10),
-      endDate: endOfMonth.toISOString().slice(0, 10),
-      warningThresholdPercent: 80,
-      currency: "VND",
-      active: false,
-    };
+    return getEmptyBudget();
   }
 
   const startDateRaw = rawBudget.startDate ?? rawBudget.start_date;
   const endDateRaw = rawBudget.endDate ?? rawBudget.end_date;
   const amountRaw = rawBudget.amount;
-  const warningRaw = rawBudget.warningThresholdPercent ?? rawBudget.warning_threshold_percent;
+  const warningRaw =
+    rawBudget.warningThresholdPercent ?? rawBudget.warning_threshold_percent;
 
   const startDateStr = startDateRaw ? String(startDateRaw).slice(0, 10) : "";
   const endDateStr = endDateRaw ? String(endDateRaw).slice(0, 10) : "";
@@ -61,7 +58,8 @@ function mapBudgetRecord(apiPayload, expenses) {
     0,
   );
   const remainingAmount = Math.max(amount - spentAmount, 0);
-  const usagePercent = amount > 0 ? Math.round((spentAmount / amount) * 100) : 0;
+  const usagePercent =
+    amount > 0 ? Math.round((spentAmount / amount) * 100) : 0;
 
   return {
     id: rawBudget.id ?? 0,
@@ -69,7 +67,7 @@ function mapBudgetRecord(apiPayload, expenses) {
     spentAmount,
     remainingAmount,
     usagePercent,
-    period: rawBudget.period ?? "MONTH",
+    period: rawBudget.period ?? "MONTHLY",
     startDate: startDateStr,
     endDate: endDateStr,
     warningThresholdPercent: warningRaw ?? 80,
@@ -79,19 +77,18 @@ function mapBudgetRecord(apiPayload, expenses) {
 }
 
 export function getBudgetData() {
-  return getFallbackBudgetData();
+  return { budget: getEmptyBudget(), expenses: [] };
 }
 
 export async function fetchBudgetData() {
-  const fallback = getBudgetData();
-
   try {
     const [budgetResponse, expenseResult] = await Promise.all([
       api.get("/api/budgets/current"),
       fetchExpenseHistory(),
     ]);
     const budget = unwrapApiData(budgetResponse);
-    const expenses = expenseResult.data?.expenses ?? getExpenseHistory().expenses;
+    const expenses =
+      expenseResult.data?.expenses ?? getExpenseHistory().expenses;
 
     return {
       data: {
@@ -102,11 +99,8 @@ export async function fetchBudgetData() {
     };
   } catch (error) {
     return {
-      data: fallback,
-      error: extractApiMessage(
-        error,
-        "Không thể tải ngân sách. Đang dùng dữ liệu mẫu.",
-      ),
+      data: { budget: getEmptyBudget(), expenses: [] },
+      error: extractApiMessage(error, "Không thể tải ngân sách."),
     };
   }
 }

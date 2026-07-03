@@ -19,7 +19,7 @@ const CTA = () => {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <h2 className="text-5xl sm:text-[56px] font-normal tracking-[-0.04em] text-white leading-[0.95] mb-5">
+          <h2 className="text-3xl sm:text-[56px] font-normal tracking-[-0.04em] text-white leading-[1.1] sm:leading-[0.95] mb-5">
             Bắt đầu ngay{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">
               hôm nay.

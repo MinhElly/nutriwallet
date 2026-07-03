@@ -176,8 +176,8 @@ export async function saveAnalyzedMeal(result) {
       confirmedByUser: true,
     });
 
-    const validCategories = new Set(["BREAKFAST", "LUNCH", "DINNER", "SNACK"]);
-    let category = validCategories.has(result.mealType) ? result.mealType : null;
+    const validCategories = new Set(["BREAKFAST", "LUNCH", "DINNER", "SNACK", "DRINK", "OTHER"]);
+    let category = (result.mealType && validCategories.has(result.mealType.toUpperCase())) ? result.mealType.toUpperCase() : null;
 
     if (!category) {
       const hour = new Date().getHours();
