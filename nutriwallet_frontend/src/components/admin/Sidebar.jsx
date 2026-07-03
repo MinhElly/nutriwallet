@@ -2,9 +2,7 @@ import {
   LayoutGrid,
   Users,
   Brain,
-  Flag,
-  BarChart3,
-  Settings,
+  ScrollText,
   LogOut,
   Shield,
   AlertCircle
@@ -16,9 +14,7 @@ export default function Sidebar({ currentTab, setCurrentTab, currentUser, onLogo
     { id: "users", label: "User Management", icon: Users },
     { id: "ai", label: "AI Console", icon: Brain },
     { id: "ai-errors", label: "AI Error Logs", icon: AlertCircle },
-    { id: "moderation", label: "Content Moderation", icon: Flag },
-    { id: "analytics", label: "Reports & Analytics", icon: BarChart3 },
-    { id: "settings", label: "System Settings", icon: Settings },
+    { id: "audit", label: "Audit Log", icon: ScrollText },
   ];
 
   return (
