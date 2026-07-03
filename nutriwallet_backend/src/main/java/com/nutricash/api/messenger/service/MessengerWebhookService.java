@@ -8,6 +8,8 @@ import com.nutricash.api.ai.repository.AiErrorReportRepository;
 import com.nutricash.api.ai.entity.AiErrorReport;
 import com.nutricash.api.common.enums.AiErrorReportStatus;
 import com.nutricash.api.common.enums.ChatbotMessageType;
+import com.nutricash.api.common.enums.ChatbotActionStatus;
+import com.nutricash.api.common.enums.ChatbotActionType;
 import com.nutricash.api.common.enums.ChatbotPlatform;
 import com.nutricash.api.common.enums.ExpenseCategory;
 import com.nutricash.api.expense.entity.ExpenseRecord;
@@ -18,8 +20,10 @@ import com.nutricash.api.messenger.dto.MessengerMessage;
 import com.nutricash.api.messenger.dto.MessengerWebhookRequest;
 import com.nutricash.api.messenger.entity.ChatbotMessage;
 import com.nutricash.api.messenger.entity.ChatbotProfile;
+import com.nutricash.api.messenger.entity.ChatbotPendingAction;
 import com.nutricash.api.messenger.repository.ChatbotMessageRepository;
 import com.nutricash.api.messenger.repository.ChatbotProfileRepository;
+import com.nutricash.api.messenger.repository.ChatbotPendingActionRepository;
 import com.nutricash.api.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +54,7 @@ public class MessengerWebhookService {
 
     private final ChatbotProfileRepository chatbotProfileRepository;
     private final ChatbotMessageRepository chatbotMessageRepository;
+    private final ChatbotPendingActionRepository pendingActionRepository;
     private final MealRepository mealRepository;
     private final ExpenseRepository expenseRepository;
     private final AiProviderService aiProviderService;
@@ -95,6 +100,8 @@ public class MessengerWebhookService {
                 String psid = messaging.sender().id();
                 var message = messaging.message();
                 if (message == null) {
+                    String referral = messaging.referral() != null ? messaging.referral().ref() : (messaging.postback() != null && messaging.postback().referral() != null ? messaging.postback().referral().ref() : null);
+                    if ("REQUEST_LINK_CODE".equalsIgnoreCase(referral)) handleLinkCodeReferral(psid);
                     continue;
                 }
 
@@ -116,6 +123,14 @@ public class MessengerWebhookService {
         }
     }
 
+    private void handleLinkCodeReferral(String psid) {
+        ChatbotProfile profile = chatbotProfileRepository.findByPsid(psid).orElseGet(() -> createGuestProfile(psid));
+        if (profile.getUser() == null && chatbotMessageRepository.countByChatbotProfileIdAndIsFromUser(profile.getId(), false) == 0) {
+            String text = "Ma lien ket NutriWallet cua ban: " + profile.getGuestSessionCode();
+            sendFacebookMessage(psid, text); saveMessage(profile, ChatbotMessageType.TEXT, text, null, false);
+        }
+    }
+
     private void handleUserMessage(String psid, MessengerMessage message) {
         // 1. Tìm hoặc tạo ChatbotProfile
         ChatbotProfile profile = chatbotProfileRepository.findByPsid(psid)
@@ -131,12 +146,17 @@ public class MessengerWebhookService {
             }
         }
 
+        ChatbotPendingAction imageAction = null;
+        if (imageUrl != null && message.mid() != null) {
+            if (pendingActionRepository.existsByMessageId(message.mid())) return;
+            imageAction = pendingActionRepository.save(ChatbotPendingAction.builder().chatbotProfile(profile).type(ChatbotActionType.IMAGE_ANALYSIS).status(ChatbotActionStatus.PROCESSING).messageId(message.mid()).payloadJson("{\"imageUrl\":\"" + imageUrl.replace("\"", "") + "\"}").expiresAt(Instant.now().plusSeconds(5)).build());
+        }
         saveMessage(profile, ChatbotMessageType.TEXT, incomingText, imageUrl, true);
 
         // Kiểm tra câu hỏi đặc biệt về mã liên kết hoặc tính năng của chatbot
         if (incomingText != null && !incomingText.isBlank()) {
             String normalized = normalizeText(incomingText);
-            if (isAskingForLinkCode(normalized)) {
+            if (ChatbotTextRules.asksForLinkCode(incomingText)) {
                 if (profile.getUser() == null) {
                     String msg = "🔑 **Mã liên kết tài khoản Messenger của bạn là:**\n" +
                             "👉 **" + profile.getGuestSessionCode() + "**\n\n" +
@@ -192,11 +212,12 @@ public class MessengerWebhookService {
             if (imageUrl != null) {
                 sendFacebookMessage(psid, "Đang phân tích hình ảnh bữa ăn của bạn dưới vai trò Khách, vui lòng đợi một chút... ⏳");
                 analyzeAndSaveMeal(profile, null, imageUrl);
+                if (imageAction != null) { imageAction.setStatus(ChatbotActionStatus.COMPLETED); pendingActionRepository.save(imageAction); }
                 return;
             }
 
             if (incomingText != null && !incomingText.isBlank()) {
-                String aiResponse = generateAiResponse(null, incomingText);
+                String aiResponse = generateAiResponse(profile, null, incomingText);
                 aiResponse += "\n\n👉 Đăng nhập tài khoản NutriWallet ngay tại đây để liên kết và lưu trữ nhật ký lâu dài: " + frontendUrl + "/login";
                 sendFacebookMessage(psid, aiResponse);
                 saveMessage(profile, ChatbotMessageType.TEXT, aiResponse, null, false);
@@ -210,6 +231,7 @@ public class MessengerWebhookService {
         if (imageUrl != null) {
             sendFacebookMessage(psid, "Đang phân tích hình ảnh bữa ăn của bạn, vui lòng đợi một chút... ⏳");
             analyzeAndSaveMeal(profile, user, imageUrl);
+            if (imageAction != null) { imageAction.setStatus(ChatbotActionStatus.COMPLETED); pendingActionRepository.save(imageAction); }
             return;
         }
 
@@ -226,7 +248,7 @@ public class MessengerWebhookService {
                 }
             }
 
-            String aiResponse = generateAiResponse(user, incomingText);
+            String aiResponse = generateAiResponse(profile, user, incomingText);
             sendFacebookMessage(psid, aiResponse);
             saveMessage(profile, ChatbotMessageType.TEXT, aiResponse, null, false);
         }
@@ -266,7 +288,6 @@ public class MessengerWebhookService {
 
             String cleanJson = rawResponse.replace("```json", "").replace("```", "").trim();
             JsonNode jsonNode = objectMapper.readTree(cleanJson);
-
             boolean isUpdate = jsonNode.has("isUpdate") && jsonNode.get("isUpdate").asBoolean();
             boolean isErrorReport = jsonNode.has("isErrorReport") && jsonNode.get("isErrorReport").asBoolean();
 
@@ -398,6 +419,20 @@ public class MessengerWebhookService {
             // Parse JSON response
             String cleanJson = rawResponse.replace("```json", "").replace("```", "").trim();
             JsonNode jsonNode = objectMapper.readTree(cleanJson);
+            String imageType = jsonNode.path("imageType").asText(jsonNode.path("type").asText("MEAL")).toUpperCase();
+            if ("UNSUPPORTED".equals(imageType)) {
+                String msg = "Anh nay khong phai mon an, hoa don hoac thong tin chuyen khoan. Vui long gui anh lien quan hon.";
+                sendFacebookMessage(profile.getPsid(), msg);
+                saveMessage(profile, ChatbotMessageType.TEXT, msg, null, false);
+                return;
+            }
+            if ("RECEIPT".equals(imageType) || "TRANSFER".equals(imageType)) {
+                String msg = "Da trich xuat " + ("RECEIPT".equals(imageType) ? "hoa don" : "chuyen khoan")
+                        + ". Vui long xac nhan truoc khi NutriWallet luu du lieu:\n" + jsonNode.toPrettyString();
+                sendFacebookMessage(profile.getPsid(), msg);
+                saveMessage(profile, ChatbotMessageType.TEXT, msg, null, false);
+                return;
+            }
 
             String foodName = jsonNode.has("foodName") ? jsonNode.get("foodName").asText() : "Bữa ăn từ Messenger";
             BigDecimal calories = jsonNode.has("calories") ? jsonNode.get("calories").decimalValue() : BigDecimal.ZERO;
@@ -422,30 +457,6 @@ public class MessengerWebhookService {
                         .confirmedByUser(false)
                         .build();
                 mealRecord = mealRepository.save(mealRecord);
-
-                // Tạo ExpenseRecord tự động với số tiền ước tính
-                int hour = LocalDateTime.now().getHour();
-                ExpenseCategory category;
-                if (hour < 11) {
-                    category = ExpenseCategory.BREAKFAST;
-                } else if (hour < 16) {
-                    category = ExpenseCategory.LUNCH;
-                } else if (hour < 21) {
-                    category = ExpenseCategory.DINNER;
-                } else {
-                    category = ExpenseCategory.SNACK;
-                }
-
-                ExpenseRecord expenseRecord = ExpenseRecord.builder()
-                        .user(user)
-                        .mealRecord(mealRecord)
-                        .amount(estimatedPriceVnd)
-                        .currency("VND")
-                        .category(category)
-                        .expenseDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
-                        .note("Tự động tạo từ Chatbot: " + foodName)
-                        .build();
-                expenseRepository.save(expenseRecord);
             }
 
             String responseMsg = "🍽️ **Kết quả phân tích dinh dưỡng:**\n" +
@@ -473,10 +484,10 @@ public class MessengerWebhookService {
         }
     }
 
-    private String generateAiResponse(User user, String userText) {
+    private String generateAiResponse(ChatbotProfile profile, User user, String userText) {
         try {
             if (user == null) {
-                return aiProviderService.generate(aiPromptBuilder.chat(), userText);
+                return aiProviderService.generate(aiPromptBuilder.chat() + conversationContext(profile), userText);
             }
 
             // Lấy ngữ cảnh hôm nay của người dùng
@@ -515,10 +526,10 @@ public class MessengerWebhookService {
                     "- Tổng chi tiêu: " + totalExpense + " VND/USD.\n\n" +
                     "Hãy trả lời tin nhắn của người dùng một cách thân thiện, ngắn gọn và hữu ích dựa trên ngữ cảnh này.";
 
-            return aiProviderService.generate(systemPrompt, userText);
+            return aiProviderService.generate(systemPrompt + conversationContext(profile), userText);
         } catch (Exception e) {
             log.error("Failed to generate AI response for chatbot context", e);
-            return aiProviderService.generate(aiPromptBuilder.chat(), userText);
+            return aiProviderService.generate(aiPromptBuilder.chat() + conversationContext(profile), userText);
         }
     }
 
@@ -548,6 +559,16 @@ public class MessengerWebhookService {
         }
     }
 
+    private String conversationContext(ChatbotProfile profile) {
+        if (profile == null) return "";
+        List<ChatbotMessage> recent = chatbotMessageRepository.findTop12ByChatbotProfileIdOrderByCreatedAtDesc(profile.getId());
+        Collections.reverse(recent);
+        String history = recent.stream().filter(m -> m.getMessageText() != null && m.getAttachmentUrl() == null)
+                .filter(m -> !m.getMessageText().contains("NW-") && !m.getMessageText().toLowerCase().contains("ma lien ket"))
+                .map(m -> (m.isFromUser() ? "User: " : "Assistant: ") + m.getMessageText()).collect(Collectors.joining("\n"));
+        return history.isBlank() ? "" : "\n\nHoi thoai gan day (toi da 6 cap):\n" + history;
+    }
+
     private String normalizeText(String text) {
         if (text == null) return "";
         return text.toLowerCase()
@@ -564,7 +585,10 @@ public class MessengerWebhookService {
     }
 
     private boolean isAskingForLinkCode(String normalizedText) {
-        return normalizedText.contains("ma lien ket") ||
+        return normalizedText.equals("ma") || normalizedText.equals("code") ||
+               normalizedText.equals("ma web") || normalizedText.equals("ma ket noi") ||
+               normalizedText.contains("lien ket roi") ||
+               normalizedText.contains("ma lien ket") ||
                normalizedText.contains("ma ket noi") ||
                normalizedText.contains("code lien ket") ||
                normalizedText.contains("code ket noi") ||

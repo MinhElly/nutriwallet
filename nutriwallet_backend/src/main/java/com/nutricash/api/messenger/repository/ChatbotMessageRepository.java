@@ -10,4 +10,6 @@ public interface ChatbotMessageRepository extends JpaRepository<ChatbotMessage, 
     List<ChatbotMessage> findAllByChatbotProfileIdOrderByCreatedAtDesc(Long chatbotProfileId);
 
     long countByChatbotProfileIdAndIsFromUser(Long chatbotProfileId, boolean isFromUser);
+
+    List<ChatbotMessage> findTop12ByChatbotProfileIdOrderByCreatedAtDesc(Long chatbotProfileId);
 }
