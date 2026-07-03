@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   fetchExpenseHistory,
   getExpenseHistory,
+  createExpense as createExpenseApi,
+  updateExpense as updateExpenseApi,
+  deleteExpense as deleteExpenseApi,
 } from "../services/expense.service";
 
 export function useExpenseHistoryData() {
@@ -13,29 +16,53 @@ export function useExpenseHistoryData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let ignore = false;
-
-    fetchExpenseHistory()
-      .then((result) => {
-        if (ignore) {
-          return;
-        }
-
-        setExpenses(result.data.expenses);
-        setCategoryLabelMap(result.data.categoryLabelMap);
-        setError(result.error ?? "");
-      })
-      .finally(() => {
-        if (!ignore) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
+  const loadExpenses = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await fetchExpenseHistory();
+      setExpenses(result.data.expenses);
+      setCategoryLabelMap(result.data.categoryLabelMap);
+      setError(result.error ?? "");
+    } catch (err) {
+      setError("Không thể tải chi tiêu");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { expenses, categoryLabelMap, loading, error };
+  useEffect(() => {
+    loadExpenses();
+  }, [loadExpenses]);
+
+  const addExpense = useCallback(async (payload) => {
+    const nextExpense = await createExpenseApi(payload);
+    setExpenses((current) =>
+      [nextExpense, ...current].sort((a, b) => b.expenseDate.localeCompare(a.expenseDate))
+    );
+    return nextExpense;
+  }, []);
+
+  const updateExpense = useCallback(async (id, payload) => {
+    const updated = await updateExpenseApi(id, payload);
+    setExpenses((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...updated } : item))
+    );
+    return updated;
+  }, []);
+
+  const deleteExpense = useCallback(async (id) => {
+    await deleteExpenseApi(id);
+    setExpenses((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  return {
+    expenses,
+    categoryLabelMap,
+    loading,
+    error,
+    refetch: loadExpenses,
+    addExpense,
+    updateExpense,
+    deleteExpense,
+  };
 }

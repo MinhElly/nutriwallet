@@ -323,11 +323,17 @@ export default function SettingsPage() {
               >
                 <div className="overflow-hidden rounded-2xl border border-slate-100 divide-y divide-slate-100 dark:border-slate-800 dark:divide-slate-800 bg-slate-50/30 dark:bg-slate-900/30">
                   {[
-                    { label: "Tên hiển thị", value: profileData?.user?.fullName },
+                    {
+                      label: "Tên hiển thị",
+                      value: profileData?.user?.fullName,
+                    },
                     { label: "Email", value: profileData?.user?.email },
                     { label: "Vai trò", value: profileData?.user?.role },
                     { label: "Trạng thái", value: profileData?.user?.status },
-                    { label: "Tạo lúc", value: formatDateTime(profileData?.user?.createdAt) },
+                    {
+                      label: "Tạo lúc",
+                      value: formatDateTime(profileData?.user?.createdAt),
+                    },
                     {
                       label: "Cập nhật lần cuối",
                       value: formatDateTime(profileData?.user?.updatedAt),

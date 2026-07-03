@@ -1,11 +1,4 @@
-import {
-  Pencil,
-  Wallet,
-  X,
-  Heart,
-  Sparkles,
-  Save,
-} from "lucide-react";
+import { Pencil, Wallet, X, Heart, Sparkles, Save } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import AppShell from "../../components/layout/AppShell";
 import { useProfileData } from "../../hooks/useProfileData";
@@ -90,17 +83,22 @@ function formatJoinedDate(dateValue) {
 
 export default function ProfilePage() {
   const { profileData, updateProfile, loading, error } = useProfileData();
-  const { budget } = useBudgetData();
+  const { budget, updateBudgetData } = useBudgetData();
   const { replaceUser, currentUser } = useAuth();
   const { user, stats } = profileData;
   const avatarPreviewUrlRef = useRef("");
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
   const [profileMeta, setProfileMeta] = useState(readProfileMeta);
   const [profileForm, setProfileForm] = useState(() =>
     createProfileForm(user, readProfileMeta()),
   );
 
-  const { settings, loading: settingsLoading, saveSettings } = useSettingsData();
+  const {
+    settings,
+    loading: settingsLoading,
+    saveSettings,
+  } = useSettingsData();
   const [settingsState, setSettingsState] = useState(null);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -250,6 +248,14 @@ export default function ProfilePage() {
         />
       )}
 
+      {isBudgetEditOpen && (
+        <EditBudgetModal
+          budget={budget}
+          onClose={() => setIsBudgetEditOpen(false)}
+          onSubmit={updateBudgetData}
+        />
+      )}
+
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-slate-950 dark:text-white xl:text-4xl">
           Hồ sơ
@@ -305,11 +311,21 @@ export default function ProfilePage() {
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-3 sm:max-w-xs">
-          <MiniInfoCard
-            icon={<Wallet size={18} />}
-            label="Ngân sách hiện tại"
-            value={formatMoney(budget?.amount ?? stats.currentBudget)}
-          />
+          <div className="relative">
+            <MiniInfoCard
+              icon={<Wallet size={18} />}
+              label="Ngân sách hiện tại"
+              value={formatMoney(budget?.amount ?? stats.currentBudget)}
+            />
+            <button
+              type="button"
+              onClick={() => setIsBudgetEditOpen(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-emerald-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700"
+              title="Chỉnh sửa ngân sách"
+            >
+              <Pencil size={14} />
+            </button>
+          </div>
         </div>
       </section>
 
@@ -327,9 +343,9 @@ export default function ProfilePage() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                AI sẽ dựa vào các thông số dưới đây để phân tích thể chất,
-                dinh dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù
-                hợp nhất cho bạn.
+                AI sẽ dựa vào các thông số dưới đây để phân tích thể chất, dinh
+                dưỡng và đưa ra gợi ý kế hoạch ăn uống, chi tiêu phù hợp nhất
+                cho bạn.
               </p>
             </div>
 
@@ -430,7 +446,11 @@ export default function ProfilePage() {
                   ) : (
                     <Save size={18} />
                   )}
-                  {isSavingSettings ? "Đang lưu..." : saveSuccess ? "Đã lưu thành công!" : "Lưu thông số sức khỏe & tài chính"}
+                  {isSavingSettings
+                    ? "Đang lưu..."
+                    : saveSuccess
+                      ? "Đã lưu thành công!"
+                      : "Lưu thông số sức khỏe & tài chính"}
                 </button>
               </>
             )}
@@ -690,14 +710,120 @@ function SettingsInput({
                   suffix ? "pr-12" : ""
                 }`}
               />
-              {suffix && (
-                <span className="absolute right-4 text-xs font-bold text-slate-400 dark:text-slate-500">
-                  {suffix}
-                </span>
-              )}
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function EditBudgetModal({ budget, onClose, onSubmit }) {
+  const [amount, setAmount] = useState(budget?.amount || 0);
+  const [warningThreshold, setWarningThreshold] = useState(budget?.warningThresholdPercent || 80);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (amount <= 0) {
+      setError("Số tiền ngân sách phải lớn hơn 0");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onSubmit({
+        amount: Number(amount),
+        warningThresholdPercent: Number(warningThreshold),
+        period: "MONTHLY",
+        startDate: budget?.startDate || new Date().toISOString().slice(0, 10),
+        endDate: budget?.endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+        currency: budget?.currency || "VND",
+        active: true,
+      });
+      onClose();
+    } catch (err) {
+      setError(err.message || "Không thể lưu ngân sách");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 p-0 backdrop-blur-[1px] dark:bg-slate-950/60 sm:items-center sm:justify-center sm:p-4">
+      <button
+        type="button"
+        aria-label="Đóng sửa ngân sách"
+        className="absolute inset-0 cursor-pointer"
+        onClick={onClose}
+      />
+
+      <div className="relative z-10 w-full rounded-t-[28px] bg-white p-5 shadow-2xl dark:border dark:border-slate-800 dark:bg-slate-900 sm:max-w-xl sm:rounded-3xl sm:p-6">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {budget?.id ? "Sửa ngân sách hiện tại" : "Tạo ngân sách mới"}
+          </h2>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Số tiền (VND)
+            </span>
+            <input
+              type="number"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
+              placeholder="Ví dụ: 5000000"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Ngưỡng cảnh báo (%)
+            </span>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={warningThreshold}
+              onChange={(e) => setWarningThreshold(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-emerald-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
+              placeholder="Ví dụ: 80"
+            />
+          </label>
+
+          {error && (
+            <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p>
+          )}
+
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="cursor-pointer rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:bg-emerald-300"
+            >
+              {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

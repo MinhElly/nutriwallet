@@ -168,6 +168,7 @@ function BudgetPage() {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [activeDateField, setActiveDateField] = useState("start");
+  const [categoryPeriod, setCategoryPeriod] = useState("month");
   const { budget, expenses, loading, error, addExpense } = useBudgetData();
   const sectionRef = useRef(null);
   const [allExpenses, setAllExpenses] = useState(() =>
@@ -322,17 +323,34 @@ function BudgetPage() {
       }),
     );
 
-    const categoryTotals = filteredExpenses.reduce((result, item) => {
+    // Category calculation with period filters (Day/Week/Month)
+    const filteredForCategory = filteredExpenses.filter((expense) => {
+      const expenseDateObj = toDate(expense.date);
+      if (!expenseDateObj) return true;
+      const today = new Date();
+      
+      if (categoryPeriod === "day") {
+        return isSameDay(expenseDateObj, today);
+      } else if (categoryPeriod === "week") {
+        const sevenDaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+        return expenseDateObj >= sevenDaysAgo;
+      }
+      return true;
+    });
+
+    const categoryTotals = filteredForCategory.reduce((result, item) => {
       result[item.category] = (result[item.category] || 0) + item.amount;
       return result;
     }, {});
+
+    const categoryTotalSpent = Object.values(categoryTotals).reduce((sum, amt) => sum + amt, 0);
 
     const categoryData = Object.entries(categoryTotals).map(
       ([category, amount]) => ({
         key: category,
         name: categoryLabelMap[category] ?? category,
         amount,
-        percent: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0,
+        percent: categoryTotalSpent > 0 ? Math.round((amount / categoryTotalSpent) * 100) : 0,
         color: categoryColorMap[category] ?? "#cbd5e1",
       }),
     );
@@ -348,6 +366,7 @@ function BudgetPage() {
       dailySpendingData,
       weeklyTrendData,
       categoryData,
+      categoryTotalSpent,
     };
   }, [
     budget.amount,
@@ -357,6 +376,7 @@ function BudgetPage() {
     minSelectableDate,
     normalizedSelectedRange.endDate,
     normalizedSelectedRange.startDate,
+    categoryPeriod,
   ]);
 
   const {
@@ -370,6 +390,7 @@ function BudgetPage() {
     dailySpendingData,
     weeklyTrendData,
     categoryData,
+    categoryTotalSpent,
   } = analytics;
 
   const canGoPrevMonth =
@@ -584,10 +605,10 @@ function BudgetPage() {
               <button
                 type="button"
                 onClick={openDatePicker}
-                className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-slate-50 sm:min-w-[280px] sm:justify-between"
+                className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-slate-50 sm:min-w-[280px] sm:justify-between dark:border-slate-800 dark:bg-slate-850 dark:text-slate-250 dark:hover:bg-slate-800"
               >
                 <span className="flex items-center gap-3">
-                  <CalendarDays size={18} className="text-emerald-600" />
+                  <CalendarDays size={18} className="text-emerald-600 dark:text-emerald-400" />
                   <span>{dateRangeLabel}</span>
                 </span>
                 <ChevronDown
@@ -606,15 +627,15 @@ function BudgetPage() {
                     className="fixed inset-0 z-10 cursor-pointer bg-transparent"
                     onClick={() => setOpenDropdown(null)}
                   />
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[calc(100vw-2rem)] max-w-[340px] rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
-                    <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-1">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[calc(100vw-2rem)] max-w-[340px] rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                    <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-1 dark:bg-slate-800">
                       <button
                         type="button"
                         onClick={() => setActiveDateField("start")}
                         className={`flex-1 rounded-2xl px-3 py-2 text-left text-sm font-medium transition-colors ${
                           activeDateField === "start"
-                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200/60"
-                            : "text-slate-500"
+                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200/60 dark:bg-slate-700 dark:text-white dark:shadow-none"
+                            : "text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         <span className="block text-[11px] uppercase tracking-wide text-slate-400">
@@ -630,8 +651,8 @@ function BudgetPage() {
                         onClick={() => setActiveDateField("end")}
                         className={`flex-1 rounded-2xl px-3 py-2 text-left text-sm font-medium transition-colors ${
                           activeDateField === "end"
-                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200/60"
-                            : "text-slate-500"
+                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200/60 dark:bg-slate-700 dark:text-white dark:shadow-none"
+                            : "text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         <span className="block text-[11px] uppercase tracking-wide text-slate-400">
@@ -648,7 +669,7 @@ function BudgetPage() {
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Chọn ngày
                         </p>
-                        <p className="mt-1 text-base font-semibold text-slate-900">
+                        <p className="mt-1 text-base font-semibold text-slate-900 dark:text-white">
                           {monthYearLabel}
                         </p>
                       </div>
@@ -658,7 +679,7 @@ function BudgetPage() {
                           type="button"
                           onClick={() => changeMonth(-1)}
                           disabled={!canGoPrevMonth}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-350"
                         >
                           <ChevronLeft size={16} strokeWidth={2} />
                         </button>
@@ -666,7 +687,7 @@ function BudgetPage() {
                           type="button"
                           onClick={() => changeMonth(1)}
                           disabled={!canGoNextMonth}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-350"
                         >
                           <ChevronRight size={16} strokeWidth={2} />
                         </button>
@@ -709,15 +730,15 @@ function BudgetPage() {
                             onClick={() => handleSelectCalendarDate(date)}
                             className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-sm font-medium transition-all ${
                               isSelectedStart || isSelectedEnd
-                                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
+                                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200 dark:shadow-none"
                                 : isWithinPreviewRange
-                                  ? "bg-emerald-50 text-emerald-700"
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
                                   : isCurrentMonth
-                                    ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                                    : "text-slate-300 hover:bg-slate-50"
+                                    ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
+                                    : "text-slate-300 hover:bg-slate-50 dark:text-slate-650 dark:hover:bg-slate-800"
                             } ${
                               isToday && !isSelectedStart && !isSelectedEnd
-                                ? "ring-1 ring-emerald-200"
+                                ? "ring-1 ring-emerald-200 dark:ring-emerald-800"
                                 : ""
                             } ${
                               isOutOfBounds
@@ -731,11 +752,11 @@ function BudgetPage() {
                       })}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
                       <button
                         type="button"
                         onClick={handleResetBudgetRange}
-                        className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+                        className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
                       >
                         Toàn bộ kỳ
                       </button>
@@ -744,7 +765,7 @@ function BudgetPage() {
                         <button
                           type="button"
                           onClick={() => setOpenDropdown(null)}
-                          className="cursor-pointer text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+                          className="cursor-pointer text-sm font-medium text-slate-500 transition-colors hover:text-slate-750 dark:text-slate-400"
                         >
                           Đóng
                         </button>
@@ -805,32 +826,57 @@ function BudgetPage() {
               <DailySpendingChart data={dailySpendingData} />
             </ChartCard>
 
-            <ChartCard title="Chi tiêu theo danh mục">
-              <CategoryChart totalSpent={totalSpent} categoryData={categoryData} />
+            <ChartCard
+              title="Chi tiêu theo danh mục"
+              extra={
+                <div className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryPeriod("day")}
+                    className={`rounded-md px-2.5 py-1 transition-colors ${
+                      categoryPeriod === "day"
+                        ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    Ngày
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryPeriod("week")}
+                    className={`rounded-md px-2.5 py-1 transition-colors ${
+                      categoryPeriod === "week"
+                        ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    Tuần
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryPeriod("month")}
+                    className={`rounded-md px-2.5 py-1 transition-colors ${
+                      categoryPeriod === "month"
+                        ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    Tháng
+                  </button>
+                </div>
+              }
+            >
+              <CategoryChart totalSpent={categoryTotalSpent} categoryData={categoryData} />
             </ChartCard>
           </section>
 
-          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <section className="mt-6">
             <RecentExpenses
               expenses={filteredExpenses}
+              onAddExpense={handleOpenAddExpense}
               onViewAllExpenses={() => navigate("/expense-history")}
             />
-
-            <ChartCard title="Xu hướng chi tiêu theo tuần">
-              <WeeklyTrendChart data={weeklyTrendData} />
-            </ChartCard>
           </section>
-
-          <div className="mt-6 flex justify-end">
-            <button
-              type="button"
-              onClick={handleOpenAddExpense}
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition-colors hover:bg-emerald-800"
-            >
-              <Plus size={18} />
-              Thêm khoản chi
-            </button>
-          </div>
     </AppShell>
   );
 }
@@ -1007,10 +1053,13 @@ function SummaryCard({ icon, title, value, subtitle, bg, progress, badge }) {
   );
 }
 
-function ChartCard({ title, children }) {
+function ChartCard({ title, extra, children }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="mb-6 text-xl font-bold dark:text-white">{title}</h2>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-xl font-bold dark:text-white">{title}</h2>
+        {extra}
+      </div>
       {children}
     </div>
   );
@@ -1139,18 +1188,28 @@ function CategoryChart({ totalSpent, categoryData }) {
   );
 }
 
-function RecentExpenses({ expenses, onViewAllExpenses }) {
+function RecentExpenses({ expenses, onAddExpense, onViewAllExpenses }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold dark:text-white">Khoản chi gần đây</h2>
-        <button
-          type="button"
-          onClick={onViewAllExpenses}
-          className="cursor-pointer rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:hover:bg-emerald-900/60"
-        >
-          Xem tất cả khoản chi
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onAddExpense}
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white shadow-md transition-colors hover:bg-emerald-800"
+          >
+            <Plus size={16} />
+            Thêm khoản chi
+          </button>
+          <button
+            type="button"
+            onClick={onViewAllExpenses}
+            className="cursor-pointer rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          >
+            Xem tất cả khoản chi
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">

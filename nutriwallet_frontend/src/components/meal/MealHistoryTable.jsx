@@ -702,7 +702,6 @@ export default function MealHistoryTable({ searchQuery = "" }) {
               <th className="px-5 py-4">Tinh bột</th>
               <th className="px-5 py-4">Chất béo</th>
               <th className="px-5 py-4">Trạng thái AI</th>
-              <th className="px-5 py-4"></th>
             </tr>
           </thead>
 
@@ -795,12 +794,6 @@ export default function MealHistoryTable({ searchQuery = "" }) {
                       <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-400">
                         {meal.modelName}
                       </p>
-                    </td>
-
-                    <td className="px-5 py-5 text-right">
-                      <button className="cursor-pointer rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-emerald-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-emerald-400">
-                        <ArrowRight size={18} />
-                      </button>
                     </td>
                   </tr>
                 );
