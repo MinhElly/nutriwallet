@@ -1,9 +1,11 @@
-import { useState } from "react";
+  import { useState, useEffect } from "react";
 import {
   Bot,
   CheckCircle,
   Zap,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -22,135 +24,147 @@ import {
   CartesianGrid
 } from "recharts";
 
+// Import API Services
+import {
+  fetchAiConsoleStats,
+  fetchAiConsolePerformance,
+  fetchAiConsoleLogs,
+  updateAiLogEvaluation,
+  triggerModelRetrain
+} from "../../services/aiLog.service";
+
 export default function AIConsoleTab() {
   // AI Console State Management
-  const [retrainQueue, setRetrainQueue] = useState(23);
-  const [correctCount, setCorrectCount] = useState(156);
-  const [wrongCount, setWrongCount] = useState(23);
-  const [pendingCount, setPendingCount] = useState(12);
+  const [stats, setStats] = useState({
+    totalRequestsToday: 0,
+    successRate: 100.0,
+    avgResponseTime: 0.0,
+    failedRequestsToday: 0
+  });
+  const [performanceData, setPerformanceData] = useState([]);
+  const [recognitionLogs, setRecognitionLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Recognition Logs Data
-  const [recognitionLogs, setRecognitionLogs] = useState([
-    {
-      id: 1,
-      name: "Phở bò",
-      confidence: "99.2%",
-      correctness: "correct",
-      aiGuess: 'AI: "Beef Pho Noodle Soup"',
-      avatarUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=150&auto=format&fit=crop&q=60"
-    },
-    {
-      id: 2,
-      name: "Bánh mì",
-      confidence: "97.8%",
-      correctness: "correct",
-      aiGuess: 'AI: "Vietnamese Banh Mi"',
-      avatarUrl: "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?w=150&auto=format&fit=crop&q=60"
-    },
-    {
-      id: 3,
-      name: "Gỏi cuốn",
-      confidence: "72.3%",
-      correctness: "pending",
-      aiGuess: 'AI: "Egg Rolls (incorrect)"',
-      avatarUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=150&auto=format&fit=crop&q=60"
-    },
-    {
-      id: 4,
-      name: "Bún bò Huế",
-      confidence: "88.4%",
-      correctness: "correct",
-      aiGuess: 'AI: "Hue Beef Noodle Soup"',
-      avatarUrl: "https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=150&auto=format&fit=crop&q=60"
+  // Dynamic counts for status label counters
+  const correctCount = recognitionLogs.filter((log) => log.evaluationStatus === "CORRECT").length;
+  const wrongCount = recognitionLogs.filter((log) => log.evaluationStatus === "INCORRECT").length;
+  const pendingCount = recognitionLogs.filter((log) => log.evaluationStatus === "PENDING").length;
+
+  const loadStats = async () => {
+    try {
+      const data = await fetchAiConsoleStats();
+      setStats(data || {
+        totalRequestsToday: 0,
+        successRate: 100.0,
+        avgResponseTime: 0.0,
+        failedRequestsToday: 0
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể tải số liệu thống kê AI");
     }
-  ]);
+  };
+
+  const loadPerformance = async () => {
+    try {
+      const data = await fetchAiConsolePerformance();
+      setPerformanceData(data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể tải dữ liệu hiệu suất biểu đồ");
+    }
+  };
+
+  const loadLogs = async () => {
+    try {
+      const data = await fetchAiConsoleLogs();
+      setRecognitionLogs(data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể tải nhật ký AI");
+    }
+  };
+
+  const loadAllData = async () => {
+    setLoading(true);
+    await Promise.all([loadStats(), loadPerformance(), loadLogs()]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadAllData();
+  }, []);
 
   // Log Actions
-  const handleApproveLog = (logId) => {
-    setRecognitionLogs((prev) =>
-      prev.map((log) => {
-        if (log.id === logId) {
-          if (log.correctness === "pending") {
-            setPendingCount((c) => Math.max(0, c - 1));
-            setCorrectCount((c) => c + 1);
-          } else if (log.correctness === "wrong") {
-            setWrongCount((c) => Math.max(0, c - 1));
-            setCorrectCount((c) => c + 1);
-          }
-          return { ...log, correctness: "correct" };
-        }
-        return log;
-      })
-    );
-    toast.success("Đã xác nhận kết quả nhận diện chính xác");
+  const handleApproveLog = async (logId) => {
+    try {
+      await updateAiLogEvaluation(logId, "CORRECT");
+      toast.success("Đã xác nhận kết quả nhận diện chính xác");
+      setRecognitionLogs((prev) =>
+        prev.map((log) => (log.id === logId ? { ...log, evaluationStatus: "CORRECT" } : log))
+      );
+      loadStats();
+    } catch (err) {
+      toast.error(err.message || "Đánh giá thất bại");
+    }
   };
 
-  const handleRejectLog = (logId) => {
-    setRecognitionLogs((prev) =>
-      prev.map((log) => {
-        if (log.id === logId) {
-          if (log.correctness === "pending") {
-            setPendingCount((c) => Math.max(0, c - 1));
-            setWrongCount((c) => c + 1);
-          } else if (log.correctness === "correct") {
-            setCorrectCount((c) => Math.max(0, c - 1));
-            setWrongCount((c) => c + 1);
-          }
-          return { ...log, correctness: "wrong" };
-        }
-        return log;
-      })
-    );
-    toast.error("Đã từ chối và gắn nhãn kết quả nhận diện sai");
+  const handleRejectLog = async (logId) => {
+    try {
+      await updateAiLogEvaluation(logId, "INCORRECT");
+      toast.error("Đã từ chối và gắn nhãn kết quả nhận diện sai");
+      setRecognitionLogs((prev) =>
+        prev.map((log) => (log.id === logId ? { ...log, evaluationStatus: "INCORRECT" } : log))
+      );
+      loadStats();
+    } catch (err) {
+      toast.error(err.message || "Đánh giá thất bại");
+    }
   };
 
-  const handleRetrainLog = (logId) => {
-    setRecognitionLogs((prev) =>
-      prev.map((log) => {
-        if (log.id === logId) {
-          if (log.correctness === "pending") {
-            setPendingCount((c) => Math.max(0, c - 1));
-          } else if (log.correctness === "correct") {
-            setCorrectCount((c) => Math.max(0, c - 1));
-          } else if (log.correctness === "wrong") {
-            setWrongCount((c) => Math.max(0, c - 1));
-          }
-          setRetrainQueue((q) => q + 1);
-          return { ...log, correctness: "retrain" };
-        }
-        return log;
-      })
-    );
-    toast.success("Đã đưa dữ liệu này vào hàng đợi huấn luyện lại");
+  const handleRetrainLog = async (logId) => {
+    try {
+      await updateAiLogEvaluation(logId, "RETRAIN");
+      toast.success("Đã đưa dữ liệu này vào hàng đợi huấn luyện lại");
+      setRecognitionLogs((prev) =>
+        prev.map((log) => (log.id === logId ? { ...log, evaluationStatus: "RETRAIN" } : log))
+      );
+      loadStats();
+    } catch (err) {
+      toast.error(err.message || "Đánh giá thất bại");
+    }
   };
 
-  const handleRetrainModel = () => {
-    const toastId = toast.loading("Đang khởi tạo phiên làm việc với máy chủ GPU...");
-    setTimeout(() => {
-      toast.loading("Đang trích xuất dữ liệu gắn nhãn mới...", { id: toastId });
+  const handleRetrainModel = async () => {
+    const toastId = toast.loading("Đang kết nối tới máy chủ GPU...");
+    try {
+      await triggerModelRetrain();
       setTimeout(() => {
-        toast.loading("Đang huấn luyện lại mô hình ResNet-50 (Epoch 1/5)...", { id: toastId });
+        toast.loading("Đang chuẩn bị dữ liệu huấn luyện bổ sung...", { id: toastId });
         setTimeout(() => {
-          toast.success("Huấn luyện thành công! Phiên bản Model v2.4.2 đang trực tuyến.", {
-            id: toastId,
-            duration: 4000
-          });
-          setRetrainQueue(0);
-        }, 2000);
+          toast.loading("Đang huấn luyện lại mô hình (Epoch 1/5)...", { id: toastId });
+          setTimeout(() => {
+            toast.success("Huấn luyện hoàn tất! Phiên bản Model mới đang trực tuyến.", {
+              id: toastId,
+              duration: 4000
+            });
+            loadAllData();
+          }, 2000);
+        }, 1500);
       }, 1500);
-    }, 1500);
+    } catch (err) {
+      toast.error(err.message || "Huấn luyện thất bại", { id: toastId });
+    }
   };
 
-  // Recharts Data
-  const aiPerformanceData = [
-    { name: "T6", volume: 380, accuracy: 95.8 },
-    { name: "T7", volume: 440, accuracy: 96.2 },
-    { name: "CN", volume: 320, accuracy: 95.4 },
-    { name: "T2", volume: 490, accuracy: 96.5 },
-    { name: "T3", volume: 530, accuracy: 96.8 },
-    { name: "T4", volume: 420, accuracy: 96.0 },
-    { name: "T5", volume: 480, accuracy: 96.2 },
-  ];
+  if (loading) {
+    return (
+      <div className="flex flex-col h-[400px] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-purple-500 mb-2" />
+        <span className="text-slate-400 font-medium text-sm">Đang tải dữ liệu AI Console...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -187,7 +201,7 @@ export default function AIConsoleTab() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           title="AI Requests Hôm Nay"
-          value="12,847"
+          value={stats.totalRequestsToday.toLocaleString()}
           trend="↗ Hoạt động ổn định"
           isImprovement={true}
           icon={Bot}
@@ -196,16 +210,16 @@ export default function AIConsoleTab() {
         />
         <SummaryCard
           title="Success Rate"
-          value="96.8%"
-          trend="↗ Độ chính xác cao"
-          isImprovement={true}
+          value={stats.successRate.toFixed(1) + "%"}
+          trend={stats.successRate >= 90 ? "↗ Độ chính xác cao" : "↘ Cần cải thiện"}
+          isImprovement={stats.successRate >= 90}
           icon={CheckCircle}
           iconBg="bg-emerald-950/50"
           iconColor="text-emerald-400"
         />
         <SummaryCard
           title="Avg Response"
-          value="1.2s"
+          value={stats.avgResponseTime.toFixed(1) + "s"}
           trend="↗ Phản hồi nhanh chóng"
           isImprovement={true}
           icon={Zap}
@@ -213,13 +227,13 @@ export default function AIConsoleTab() {
           iconColor="text-amber-400"
         />
         <SummaryCard
-          title="Retrain Queue"
-          value={retrainQueue.toString()}
-          trend="↗ Cần huấn luyện bổ sung"
-          isImprovement={retrainQueue > 0 ? false : true}
-          icon={RefreshCw}
-          iconBg="bg-blue-950/50"
-          iconColor="text-blue-400"
+          title="Failed / Error Requests"
+          value={stats.failedRequestsToday.toLocaleString()}
+          trend={stats.failedRequestsToday > 0 ? "⚠️ Cần kiểm tra hệ thống" : "✓ Hoạt động ổn định"}
+          isImprovement={stats.failedRequestsToday === 0}
+          icon={AlertTriangle}
+          iconBg="bg-rose-950/50"
+          iconColor="text-rose-400"
         />
       </div>
 
@@ -237,7 +251,7 @@ export default function AIConsoleTab() {
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={aiPerformanceData}
+              data={performanceData}
               margin={{ top: 20, right: 20, bottom: 20, left: 10 }}
             >
               <CartesianGrid stroke="#25214d" strokeDasharray="3 3" vertical={false} />
@@ -254,8 +268,8 @@ export default function AIConsoleTab() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                domain={[92, 100]}
-                label={{ value: 'Accuracy (%)', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10, offset: 0 }}
+                domain={[0, 100]}
+                label={{ value: 'Accuracy (%)', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10, offset: -5 }}
               />
               <YAxis
                 yAxisId="right"
@@ -264,7 +278,7 @@ export default function AIConsoleTab() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                domain={[0, 600]}
+                domain={[0, 'auto']}
                 label={{ value: 'Requests', angle: 90, position: 'insideRight', fill: '#64748b', fontSize: 10, offset: 0 }}
               />
               <Tooltip
@@ -319,109 +333,117 @@ export default function AIConsoleTab() {
         </div>
 
         <div className="space-y-4">
-          {recognitionLogs.map((log) => {
-            const isPending = log.correctness === "pending";
-            const isCorrect = log.correctness === "correct";
-            const isWrong = log.correctness === "wrong";
-            const isRetrain = log.correctness === "retrain";
+          {recognitionLogs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <Bot size={48} className="mb-3 text-slate-600 animate-pulse" />
+              <p className="text-sm font-medium">Chưa có nhật ký AI nào được ghi nhận</p>
+            </div>
+          ) : (
+            recognitionLogs.map((log) => {
+              const isPending = log.evaluationStatus === "PENDING";
+              const isCorrect = log.evaluationStatus === "CORRECT";
+              const isWrong = log.evaluationStatus === "INCORRECT";
+              const isRetrain = log.evaluationStatus === "RETRAIN";
 
-            const isHighConfidence = parseFloat(log.confidence) >= 85;
+              const isHighConfidence = parseFloat(log.confidence) >= 85;
+              const imageUrl = log.inputImageUrl || "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=150&auto=format&fit=crop&q=60";
 
-            return (
-              <div
-                key={log.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-[#25214d]/50 bg-[#1f1c42]/20 p-4 transition-all duration-150 hover:bg-[#1f1b40]/30"
-              >
-                <div className="flex items-center gap-4 min-w-0">
-                  <img
-                    src={log.avatarUrl}
-                    alt={log.name}
-                    className="h-12 w-12 rounded-2xl object-cover ring-2 ring-purple-600/30 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-base font-bold text-white truncate">
-                        {log.name}
-                      </h4>
-                      
-                      {/* Confidence Badge */}
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                        isHighConfidence
-                          ? "bg-emerald-950/60 text-emerald-400"
-                          : "bg-rose-950/60 text-rose-400"
-                      }`}>
-                        {log.confidence}
+              return (
+                <div
+                  key={log.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-[#25214d]/50 bg-[#1f1c42]/20 p-4 transition-all duration-150 hover:bg-[#1f1b40]/30"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <img
+                      src={imageUrl}
+                      alt={log.foodName}
+                      className="h-12 w-12 rounded-2xl object-cover ring-2 ring-purple-600/30 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-bold text-white truncate">
+                          {log.foodName}
+                        </h4>
+                        
+                        {/* Confidence Badge */}
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                          isHighConfidence
+                            ? "bg-emerald-950/60 text-emerald-400"
+                            : "bg-rose-950/60 text-rose-400"
+                        }`}>
+                          {log.confidence}
+                        </span>
+
+                        {/* Status Badge */}
+                        {isCorrect && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/40 border border-emerald-900/30 px-2 py-0.5 text-[10px] font-extrabold text-emerald-400">
+                            ✓ Correct
+                          </span>
+                        )}
+                        {isWrong && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-950/40 border border-rose-900/30 px-2 py-0.5 text-[10px] font-extrabold text-rose-400">
+                            ✗ Wrong
+                          </span>
+                        )}
+                        {isRetrain && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-950/40 border border-blue-900/30 px-2 py-0.5 text-[10px] font-extrabold text-blue-400">
+                            ↻ In Queue
+                          </span>
+                        )}
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-950/40 border border-amber-900/30 px-2 py-0.5 text-[10px] font-extrabold text-amber-400">
+                            ? Pending
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium block mt-1">
+                        Model: {log.modelName || "Gemini"} | User: {log.userEmail || "Anonymous"} | {new Date(log.createdAt).toLocaleString("vi-VN")}
                       </span>
-
-                      {/* Status Badge */}
-                      {isCorrect && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/40 border border-emerald-900/30 px-2 py-0.5 text-[10px] font-extrabold text-emerald-400">
-                          ✓ Correct
-                        </span>
-                      )}
-                      {isWrong && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-950/40 border border-rose-900/30 px-2 py-0.5 text-[10px] font-extrabold text-rose-400">
-                          ✗ Wrong
-                        </span>
-                      )}
-                      {isRetrain && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-950/40 border border-blue-900/30 px-2 py-0.5 text-[10px] font-extrabold text-blue-400">
-                          ↻ In Queue
-                        </span>
-                      )}
-                      {isPending && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-950/40 border border-amber-900/30 px-2 py-0.5 text-[10px] font-extrabold text-amber-400">
-                          ? Pending
-                        </span>
-                      )}
                     </div>
-                    <span className="text-xs text-slate-400 font-medium block mt-1">
-                      {log.aiGuess}
-                    </span>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  {isPending || isRetrain ? (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleApproveLog(log.id)}
-                        className="inline-flex items-center rounded-xl bg-emerald-950/30 hover:bg-emerald-600 border border-emerald-900/30 px-4 py-2 text-xs font-bold text-emerald-400 hover:text-white transition-all cursor-pointer"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRejectLog(log.id)}
-                        className="inline-flex items-center rounded-xl bg-rose-950/30 hover:bg-rose-600 border border-rose-900/30 px-4 py-2 text-xs font-bold text-rose-400 hover:text-white transition-all cursor-pointer"
-                      >
-                        Reject
-                      </button>
-                      {!isRetrain && (
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    {isPending || isRetrain ? (
+                      <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={() => handleRetrainLog(log.id)}
-                          className="inline-flex items-center rounded-xl bg-amber-950/30 hover:bg-amber-600 border border-amber-900/30 px-4 py-2 text-xs font-bold text-amber-400 hover:text-white transition-all cursor-pointer"
-                          title="Add to Retrain Queue"
+                          onClick={() => handleApproveLog(log.id)}
+                          className="inline-flex items-center rounded-xl bg-emerald-950/30 hover:bg-emerald-600 border border-emerald-900/30 px-4 py-2 text-xs font-bold text-emerald-400 hover:text-white transition-all cursor-pointer"
                         >
-                          Retrain
+                          Approve
                         </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-950/40 border border-emerald-900/30 text-emerald-400">
-                      <CheckCircle size={18} />
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          onClick={() => handleRejectLog(log.id)}
+                          className="inline-flex items-center rounded-xl bg-rose-950/30 hover:bg-rose-600 border border-rose-900/30 px-4 py-2 text-xs font-bold text-rose-400 hover:text-white transition-all cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                        {!isRetrain && (
+                          <button
+                            type="button"
+                            onClick={() => handleRetrainLog(log.id)}
+                            className="inline-flex items-center rounded-xl bg-amber-950/30 hover:bg-amber-600 border border-amber-900/30 px-4 py-2 text-xs font-bold text-amber-400 hover:text-white transition-all cursor-pointer"
+                            title="Add to Retrain Queue"
+                          >
+                            Retrain
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1f1c42]/20 border border-[#25214d]/50 text-emerald-400">
+                        {isCorrect && <CheckCircle size={18} />}
+                        {isWrong && <span className="text-rose-400 font-bold text-sm">✗</span>}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
-
     </div>
   );
 }

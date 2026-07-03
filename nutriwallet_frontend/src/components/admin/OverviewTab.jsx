@@ -43,7 +43,7 @@ export default function OverviewTab() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      
+
       {/* Overview Title and Banner Status */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -103,7 +103,7 @@ export default function OverviewTab() {
 
       {/* Charts Dashboard Layout */}
       <div className="space-y-6">
-        
+
         {/* Chart 1: Revenue Composed Chart (Full Width) */}
         <div className="rounded-[24px] border border-[#25214d] bg-[#171530] p-6 shadow-md">
           <div className="flex items-center justify-between mb-6">
@@ -184,7 +184,7 @@ export default function OverviewTab() {
 
         {/* Grid for Plan Distribution & Recent System Events */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          
+
           {/* Plan Distribution (Donut Chart) */}
           <div className="rounded-[24px] border border-[#25214d] bg-[#171530] p-6 shadow-md lg:col-span-7 flex flex-col justify-between">
             <div>
@@ -224,7 +224,7 @@ export default function OverviewTab() {
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                
+
                 {/* Center label */}
                 <div className="absolute flex flex-col items-center justify-center">
                   <span className="text-3xl font-black text-white">68%</span>

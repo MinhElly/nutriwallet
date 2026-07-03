@@ -18,13 +18,13 @@ import UserTable from "../../components/admin/UserTable";
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  
+
   // State variables for User Management
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  
+
   // Navigation tab state: 'overview', 'users', or 'ai'
   const [currentTab, setCurrentTab] = useState("overview");
 
@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
     const matchesSearch =
       (u.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.email || "").toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (statusFilter === "ALL") return matchesSearch;
     return matchesSearch && u.status === statusFilter;
   });
@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-[#0b091a]">
-        
+
         {/* Top Header */}
         <header className="flex h-20 items-center justify-between border-b border-[#1f1b40] bg-[#0c0a1e]/90 px-8 sticky top-0 z-30 backdrop-blur-md">
           {/* Search bar */}
@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
 
         {/* Dashboard Content tabs */}
         <div className="flex-1 px-8 py-8 bg-[#0b091a]">
-          
+
           {/* OVERVIEW TAB */}
           {currentTab === "overview" && <OverviewTab />}
 
@@ -197,33 +197,30 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setStatusFilter("ALL")}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                        statusFilter === "ALL"
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${statusFilter === "ALL"
                           ? "bg-purple-600 text-white shadow-sm"
                           : "text-slate-400 hover:text-white"
-                      }`}
+                        }`}
                     >
                       Tất cả
                     </button>
                     <button
                       type="button"
                       onClick={() => setStatusFilter("ACTIVE")}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                        statusFilter === "ACTIVE"
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${statusFilter === "ACTIVE"
                           ? "bg-purple-600 text-white shadow-sm"
                           : "text-slate-400 hover:text-white"
-                      }`}
+                        }`}
                     >
                       Hoạt động
                     </button>
                     <button
                       type="button"
                       onClick={() => setStatusFilter("BLOCKED")}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                        statusFilter === "BLOCKED"
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${statusFilter === "BLOCKED"
                           ? "bg-purple-600 text-white shadow-sm"
                           : "text-slate-400 hover:text-white"
-                      }`}
+                        }`}
                     >
                       Bị khóa
                     </button>
