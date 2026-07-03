@@ -148,16 +148,17 @@ export default function ProfilePage() {
     [],
   );
 
+  const settingsGoal = settings?.goal ?? null;
   const tags = useMemo(() => {
-    if (!settings?.goal) return [];
-    return settings.goal
+    if (!settingsGoal) return [];
+    return settingsGoal
       .split(",")
       .map((g) => {
         const trimmed = g.trim();
         return onboardingGoalMap[trimmed] || trimmed;
       })
       .filter(Boolean);
-  }, [settings?.goal]);
+  }, [settingsGoal]);
 
   function handleProfileFieldChange(event) {
     const { name, value } = event.target;

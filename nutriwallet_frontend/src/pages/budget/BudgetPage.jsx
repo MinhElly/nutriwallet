@@ -14,8 +14,6 @@ import {
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Pie,
@@ -72,7 +70,7 @@ const vietnameseDateFormatter = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
 
 const formatMoney = (value) =>
   `${new Intl.NumberFormat("vi-VN").format(Math.max(value, 0))}đ`;
@@ -305,24 +303,6 @@ function BudgetPage() {
         amount,
       }));
 
-    const groupedByWeek = dailySpendingData.reduce((result, item) => {
-      const currentDate = toDate(item.date) ?? rangeStartDate;
-      const diffInDays = Math.floor(
-        (currentDate.getTime() - rangeStartDate.getTime()) / millisecondsPerDay,
-      );
-      const weekKey = `Tuần ${Math.floor(diffInDays / 7) + 1}`;
-
-      result[weekKey] = (result[weekKey] || 0) + item.amount;
-      return result;
-    }, {});
-
-    const weeklyTrendData = Object.entries(groupedByWeek).map(
-      ([week, amount]) => ({
-        week,
-        amount,
-      }),
-    );
-
     // Category calculation with period filters (Day/Week/Month)
     const filteredForCategory = filteredExpenses.filter((expense) => {
       const expenseDateObj = toDate(expense.date);
@@ -364,7 +344,6 @@ function BudgetPage() {
       rangeBudgetAmount,
       selectedDayCount,
       dailySpendingData,
-      weeklyTrendData,
       categoryData,
       categoryTotalSpent,
     };

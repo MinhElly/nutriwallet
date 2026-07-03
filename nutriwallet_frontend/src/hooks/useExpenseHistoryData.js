@@ -23,7 +23,7 @@ export function useExpenseHistoryData() {
       setExpenses(result.data.expenses);
       setCategoryLabelMap(result.data.categoryLabelMap);
       setError(result.error ?? "");
-    } catch (err) {
+    } catch {
       setError("Không thể tải chi tiêu");
     } finally {
       setLoading(false);
@@ -39,7 +39,9 @@ export function useExpenseHistoryData() {
   const addExpense = useCallback(async (payload) => {
     const nextExpense = await createExpenseApi(payload);
     setExpenses((current) =>
-      [nextExpense, ...current].sort((a, b) => b.expenseDate.localeCompare(a.expenseDate))
+      [nextExpense, ...current].sort((a, b) =>
+        b.expenseDate.localeCompare(a.expenseDate),
+      ),
     );
     return nextExpense;
   }, []);
@@ -47,7 +49,7 @@ export function useExpenseHistoryData() {
   const updateExpense = useCallback(async (id, payload) => {
     const updated = await updateExpenseApi(id, payload);
     setExpenses((current) =>
-      current.map((item) => (item.id === id ? { ...item, ...updated } : item))
+      current.map((item) => (item.id === id ? { ...item, ...updated } : item)),
     );
     return updated;
   }, []);
