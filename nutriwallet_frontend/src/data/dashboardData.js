@@ -15,7 +15,7 @@ export const userInfo = {
 };
 
 export const dashboardMeta = {
-  periodLabel: "1 tháng qua",
+  periodLabel: "Tháng này",
   description:
     "Đây là tổng quan sức khỏe, bữa ăn, chi tiêu và phân tích AI của bạn.",
 };
