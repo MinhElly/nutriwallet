@@ -96,6 +96,19 @@ public class HealthProfileService {
         return toResponse(profile);
     }
 
+    @Transactional
+    public HealthProfileResponse setReviewSchedule(User user, AssessmentType frequency) {
+        HealthProfile profile = getOrCreate(user);
+        Instant now = Instant.now();
+        if (frequency == AssessmentType.ANNUAL) {
+            profile.setNextQuarterlyReviewAt(null);
+            profile.setNextAnnualReviewAt(now.plus(365, ChronoUnit.DAYS));
+        } else {
+            profile.setNextQuarterlyReviewAt(now.plus(90, ChronoUnit.DAYS));
+            profile.setNextAnnualReviewAt(null);
+        }
+        return toResponse(profiles.saveAndFlush(profile));
+    }
     public HealthProfileResponse toResponse(HealthProfile p) {
         List<HealthConditionInput> conditions = p.getConditions().stream()
                 .map(v -> new HealthConditionInput(v.getConditionType(), v.getCustomValue())).toList();
