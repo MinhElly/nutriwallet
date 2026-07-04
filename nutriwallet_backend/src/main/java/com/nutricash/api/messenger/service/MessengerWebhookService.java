@@ -68,6 +68,9 @@ public class MessengerWebhookService {
     private final AiErrorReportRepository errorReports;
     private final BudgetService budgetService;
     private final BudgetAlertService budgetAlertService;
+    private final MessengerHealthFlowService healthFlow;
+    private final MessengerMealFlowService mealFlow;
+    private final MessengerInsightService insights;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -110,6 +113,10 @@ public class MessengerWebhookService {
                 if (message == null) {
                     String referral = messaging.referral() != null ? messaging.referral().ref() : (messaging.postback() != null && messaging.postback().referral() != null ? messaging.postback().referral().ref() : null);
                     if ("REQUEST_LINK_CODE".equalsIgnoreCase(referral)) handleLinkCodeReferral(psid);
+                    if (messaging.postback() != null && messaging.postback().payload() != null) {
+                        handleUserMessage(psid, new MessengerMessage(null, messaging.postback().title(), List.of(),
+                                new com.nutricash.api.messenger.dto.MessengerQuickReply(messaging.postback().payload(), "text", messaging.postback().title())));
+                    }
                     continue;
                 }
 
@@ -160,6 +167,10 @@ public class MessengerWebhookService {
             imageAction = pendingActionRepository.save(ChatbotPendingAction.builder().chatbotProfile(profile).type(ChatbotActionType.IMAGE_ANALYSIS).status(ChatbotActionStatus.PROCESSING).messageId(message.mid()).payloadJson("{\"imageUrl\":\"" + imageUrl.replace("\"", "") + "\"}").expiresAt(Instant.now().plusSeconds(5)).build());
         }
         saveMessage(profile, ChatbotMessageType.TEXT, incomingText, imageUrl, true);
+
+        if (healthFlow.handle(profile, message)) return;
+        if (mealFlow.handle(profile, message)) return;
+        if (insights.handle(profile, incomingText)) return;
 
         // Kiểm tra câu hỏi đặc biệt về mã liên kết hoặc tính năng của chatbot
         if (incomingText != null && !incomingText.isBlank()) {
@@ -546,42 +557,7 @@ public class MessengerWebhookService {
                 return;
             }
 
-            String foodName = jsonNode.has("foodName") ? jsonNode.get("foodName").asText() : "Bữa ăn từ Messenger";
-            BigDecimal calories = jsonNode.has("calories") ? jsonNode.get("calories").decimalValue() : BigDecimal.ZERO;
-            BigDecimal protein = jsonNode.has("proteinGram") ? jsonNode.get("proteinGram").decimalValue() : BigDecimal.ZERO;
-            BigDecimal carb = jsonNode.has("carbGram") ? jsonNode.get("carbGram").decimalValue() : BigDecimal.ZERO;
-            BigDecimal fat = jsonNode.has("fatGram") ? jsonNode.get("fatGram").decimalValue() : BigDecimal.ZERO;
-            BigDecimal estimatedPriceVnd = jsonNode.has("estimatedPriceVnd") ? jsonNode.get("estimatedPriceVnd").decimalValue() : BigDecimal.ZERO;
-
-            if (user != null) {
-                // Lưu vào MealRecord cho người dùng đã liên kết
-                Map<String,Object> payload = new LinkedHashMap<>();
-                payload.put("foodName", foodName); payload.put("imageUrl", imageUrl);
-                payload.put("calories", calories); payload.put("proteinGram", protein);
-                payload.put("carbGram", carb); payload.put("fatGram", fat); payload.put("estimatedPriceVnd", estimatedPriceVnd);
-                pendingActionRepository.save(ChatbotPendingAction.builder().chatbotProfile(profile)
-                        .type(ChatbotActionType.MEAL_CONFIRMATION).status(ChatbotActionStatus.AWAITING_CONFIRMATION)
-                        .payloadJson(objectMapper.writeValueAsString(payload)).expiresAt(Instant.now().plusSeconds(900)).build());
-            }
-
-            String responseMsg = "🍽️ **Kết quả phân tích dinh dưỡng:**\n" +
-                    "Món: " + foodName + "\n" +
-                    "Calo: " + calories + " kcal\n" +
-                    "Đạm: " + protein + "g\n" +
-                    "Carb: " + carb + "g\n" +
-                    "Béo: " + fat + "g\n" +
-                    "Tiền: " + estimatedPriceVnd + " VND\n\n";
-
-            if (user != null) {
-                responseMsg += "Bữa ăn này đã được ghi nhận tự động vào nhật ký NutriWallet của bạn! ✅\n" +
-                        "💡 *Nếu muốn cập nhật lại thông tin (tên món, số tiền), hãy nhắn tin trả lời ví dụ: \"Cập nhật cơm tấm 45k\" hoặc \"Cập nhật cơm sườn 45000\".*";
-            } else {
-                responseMsg += "Đăng ký tài khoản và liên kết Messenger để ghi nhận tự động bữa ăn vào nhật ký NutriWallet của bạn! 📝\n" +
-                        "👉 Đăng nhập ngay tại: " + frontendUrl + "/login";
-            }
-
-            sendFacebookMessage(profile.getPsid(), responseMsg);
-            saveMessage(profile, ChatbotMessageType.TEXT, responseMsg, null, false);
+            mealFlow.begin(profile, user, imageUrl, jsonNode, rawResponse, aiProviderService.model());
 
         } catch (Exception e) {
             log.error("Failed to analyze meal image from Chatbot", e);
