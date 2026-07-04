@@ -30,7 +30,7 @@ public class UserSettingController {
     @GetMapping
     public ApiResponse<UserSettingResponse> getUserSetting(@AuthenticationPrincipal SecurityUser currentUser) {
         UserSetting setting = userSettingService.getOrCreateUserSetting(currentUser.getUser());
-        return ApiResponse.success(mapToResponse(setting));
+        return ApiResponse.success(userSettingService.toResponse(setting));
     }
 
     @Operation(summary = "Update user settings", description = "Update user settings and profile details.")
@@ -39,26 +39,6 @@ public class UserSettingController {
             @AuthenticationPrincipal SecurityUser currentUser,
             @RequestBody UpdateUserSettingRequest request) {
         UserSetting setting = userSettingService.updateUserSetting(currentUser.getUser(), request);
-        return ApiResponse.success(mapToResponse(setting));
-    }
-
-    private UserSettingResponse mapToResponse(UserSetting setting) {
-        return new UserSettingResponse(
-                setting.getId(),
-                setting.getGender(),
-                setting.getWeight(),
-                setting.getHeight(),
-                setting.getGoal(),
-                setting.getAge(),
-                setting.getDiet(),
-                setting.getActivityLevel(),
-                setting.getMonthlyBudget(),
-                setting.getLanguage(),
-                setting.isEmailAnalysisReady(),
-                setting.isBudgetWarningPush(),
-                setting.isAutoCreateExpense(),
-                setting.isAiRecommendationsEnabled(),
-                setting.getTheme()
-        );
+        return ApiResponse.success(userSettingService.toResponse(setting));
     }
 }
