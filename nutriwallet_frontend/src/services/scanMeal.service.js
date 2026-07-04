@@ -66,7 +66,14 @@ function mapMealAnalysis(analysis, imageUrl) {
       fat: toSafeNumber(analysis?.fatGram),
     },
     estimatedPrice: toSafeNumber(analysis?.estimatedPriceVnd),
-    candidateFoods: Array.isArray(analysis?.candidateFoods) ? analysis.candidateFoods : [],
+    candidateFoods: Array.isArray(analysis?.candidateFoods)
+      ? analysis.candidateFoods
+          .map((food) => ({
+            name: food?.foodName?.trim() || food?.name?.trim() || "",
+            confidence: Math.min(100, Math.max(0, toSafeNumber(food?.confidence))),
+          }))
+          .filter((food) => food.name)
+      : [],
     ingredients: Array.isArray(analysis?.ingredients) ? analysis.ingredients : [],
     allergens: Array.isArray(analysis?.allergens) ? analysis.allergens : [],
     sugarGram: analysis?.sugarGram == null ? null : toSafeNumber(analysis.sugarGram),
