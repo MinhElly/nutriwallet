@@ -38,13 +38,17 @@ public class AiErrorReportService {
 
         MealRecord meal = null;
         if (request.mealRecordId() != null) {
-            meal = mealRepository.findById(request.mealRecordId())
+            meal = (currentUser == null
+                    ? mealRepository.findById(request.mealRecordId())
+                    : mealRepository.findByIdAndUserId(request.mealRecordId(), currentUser.getId()))
                     .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
         }
 
         AiAnalysisLog log = null;
         if (request.aiAnalysisLogId() != null) {
-            log = aiAnalysisLogRepository.findById(request.aiAnalysisLogId())
+            log = (currentUser == null
+                    ? aiAnalysisLogRepository.findById(request.aiAnalysisLogId())
+                    : aiAnalysisLogRepository.findByIdAndUserId(request.aiAnalysisLogId(), currentUser.getId()))
                     .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
         }
 
@@ -57,7 +61,7 @@ public class AiErrorReportService {
                 .status(AiErrorReportStatus.PENDING)
                 .build();
 
-        report = errorReports.save(report);
+        report = errorReports.saveAndFlush(report);
         AiErrorReportService.log.info("Successfully created AI error report with ID: {}", report.getId());
         return mapToResponse(report);
     }
@@ -75,7 +79,7 @@ public class AiErrorReportService {
         AiErrorReport report = errorReports.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
         report.setStatus(status);
-        report = errorReports.save(report);
+        report = errorReports.saveAndFlush(report);
         AiErrorReportService.log.info("Successfully updated AI error report ID {} status to: {}", id, status);
         return mapToResponse(report);
     }
