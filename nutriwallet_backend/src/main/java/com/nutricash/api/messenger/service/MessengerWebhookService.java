@@ -555,20 +555,13 @@ public class MessengerWebhookService {
 
             if (user != null) {
                 // Lưu vào MealRecord cho người dùng đã liên kết
-                MealRecord mealRecord = MealRecord.builder()
-                        .user(user)
-                        .chatbotProfile(profile)
-                        .mealName(foodName)
-                        .imageUrl(imageUrl)
-                        .mealTime(LocalDateTime.now())
-                        .totalCalories(calories)
-                        .proteinGram(protein)
-                        .carbGram(carb)
-                        .fatGram(fat)
-                        .aiEstimated(true)
-                        .confirmedByUser(false)
-                        .build();
-                mealRecord = mealRepository.save(mealRecord);
+                Map<String,Object> payload = new LinkedHashMap<>();
+                payload.put("foodName", foodName); payload.put("imageUrl", imageUrl);
+                payload.put("calories", calories); payload.put("proteinGram", protein);
+                payload.put("carbGram", carb); payload.put("fatGram", fat); payload.put("estimatedPriceVnd", estimatedPriceVnd);
+                pendingActionRepository.save(ChatbotPendingAction.builder().chatbotProfile(profile)
+                        .type(ChatbotActionType.MEAL_CONFIRMATION).status(ChatbotActionStatus.AWAITING_CONFIRMATION)
+                        .payloadJson(objectMapper.writeValueAsString(payload)).expiresAt(Instant.now().plusSeconds(900)).build());
             }
 
             String responseMsg = "🍽️ **Kết quả phân tích dinh dưỡng:**\n" +

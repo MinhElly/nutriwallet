@@ -79,6 +79,13 @@ public class AiAnalysisLog {
     @Column(name = "parsed_fat_gram", precision = 10, scale = 2)
     private BigDecimal parsedFatGram;
 
+    @Column(name = "sugar_gram", precision = 10, scale = 2)
+    private BigDecimal sugarGram;
+    @Column(name = "sodium_mg", precision = 10, scale = 2)
+    private BigDecimal sodiumMg;
+    @Lob @Column(name = "enrichment_json", columnDefinition = "LONGTEXT")
+    private String enrichmentJson;
+
     @Column(name = "confidence", precision = 5, scale = 2)
     private BigDecimal confidence;
 

@@ -48,11 +48,15 @@ export default function AnalysisResultCard({ result, onUpdateResult, onSave }) {
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const handleSubmitReport = async () => {
+    if (!result.savedMealId) {
+      toast.error("Hãy lưu bữa ăn trước khi gửi báo cáo lỗi.");
+      return;
+    }
     setIsSubmittingReport(true);
     const toastId = toast.loading("Đang gửi báo cáo lỗi...");
     try {
       await submitAiErrorReport({
-        mealRecordId: result.savedMealId || null,
+        mealRecordId: result.savedMealId,
         aiAnalysisLogId: result.analysisLogId || null,
         reason: reportReason,
         description: reportDescription,

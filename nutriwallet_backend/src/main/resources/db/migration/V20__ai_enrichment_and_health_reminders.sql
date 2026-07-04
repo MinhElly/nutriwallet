@@ -1,0 +1,8 @@
+ALTER TABLE ai_analysis_logs ADD COLUMN sugar_gram DECIMAL(10,2) NULL, ADD COLUMN sodium_mg DECIMAL(10,2) NULL, ADD COLUMN enrichment_json LONGTEXT NULL;
+ALTER TABLE nutrition_analysis_cache ADD COLUMN confidence DECIMAL(5,2) NULL, ADD COLUMN sugar_gram DECIMAL(10,2) NULL, ADD COLUMN sodium_mg DECIMAL(10,2) NULL, ADD COLUMN enrichment_json LONGTEXT NULL;
+CREATE TABLE health_reminder_deliveries (
+ id BIGINT NOT NULL AUTO_INCREMENT, user_id BIGINT NOT NULL, chatbot_profile_id BIGINT NOT NULL, assessment_type VARCHAR(20) NOT NULL, period_key VARCHAR(20) NOT NULL, status VARCHAR(20) NOT NULL, attempt_count INT NOT NULL DEFAULT 0, next_attempt_at TIMESTAMP(6) NULL, sent_at TIMESTAMP(6) NULL, created_at TIMESTAMP(6) NOT NULL, updated_at TIMESTAMP(6) NOT NULL, PRIMARY KEY (id),
+ CONSTRAINT fk_health_reminder_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, CONSTRAINT fk_health_reminder_profile FOREIGN KEY (chatbot_profile_id) REFERENCES chatbot_profiles(id) ON DELETE CASCADE, CONSTRAINT uk_health_reminder_period UNIQUE (user_id, assessment_type, period_key), INDEX idx_health_reminder_retry (status, next_attempt_at));
+CREATE TABLE ai_analysis_corrections (
+ id BIGINT NOT NULL AUTO_INCREMENT, ai_analysis_log_id BIGINT NOT NULL, user_id BIGINT NOT NULL, original_output LONGTEXT NULL, corrected_food VARCHAR(255) NULL, corrected_portion VARCHAR(100) NULL, corrected_toppings TEXT NULL, reason VARCHAR(500) NULL, corrected_at TIMESTAMP(6) NOT NULL, created_at TIMESTAMP(6) NOT NULL, updated_at TIMESTAMP(6) NOT NULL, PRIMARY KEY (id),
+ CONSTRAINT fk_ai_correction_log FOREIGN KEY (ai_analysis_log_id) REFERENCES ai_analysis_logs(id) ON DELETE CASCADE, CONSTRAINT fk_ai_correction_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE);

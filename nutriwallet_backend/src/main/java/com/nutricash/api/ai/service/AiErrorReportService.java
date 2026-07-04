@@ -30,42 +30,44 @@ public class AiErrorReportService {
 
     @Transactional
     public AiErrorReportResponse createReport(SecurityUser currentUser, CreateAiErrorReportRequest request) {
-        User user = null;
-        if (currentUser != null) {
-            user = userRepository.findByIdAndDeletedAtIsNull(currentUser.getId())
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (currentUser == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        MealRecord meal = null;
-        if (request.mealRecordId() != null) {
-            meal = (currentUser == null
-                    ? mealRepository.findById(request.mealRecordId())
-                    : mealRepository.findByIdAndUserId(request.mealRecordId(), currentUser.getId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+        User user = userRepository.findByIdAndDeletedAtIsNull(currentUser.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+
+        MealRecord meal = mealRepository.findById(request.mealRecordId())
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (meal.getUser() == null || !currentUser.getId().equals(meal.getUser().getId())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        AiAnalysisLog log = null;
+        AiAnalysisLog analysisLog = null;
         if (request.aiAnalysisLogId() != null) {
-            log = (currentUser == null
-                    ? aiAnalysisLogRepository.findById(request.aiAnalysisLogId())
-                    : aiAnalysisLogRepository.findByIdAndUserId(request.aiAnalysisLogId(), currentUser.getId()))
+            analysisLog = aiAnalysisLogRepository.findById(request.aiAnalysisLogId())
                     .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+            if (analysisLog.getUser() == null || !currentUser.getId().equals(analysisLog.getUser().getId())) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
         }
+
+        log.info("Creating AI error report: userId={}, mealRecordId={}, aiAnalysisLogId={}",
+                user.getId(), meal.getId(), analysisLog != null ? analysisLog.getId() : null);
 
         AiErrorReport report = AiErrorReport.builder()
                 .user(user)
                 .mealRecord(meal)
-                .aiAnalysisLog(log)
+                .aiAnalysisLog(analysisLog)
                 .reason(request.reason())
                 .description(request.description())
                 .status(AiErrorReportStatus.PENDING)
                 .build();
 
         report = errorReports.saveAndFlush(report);
-        AiErrorReportService.log.info("Successfully created AI error report with ID: {}", report.getId());
+        log.info("Successfully created AI error report with ID: {}", report.getId());
         return mapToResponse(report);
     }
-
     @Transactional(readOnly = true)
     public List<AiErrorReportResponse> findAllReports() {
         return errorReports.findAllByOrderByCreatedAtDesc()

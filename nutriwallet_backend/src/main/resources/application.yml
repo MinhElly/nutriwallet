@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:${BACKEND_PORT:8080}}
+  port: ${PORT:${SERVER_PORT:${BACKEND_PORT:8080}}}
   forward-headers-strategy: framework
 
 spring:
@@ -114,6 +114,9 @@ app:
   messenger:
     verify-token: ${MESSENGER_VERIFY_TOKEN:my_messenger_verify_token}
     page-access-token: ${MESSENGER_PAGE_ACCESS_TOKEN:}
+  health:
+    reminders:
+      enabled: ${HEALTH_REMINDERS_ENABLED:false}
 
 facebook:
   app-secret: ${FACEBOOK_CLIENT_SECRET:123456789012345}

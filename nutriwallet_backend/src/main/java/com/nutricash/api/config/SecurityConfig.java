@@ -1,10 +1,16 @@
 package com.nutricash.api.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nutricash.api.common.dto.ErrorResponse;
+import com.nutricash.api.common.exception.ErrorCode;
 import com.nutricash.api.security.JwtAuthenticationFilter;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,11 +27,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     @Value("${app.security.enabled:false}")
     private boolean securityEnabled;
 
-    @Value("${app.frontend-url:http://localhost:5173}")
+    @Value("${app.frontend-url:https://nutriwallet.vercel.app, http://localhost:5173}")
     private String frontendUrl;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -37,13 +44,23 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            objectMapper.writeValue(response.getOutputStream(), new ErrorResponse(
+                                    ErrorCode.UNAUTHORIZED.name(), ErrorCode.UNAUTHORIZED.message(), Instant.now()));
+                        })
+                        .accessDeniedHandler((request, response, exception) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            objectMapper.writeValue(response.getOutputStream(), new ErrorResponse(
+                                    ErrorCode.FORBIDDEN.name(), ErrorCode.FORBIDDEN.message(), Instant.now()));
+                        }));
 
         if (!securityEnabled) {
-            return http
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                    .build();
+            return http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll()).build();
         }
 
         return http
