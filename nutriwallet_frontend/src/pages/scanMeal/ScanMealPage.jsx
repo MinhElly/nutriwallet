@@ -5,7 +5,6 @@ import UploadCard from "../../components/scanMeal/UploadCard";
 import TipsCard from "../../components/scanMeal/TipsCard";
 import AnalysisResultCard from "../../components/scanMeal/AnalysisResultCard";
 import ScanMealFallback from "../../components/scanMeal/fallback/ScanMealFallback";
-import NotFoodErrorCard from "../../components/scanMeal/fallback/NotFoodErrorCard";
 import { saveAnalyzedMeal } from "../../services/scanMeal.service";
 import { useHealthProfile } from "../../hooks/useHealthProfile";
 import toast from "react-hot-toast";
@@ -58,9 +57,7 @@ export default function ScanMealPage() {
           <TipsCard />
         </div>
 
-        {analysisResult && (analysisResult.isFood === false || !analysisResult.candidateFoods || analysisResult.candidateFoods.length === 0) ? (
-          <NotFoodErrorCard onReset={() => setAnalysisResult(null)} />
-        ) : analysisResult?.requiresClarification || (analysisResult?.ai?.confidence && analysisResult.ai.confidence < 70) ? (
+        {analysisResult?.requiresClarification || (analysisResult?.ai?.confidence && analysisResult.ai.confidence < 70) ? (
           <ScanMealFallback 
             analysisResult={analysisResult} 
             onSave={handleSaveMeal} 
