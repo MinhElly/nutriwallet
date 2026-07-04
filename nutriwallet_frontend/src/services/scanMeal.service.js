@@ -57,6 +57,7 @@ function mapMealAnalysis(analysis, imageUrl) {
   return {
     analysisLogId: analysis?.analysisLogId ?? null,
     foodName: analysis?.foodName?.trim() || "Bữa ăn mới",
+    isFood: analysis?.isFood,
     imageUrl,
     mealType: analysis?.mealType ?? null,
     nutrition: {
