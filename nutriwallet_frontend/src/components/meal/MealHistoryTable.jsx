@@ -11,6 +11,7 @@ import {
   Sunset,
   Globe,
   MessageCircle,
+  AlertTriangle,
 } from "lucide-react";
 import {
   buildCalendarDays,
@@ -19,6 +20,7 @@ import {
   isSameDay,
 } from "../../utils/date";
 import { useMealHistoryData } from "../../hooks/useMealHistoryData";
+import AiErrorReportModal from "./AiErrorReportModal";
 const mealTypeConfig = {
   all: {
     label: "Tất cả bữa ăn",
@@ -173,6 +175,7 @@ export default function MealHistoryTable({ searchQuery = "" }) {
   const [draftStartDate, setDraftStartDate] = useState("");
   const [draftEndDate, setDraftEndDate] = useState("");
   const [viewDate, setViewDate] = useState(() => new Date());
+  const [reportingMeal, setReportingMeal] = useState(null);
   const sectionRef = useRef(null);
 
   const today = useMemo(() => toDate(liveTodayDate) ?? new Date(), [liveTodayDate]);
@@ -701,6 +704,7 @@ export default function MealHistoryTable({ searchQuery = "" }) {
               <th className="px-5 py-4">Tinh bột</th>
               <th className="px-5 py-4">Chất béo</th>
               <th className="px-5 py-4">Trạng thái AI</th>
+              <th className="px-5 py-4 text-right">Thao tác</th>
             </tr>
           </thead>
 
@@ -794,6 +798,12 @@ export default function MealHistoryTable({ searchQuery = "" }) {
                         {meal.modelName}
                       </p>
                     </td>
+
+                    <td className="px-5 py-5 text-right">
+                      <button type="button" onClick={() => setReportingMeal(meal)} className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-950/20">
+                        <AlertTriangle size={16} aria-hidden="true" /> Báo lỗi AI
+                      </button>
+                    </td>
                   </tr>
                 );
               })
@@ -853,6 +863,8 @@ export default function MealHistoryTable({ searchQuery = "" }) {
           </button>
         </div>
       </div>
+
+      <AiErrorReportModal key={reportingMeal?.id ?? "closed"} meal={reportingMeal} onClose={() => setReportingMeal(null)} />
     </section>
   );
 }

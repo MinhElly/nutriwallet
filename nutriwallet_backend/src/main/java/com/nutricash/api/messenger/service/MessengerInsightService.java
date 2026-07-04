@@ -7,6 +7,8 @@ import com.nutricash.api.health.service.HealthProfileService;
 import com.nutricash.api.meal.entity.MealRecord;
 import com.nutricash.api.meal.repository.MealRepository;
 import com.nutricash.api.messenger.entity.ChatbotProfile;
+import com.nutricash.api.setting.entity.UserSetting;
+import com.nutricash.api.setting.service.UserSettingService;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.Normalizer;
@@ -23,6 +25,7 @@ public class MessengerInsightService {
     private final MealRepository meals;
     private final ExpenseRepository expenses;
     private final HealthProfileService healthProfiles;
+    private final UserSettingService settings;
     private final MessengerReplyService replies;
 
     @Transactional(readOnly = true)
@@ -52,7 +55,8 @@ public class MessengerInsightService {
         }
 
         HealthProfileResponse health = healthProfiles.toResponse(healthProfiles.getOrCreate(profile.getUser()));
-        String response = health(health) + "\n\n" + nutrition(todayMeals) + "\n\n" + spending(todayExpenses)
+        UserSetting setting = settings.getOrCreateUserSetting(profile.getUser());
+        String response = health(profile, setting, health) + "\n\n" + nutrition(todayMeals) + "\n\n" + spending(todayExpenses)
                 + "\n\nThông tin sức khỏe là dữ liệu tự khai và không thay thế tư vấn y khoa.";
         if (health.firstCompletedAt() == null || !health.consentGiven()) {
             replies.sendQuickReplies(profile, response + "\n\nBạn muốn thiết lập hồ sơ sức khỏe ngay không?",
@@ -75,18 +79,22 @@ public class MessengerInsightService {
         return Intent.NONE;
     }
 
-    private String health(HealthProfileResponse h) {
+    private String health(ChatbotProfile profile, UserSetting s, HealthProfileResponse h) {
         if (h.firstCompletedAt() == null) return "Hồ sơ sức khỏe: chưa thiết lập.";
         String type = h.classification() == null ? "GENERAL" : h.classification().primaryType().name();
-        String conditions = h.conditions().isEmpty() ? "Không khai báo" : h.conditions().stream()
-                .map(v -> v.type().name()).reduce((a,b) -> a + ", " + b).orElse("");
-        String allergies = h.allergies().isEmpty() ? "Không khai báo" : h.allergies().stream()
-                .map(v -> v.type().name()).reduce((a,b) -> a + ", " + b).orElse("");
-        return "Hồ sơ sức khỏe:\n- Nhóm: " + type + "\n- Bệnh nền: " + conditions
-                + "\n- Dị ứng: " + allergies + "\n- Hạn chế: "
-                + (h.foodRestrictions().isEmpty() ? "Không" : String.join(", ", h.foodRestrictions()));
+        String conditions = h.conditions().isEmpty() ? "Không khai báo" : h.conditions().stream().map(v -> v.type().name()).reduce((a,b) -> a + ", " + b).orElse("");
+        String allergies = h.allergies().isEmpty() ? "Không khai báo" : h.allergies().stream().map(v -> v.type().name()).reduce((a,b) -> a + ", " + b).orElse("");
+        String schedule = h.nextQuarterlyReviewAt() != null ? "Hàng quý - " + h.nextQuarterlyReviewAt() : h.nextAnnualReviewAt() != null ? "Hàng năm - " + h.nextAnnualReviewAt() : "Chưa chọn";
+        return "Hồ sơ sức khỏe:\n- Tên: " + profile.getUser().getFullName() + "\n- Tuổi: " + value(s.getAge())
+                + "\n- Giới tính: " + value(s.getGender()) + "\n- Chiều cao: " + value(s.getHeight()) + " cm"
+                + "\n- Cân nặng: " + value(s.getWeight()) + " kg\n- Vận động: " + value(s.getActivityLevel())
+                + "\n- Chế độ ăn: " + value(s.getDiet()) + "\n- Mục tiêu: " + value(s.getGoal())
+                + "\n- Nhóm: " + type + "\n- Bệnh nền: " + conditions + "\n- Dị ứng: " + allergies
+                + "\n- Hạn chế: " + (h.foodRestrictions().isEmpty() ? "Không" : String.join(", ", h.foodRestrictions()))
+                + "\n- Lịch đánh giá lại: " + schedule;
     }
 
+    private String value(Object value) { return value == null || value.toString().isBlank() ? "Chưa cập nhật" : value.toString(); }
     private String nutrition(List<MealRecord> values) {
         if (values.isEmpty()) return "Dinh dưỡng hôm nay: chưa ghi nhận bữa ăn.";
         BigDecimal calories = sum(values, MealRecord::getTotalCalories);
