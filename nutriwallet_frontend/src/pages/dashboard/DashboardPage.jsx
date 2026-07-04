@@ -13,9 +13,12 @@ import AppShell from "../../components/layout/AppShell";
 export default function DashboardPage() {
   const {
     selectedDate,
-    onDateChange: setSelectedDate,
+    setSelectedDate,
     selectedPeriod,
-    onPeriodChange: setSelectedPeriod,
+    setSelectedPeriod,
+    customStartDate,
+    customEndDate,
+    setCustomRange,
     snapshot: dashboardSnapshot,
     aiRecommendations,
     loading,
@@ -40,6 +43,9 @@ export default function DashboardPage() {
         onDateChange={setSelectedDate}
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
+        customStartDate={customStartDate}
+        customEndDate={customEndDate}
+        onCustomRangeChange={setCustomRange}
       />
 
       {(loading || error) && (

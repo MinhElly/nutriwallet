@@ -90,17 +90,28 @@ function buildTrendData(rangeDates, dataMap) {
   });
 }
 
-function getBudgetRangeAmount(budget, selectedDayCount) {
+function getBudgetRangeAmount(budget, startDate, endDate) {
   if (!budget?.amount || !budget?.startDate || !budget?.endDate) {
     return 0;
   }
 
+  const budgetStart = new Date(budget.startDate);
+  const budgetEnd = new Date(budget.endDate);
+
+  const overlapStart = new Date(Math.max(startDate.getTime(), budgetStart.getTime()));
+  const overlapEnd = new Date(Math.min(endDate.getTime(), budgetEnd.getTime()));
+
+  if (overlapStart > overlapEnd) {
+    return 0;
+  }
+
+  const overlapDays = getInclusiveDayCount(overlapStart, overlapEnd);
   const totalBudgetDays = Math.max(
-    getInclusiveDayCount(new Date(budget.startDate), new Date(budget.endDate)),
+    getInclusiveDayCount(budgetStart, budgetEnd),
     1,
   );
 
-  return Math.round((Number(budget.amount) * selectedDayCount) / totalBudgetDays);
+  return Math.round((Number(budget.amount) * overlapDays) / totalBudgetDays);
 }
 
 function buildEmptySnapshot(selectedDate, selectedPeriod) {
@@ -143,12 +154,22 @@ function buildEmptySnapshot(selectedDate, selectedPeriod) {
 function buildDashboardSnapshotFromApi({
   selectedDate,
   selectedPeriod,
+  customStartDate,
+  customEndDate,
   summary,
   meals,
   expenses,
   budget,
 }) {
-  const { startDate, endDate } = getPeriodRange(selectedDate, selectedPeriod);
+  let startDate, endDate;
+  if (selectedPeriod === "Tùy chọn" && customStartDate && customEndDate) {
+    startDate = customStartDate;
+    endDate = customEndDate;
+  } else {
+    const range = getPeriodRange(selectedDate, selectedPeriod);
+    startDate = range.startDate;
+    endDate = range.endDate;
+  }
   const startDateValue = toDateString(startDate);
   const endDateValue = toDateString(endDate);
   const rangeDates = buildDateRange(startDate, endDate);
@@ -173,7 +194,7 @@ function buildDashboardSnapshotFromApi({
         );
   const mealCount = summary?.mealCount ?? filteredMeals.length;
   const expenseCount = summary?.expenseCount ?? filteredExpenses.length;
-  const rangeBudgetAmount = getBudgetRangeAmount(budget, selectedDayCount);
+  const rangeBudgetAmount = getBudgetRangeAmount(budget, startDate, endDate);
   const usedPercent =
     rangeBudgetAmount > 0
       ? Math.min(Math.round((totalExpenseValue / rangeBudgetAmount) * 100), 100)
@@ -257,7 +278,7 @@ async function fetchDashboardSummary(selectedPeriod) {
   const endpoint =
     selectedPeriod === "Hôm nay"
       ? "/api/dashboard/today"
-      : selectedPeriod === "1 tháng qua"
+      : selectedPeriod === "Tháng này"
         ? "/api/dashboard/month"
         : null;
 
@@ -282,7 +303,7 @@ export function getDashboardData(selectedDate, selectedPeriod) {
   return buildEmptySnapshot(selectedDate, selectedPeriod);
 }
 
-export async function fetchDashboardData(selectedDate, selectedPeriod) {
+export async function fetchDashboardData(selectedDate, selectedPeriod, customStartDate, customEndDate) {
   const [summaryResult, mealResult, expenseResult, budgetResult] =
     await Promise.all([
       fetchDashboardSummary(selectedPeriod),
@@ -296,6 +317,8 @@ export async function fetchDashboardData(selectedDate, selectedPeriod) {
       data: buildDashboardSnapshotFromApi({
         selectedDate,
         selectedPeriod,
+        customStartDate,
+        customEndDate,
         summary: summaryResult.data,
         meals: mealResult.data,
         expenses: expenseResult.data.expenses,

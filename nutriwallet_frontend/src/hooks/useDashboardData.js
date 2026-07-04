@@ -7,9 +7,11 @@ import {
 
 export function useDashboardData() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [selectedPeriod, setSelectedPeriod] = useState("1 tháng qua");
+  const [selectedPeriod, setSelectedPeriod] = useState("Tháng này");
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
   const [snapshot, setSnapshot] = useState(() =>
-    getDashboardData(new Date(), "1 tháng qua"),
+    getDashboardData(new Date(), "Tháng này"),
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -17,7 +19,12 @@ export function useDashboardData() {
   useEffect(() => {
     let ignore = false;
 
-    fetchDashboardData(selectedDate, selectedPeriod)
+    if (selectedPeriod === "Tùy chọn" && (!customStartDate || !customEndDate)) {
+      setLoading(false);
+      return;
+    }
+
+    fetchDashboardData(selectedDate, selectedPeriod, customStartDate, customEndDate)
       .then((result) => {
         if (ignore) {
           return;
@@ -35,7 +42,7 @@ export function useDashboardData() {
     return () => {
       ignore = true;
     };
-  }, [selectedDate, selectedPeriod]);
+  }, [selectedDate, selectedPeriod, customStartDate, customEndDate]);
 
   const [aiRecommendations, setAiRecommendations] = useState([]);
 
@@ -49,8 +56,20 @@ export function useDashboardData() {
   }
 
   function updateSelectedPeriod(nextPeriod) {
+    if (nextPeriod === "Tùy chọn" && (!customStartDate || !customEndDate)) {
+      setSelectedPeriod(nextPeriod);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      setSelectedPeriod(nextPeriod);
+    }
+  }
+
+  function updateCustomRange(start, end) {
     setLoading(true);
-    setSelectedPeriod(nextPeriod);
+    setCustomStartDate(start);
+    setCustomEndDate(end);
+    setSelectedPeriod("Tùy chọn");
   }
 
   return {
@@ -58,6 +77,9 @@ export function useDashboardData() {
     setSelectedDate: updateSelectedDate,
     selectedPeriod,
     setSelectedPeriod: updateSelectedPeriod,
+    customStartDate,
+    customEndDate,
+    setCustomRange: updateCustomRange,
     snapshot,
     aiRecommendations,
     loading,
