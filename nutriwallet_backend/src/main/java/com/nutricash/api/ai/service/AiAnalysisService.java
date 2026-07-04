@@ -255,12 +255,11 @@ public class AiAnalysisService {
         }
         Enrichment extra = readEnrichment(l.getEnrichmentJson());
         List<AiHealthWarning> warnings = l.getUser() == null ? List.of()
-                : healthWarnings.evaluate(l.getUser(), extra.ingredients(), extra.allergens(), l.getSugarGram(),
+                : healthWarnings.evaluate(l.getUser(), l.getFoodName(), extra.ingredients(), extra.allergens(), l.getSugarGram(),
                         l.getSodiumMg(), l.getParsedCarbGram(), l.getParsedProteinGram());
-        boolean highWarning = warnings.stream().anyMatch(w -> "HIGH".equals(w.severity()));
         boolean requiresClarification = l.getStatus() == AiAnalysisStatus.SUCCESS
                 && (l.getConfidence() == null || l.getConfidence().compareTo(BigDecimal.valueOf(70)) < 0
-                        || clean(l.getFoodName()) == null || highWarning);
+                        || clean(l.getFoodName()) == null || hasAmbiguousCandidates(extra.candidates()));
         return new AiAnalyzeMealResponse(l.getId(), l.getStatus(), m, l.getParsedCalories(), l.getParsedProteinGram(),
                 l.getParsedCarbGram(), l.getParsedFatGram(), l.getModelName(), l.getFoodName(), l.getSource(),
                 l.getConfidence(), l.getMealType(), l.getEstimatedPriceVnd(), extra.candidates(), extra.ingredients(),
@@ -273,6 +272,14 @@ public class AiAnalysisService {
                     "ingredients", strings(root.get("ingredients"), 50),
                     "allergens", strings(root.get("allergens"), 30)));
         } catch (Exception e) { return "{}"; }
+    }
+
+    private boolean hasAmbiguousCandidates(List<AiFoodCandidate> candidates) {
+        if (candidates == null || candidates.size() < 2) return false;
+        List<BigDecimal> scores = candidates.stream().map(AiFoodCandidate::confidence)
+                .filter(Objects::nonNull).sorted(Comparator.reverseOrder()).limit(2).toList();
+        return scores.size() == 2 && scores.get(0).subtract(scores.get(1)).abs()
+                .compareTo(BigDecimal.valueOf(15)) < 0;
     }
 
     private List<AiFoodCandidate> candidates(JsonNode node) {
@@ -377,7 +384,7 @@ public class AiAnalysisService {
     private BigDecimal validateAndGetConfidence(JsonNode j) {
         JsonNode node = j.get("confidence");
         if (node == null || !node.isNumber()) {
-            return BigDecimal.valueOf(85.0);
+            return BigDecimal.valueOf(50.0);
         }
         BigDecimal val = node.decimalValue();
         if (val.compareTo(BigDecimal.ONE) <= 0 && val.signum() >= 0) {

@@ -41,13 +41,12 @@ public class MealHealthWarningService {
         safe(allergens).forEach(v -> addTerm(mealTerms, v));
 
         for (HealthProfileAllergy allergy : profile.getAllergies()) {
-            String expected = allergy.getAllergenType() == HealthAllergenType.OTHER
-                    ? norm(allergy.getCustomValue()) : allergenTerm(allergy.getAllergenType());
-            match(mealTerms, expected).ifPresent(value -> result.add(warning(
-                    "HIGH", "ALLERGY_MATCH_" + allergy.getAllergenType(),
-                    "Cảnh báo: món ăn có thể chứa thành phần trùng với dị ứng bạn đã khai báo. "
-                            + "Hãy kiểm tra kỹ thành phần trước khi sử dụng hoặc xác nhận lưu.",
-                    List.of("allergy=" + expected, "meal=" + value))));
+            firstMatch(mealTerms, allergenTerms(allergy.getAllergenType(), allergy.getCustomValue()))
+                    .ifPresent(match -> result.add(warning(
+                            "HIGH", "ALLERGY_MATCH_" + allergy.getAllergenType(),
+                            "Cảnh báo dị ứng: món ăn có thể chứa " + displayAllergen(allergy.getAllergenType(), match.expected())
+                                    + ", trùng với dị ứng bạn đã khai báo. Hãy kiểm tra kỹ thành phần trước khi sử dụng hoặc xác nhận lưu.",
+                            List.of("allergy=" + match.expected(), "meal=" + match.mealValue()))));
         }
 
         for (String restriction : restrictions(profile.getFoodRestrictions())) {
@@ -78,6 +77,15 @@ public class MealHealthWarningService {
     private void addTerm(Set<String> terms, String value) {
         String normalized = norm(value);
         if (!normalized.isBlank()) terms.add(normalized);
+    }
+
+    private Optional<TermMatch> firstMatch(Set<String> mealTerms, List<String> expectedTerms) {
+        for (String expected : expectedTerms) {
+            for (String mealValue : mealTerms) {
+                if (matches(mealValue, expected)) return Optional.of(new TermMatch(expected, mealValue));
+            }
+        }
+        return Optional.empty();
     }
 
     private Optional<String> match(Set<String> mealTerms, String expected) {
@@ -114,25 +122,50 @@ public class MealHealthWarningService {
     }
 
     private boolean matches(String value, String expected) {
-        return value.contains(expected) || expected.contains(value);
+        if (value == null || expected == null || value.isBlank() || expected.isBlank()) return false;
+        String paddedValue = " " + value + " ";
+        String paddedExpected = " " + expected + " ";
+        return paddedValue.contains(paddedExpected) || paddedExpected.contains(paddedValue);
     }
 
     private String norm(String value) {
         return value == null ? "" : Normalizer.normalize(value, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).replace('đ', 'd').trim();
+                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).replace('đ', 'd')
+                .replaceAll("[^\\p{L}\\p{N}\\s]", " ").replaceAll("\\s+", " ").trim();
     }
 
-    private String allergenTerm(HealthAllergenType type) {
+    private List<String> allergenTerms(HealthAllergenType type, String customValue) {
+        if (type == HealthAllergenType.OTHER) {
+            if (customValue == null || customValue.isBlank()) return List.of();
+            return Arrays.stream(customValue.split("[,;]"))
+                    .map(this::norm).filter(v -> !v.isBlank()).distinct().toList();
+        }
         return switch (type) {
-            case PEANUT -> "dau phong";
-            case TREE_NUT -> "hat";
-            case MILK -> "sua";
-            case EGG -> "trung";
-            case SEAFOOD -> "hai san";
-            case SOY -> "dau nanh";
-            case WHEAT -> "lua mi";
-            case SESAME -> "me";
-            case OTHER -> "";
+            case PEANUT -> List.of("dau phong", "lac", "peanut", "groundnut");
+            case TREE_NUT -> List.of("hat dieu", "hanh nhan", "oc cho", "tree nut", "cashew", "almond", "walnut");
+            case MILK -> List.of("sua", "sua tuoi", "phomai", "pho mai", "bo sua", "milk", "dairy", "cheese", "yogurt");
+            case EGG -> List.of("trung", "trung ga", "trung vit", "egg", "omelette", "mayonnaise");
+            case SEAFOOD -> List.of("hai san", "tom", "cua", "muc", "so", "ngheu", "seafood", "shrimp", "crab", "squid");
+            case SOY -> List.of("dau nanh", "dau hu", "soy", "soya", "tofu", "miso", "tempeh");
+            case WHEAT -> List.of("lua mi", "bot mi", "gluten", "wheat", "bread", "pasta");
+            case SESAME -> List.of("me", "vung", "sesame", "tahini");
+            case OTHER -> List.of();
         };
     }
+
+    private String displayAllergen(HealthAllergenType type, String matchedTerm) {
+        return switch (type) {
+            case PEANUT -> "đậu phộng/lạc";
+            case TREE_NUT -> "hạt cây";
+            case MILK -> "sữa hoặc chế phẩm từ sữa";
+            case EGG -> "trứng hoặc chế phẩm từ trứng";
+            case SEAFOOD -> "hải sản";
+            case SOY -> "đậu nành";
+            case WHEAT -> "lúa mì/gluten";
+            case SESAME -> "mè/vừng";
+            case OTHER -> matchedTerm;
+        };
+    }
+
+    private record TermMatch(String expected, String mealValue) {}
 }
