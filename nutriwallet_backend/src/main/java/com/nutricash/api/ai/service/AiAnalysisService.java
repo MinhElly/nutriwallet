@@ -36,7 +36,7 @@ public class AiAnalysisService {
     private final AiPromptBuilder prompts;
     private final AiJobPublisher publisher;
     private final AiWorkerRateLimiter limiter;
-    private final AiErrorReportRepository errorReports;
+    private final SystemAiErrorReportService systemErrorReports;
     private final ObjectMapper mapper = new ObjectMapper();
     @Value("${app.ai.cache.ttl-days:30}")
     private long ttl;
@@ -117,15 +117,7 @@ public class AiAnalysisService {
         logs.save(l);
 
         try {
-            AiErrorReport report = AiErrorReport.builder()
-                .user(l.getUser())
-                .aiAnalysisLog(l)
-                .mealRecord(null)
-                .reason("SYSTEM_ERROR")
-                .description(details)
-                .status(AiErrorReportStatus.PENDING)
-                .build();
-            errorReports.save(report);
+            systemErrorReports.createIfAbsent(l.getUser() != null ? l.getUser().getId() : null, l.getId(), details);
         } catch (Exception ex) {
             log.error("Failed to automatically save AiErrorReport for fatal failure log {}", l.getId(), ex);
         }
@@ -164,15 +156,7 @@ public class AiAnalysisService {
         logs.save(l);
 
         try {
-            AiErrorReport report = AiErrorReport.builder()
-                .user(l.getUser())
-                .aiAnalysisLog(l)
-                .mealRecord(null)
-                .reason("SYSTEM_ERROR")
-                .description(details)
-                .status(AiErrorReportStatus.PENDING)
-                .build();
-            errorReports.save(report);
+            systemErrorReports.createIfAbsent(l.getUser() != null ? l.getUser().getId() : null, l.getId(), details);
         } catch (Exception ex) {
             log.error("Failed to automatically save AiErrorReport for failed log {}", l.getId(), ex);
         }

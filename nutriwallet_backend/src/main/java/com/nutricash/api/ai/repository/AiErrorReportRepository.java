@@ -14,4 +14,6 @@ public interface AiErrorReportRepository extends JpaRepository<AiErrorReport, Lo
     List<AiErrorReport> findAllByMealRecordIdOrderByCreatedAtDesc(Long mealRecordId);
 
     long countByStatus(AiErrorReportStatus status);
+
+    boolean existsByAiAnalysisLogIdAndReason(Long aiAnalysisLogId, String reason);
 }
