@@ -42,9 +42,7 @@ const SEVERITY_CONFIG = {
  * @param {string} [props.className]
  */
 export default function HealthAlertBanner({ alerts = [], variant = "compact", className = "" }) {
-  const [isExpanded, setIsExpanded] = useState(() =>
-    variant === "full" || alerts.some((alert) => alert.severity === "danger"),
-  );
+  const [isExpanded, setIsExpanded] = useState(variant === "full");
 
   if (!alerts || alerts.length === 0) return null;
 

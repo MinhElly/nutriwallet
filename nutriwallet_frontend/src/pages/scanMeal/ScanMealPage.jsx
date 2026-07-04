@@ -39,30 +39,13 @@ export default function ScanMealPage() {
   };
 
   // Tính health alerts cho kết quả phân tích hiện tại
-  const localHealthAlerts = analysisResult
+  const healthAlerts = analysisResult
     ? getAlertsForMeal({
         foodName: analysisResult.foodName || "",
         description: analysisResult.description || "",
-        ingredients: [...(analysisResult.ingredients || []), ...(analysisResult.allergens || [])],
+        ingredients: analysisResult.ingredients || [],
       })
     : [];
-  const backendHealthAlerts = (analysisResult?.healthWarnings || []).map((warning, index) => ({
-    id: `ai_${warning.ruleId || index}`,
-    type: warning.ruleId?.startsWith("ALLERGY_MATCH_") ? "allergy" : "health",
-    severity: warning.severity === "HIGH" ? "danger" : warning.severity === "MEDIUM" ? "warning" : "info",
-    icon: warning.severity === "HIGH" ? "⚠️" : "ℹ️",
-    title: warning.ruleId?.startsWith("ALLERGY_MATCH_") ? "Cảnh báo dị ứng" : "Lưu ý sức khỏe",
-    detail: warning.message || "Món ăn này có thể không phù hợp với hồ sơ sức khỏe của bạn.",
-  }));
-  const healthAlerts = backendHealthAlerts.length > 0 ? backendHealthAlerts : localHealthAlerts;
-
-  const rawConfidence = analysisResult?.ai?.confidence;
-  const confidence = rawConfidence == null ? null : Number(rawConfidence);
-  const hasConfidence = Number.isFinite(confidence);
-  const requiresFullClarification = Boolean(analysisResult?.requiresClarification)
-    || (hasConfidence && confidence < 70);
-  const needsQuickConfirmation = !requiresFullClarification
-    && hasConfidence && confidence >= 70 && confidence <= 90;
 
   return (
     <AppShell pageLabel="Quét bữa ăn">
@@ -74,7 +57,7 @@ export default function ScanMealPage() {
           <TipsCard />
         </div>
 
-        {requiresFullClarification ? (
+        {analysisResult?.requiresClarification || (analysisResult?.ai?.confidence && analysisResult.ai.confidence < 70) ? (
           <ScanMealFallback 
             analysisResult={analysisResult} 
             onSave={handleSaveMeal} 
@@ -87,7 +70,6 @@ export default function ScanMealPage() {
             isSaving={isSaving}
             healthAlerts={healthAlerts}
             healthProfile={healthProfile}
-            needsConfirmation={needsQuickConfirmation}
           />
         )}
       </div>
