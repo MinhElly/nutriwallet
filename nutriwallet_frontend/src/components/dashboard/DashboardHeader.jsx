@@ -23,8 +23,9 @@ import {
 const periodOptions = [
   "Hôm nay",
   "7 ngày qua",
-  "1 tháng qua",
+  "Tháng này",
   "3 tháng qua",
+  "Tùy chọn",
 ];
 
 export default function DashboardHeader({
@@ -32,6 +33,9 @@ export default function DashboardHeader({
   onDateChange,
   selectedPeriod,
   onPeriodChange,
+  customStartDate,
+  customEndDate,
+  onCustomRangeChange,
 }) {
   const { currentUser } = useAuth();
   const today = new Date();
@@ -46,16 +50,25 @@ export default function DashboardHeader({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
 
+  const [rangeStart, setRangeStart] = useState(null);
+  const [rangeEnd, setRangeEnd] = useState(null);
+
   const effectivePeriod = selectedPeriod ?? localPeriod;
+
+
+
   const periodLabel = useMemo(() => effectivePeriod, [effectivePeriod]);
   const dateLabel = useMemo(
     () => formatDateLabel(selectedDate),
     [selectedDate],
   );
   const periodRangeLabel = useMemo(() => {
+    if (effectivePeriod === "Tùy chọn" && customStartDate && customEndDate) {
+      return formatDateRangeLabel(customStartDate, customEndDate);
+    }
     const { startDate, endDate } = getPeriodRange(selectedDate, effectivePeriod);
     return formatDateRangeLabel(startDate, endDate);
-  }, [selectedDate, effectivePeriod]);
+  }, [selectedDate, effectivePeriod, customStartDate, customEndDate]);
   const monthYearLabel = useMemo(
     () => formatMonthYearLabel(viewDate),
     [viewDate],
@@ -65,11 +78,26 @@ export default function DashboardHeader({
   const setPeriod = (nextPeriod) => {
     setLocalPeriod(nextPeriod);
     onPeriodChange?.(nextPeriod);
+    if (nextPeriod === "Tùy chọn") {
+      setRangeStart(customStartDate);
+      setRangeEnd(customEndDate);
+      setIsDatePickerOpen(true);
+    }
   };
 
   const openDatePicker = () => {
     setIsPeriodMenuOpen(false);
     setViewDate(selectedDate);
+    if (!isDatePickerOpen) {
+      if (effectivePeriod === "Tùy chọn") {
+        setRangeStart(customStartDate);
+        setRangeEnd(customEndDate);
+      } else {
+        const { startDate, endDate } = getPeriodRange(selectedDate, effectivePeriod);
+        setRangeStart(startDate);
+        setRangeEnd(endDate);
+      }
+    }
     setIsDatePickerOpen((current) => !current);
   };
 
@@ -77,6 +105,28 @@ export default function DashboardHeader({
     setViewDate(
       (current) => new Date(current.getFullYear(), current.getMonth() + offset, 1),
     );
+  };
+
+  const handleDateClick = (date) => {
+    if (effectivePeriod === "Tùy chọn") {
+      if (!rangeStart || (rangeStart && rangeEnd)) {
+        setRangeStart(date);
+        setRangeEnd(null);
+      } else {
+        if (date < rangeStart) {
+          setRangeStart(date);
+          setRangeEnd(null);
+        } else {
+          setRangeEnd(date);
+          onCustomRangeChange?.(rangeStart, date);
+          setIsDatePickerOpen(false);
+        }
+      }
+    } else {
+      onDateChange(date);
+      setViewDate(date);
+      setIsDatePickerOpen(false);
+    }
   };
 
   return (
@@ -117,7 +167,13 @@ export default function DashboardHeader({
             className="flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             <CalendarDays size={16} strokeWidth={1.9} className="text-emerald-600 dark:text-emerald-400" />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{dateLabel}</span>
+             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {effectivePeriod === "Tùy chọn"
+                ? (customStartDate && customEndDate 
+                    ? formatDateRangeLabel(customStartDate, customEndDate) 
+                    : "Chọn dải ngày") 
+                : dateLabel}
+             </span>
           </button>
 
           {isDatePickerOpen && (
@@ -132,7 +188,9 @@ export default function DashboardHeader({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                      Chọn ngày
+                      {effectivePeriod === "Tùy chọn" 
+                        ? (!rangeStart ? "Chọn ngày bắt đầu" : !rangeEnd ? "Chọn ngày kết thúc" : "Chọn dải ngày") 
+                        : "Chọn ngày"}
                     </p>
                     <p className="mt-1 text-base font-semibold text-slate-900 dark:text-white">
                       {monthYearLabel}
@@ -173,21 +231,32 @@ export default function DashboardHeader({
                     const isSelected = isSameDay(date, selectedDate);
                     const isToday = isSameDay(date, today);
 
+                    const isStart = rangeStart && isSameDay(date, rangeStart);
+                    const isEnd = rangeEnd && isSameDay(date, rangeEnd);
+                    const isInRange = rangeStart && rangeEnd && date > rangeStart && date < rangeEnd;
+
+                    const buttonClass = effectivePeriod === "Tùy chọn"
+                      ? (isStart || isEnd
+                          ? "bg-emerald-600 text-white shadow-sm rounded-2xl"
+                          : isInRange
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-none"
+                            : isCurrentMonth
+                              ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 rounded-2xl"
+                              : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800 rounded-2xl")
+                      : (isSelected
+                          ? "bg-emerald-600 text-white shadow-sm rounded-2xl"
+                          : isCurrentMonth
+                            ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 rounded-2xl"
+                            : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800 rounded-2xl");
+
+                    const showRing = isToday && (effectivePeriod === "Tùy chọn" ? (!isStart && !isEnd) : !isSelected);
+
                     return (
                       <button
                         key={date.toISOString()}
                         type="button"
-                        onClick={() => {
-                          onDateChange(date);
-                          setViewDate(date);
-                          setIsDatePickerOpen(false);
-                        }}
-                        className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-sm font-medium transition-all ${isSelected
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : isCurrentMonth
-                              ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400"
-                              : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800"
-                          } ${isToday && !isSelected ? "ring-1 ring-emerald-200 dark:ring-emerald-800" : ""}`}
+                        onClick={() => handleDateClick(date)}
+                        className={`flex h-10 w-10 cursor-pointer items-center justify-center text-sm font-medium transition-all ${buttonClass} ${showRing ? "ring-1 ring-emerald-200 dark:ring-emerald-800" : ""}`}
                       >
                         {date.getDate()}
                       </button>
@@ -199,8 +268,15 @@ export default function DashboardHeader({
                   <button
                     type="button"
                     onClick={() => {
-                      onDateChange(today);
-                      setViewDate(today);
+                      if (effectivePeriod === "Tùy chọn") {
+                        setRangeStart(today);
+                        setRangeEnd(today);
+                        onCustomRangeChange?.(today, today);
+                        setIsDatePickerOpen(false);
+                      } else {
+                        onDateChange(today);
+                        setViewDate(today);
+                      }
                     }}
                     className="cursor-pointer text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
                   >
@@ -259,8 +335,8 @@ export default function DashboardHeader({
                         setIsPeriodMenuOpen(false);
                       }}
                       className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${isActive
-                          ? "bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                          : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                        ? "bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                         }`}
                     >
                       <span>{option}</span>
