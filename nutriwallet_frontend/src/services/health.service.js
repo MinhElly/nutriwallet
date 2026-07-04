@@ -182,6 +182,21 @@ export function getEvaluationStatus(nextEvaluationDate) {
 
 // ─── Health Alert Engine ─────────────────────────────────────────────────────
 
+function normalizeHealthTerm(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function includesHealthTerm(searchText, term) {
+  if (!searchText || !term) return false;
+  return ` ${searchText} `.includes(` ${term} `);
+}
+
 /**
  * Phân tích xem một món ăn có vi phạm hồ sơ sức khỏe không.
  *
@@ -195,11 +210,7 @@ export function getHealthAlerts(mealInfo, healthProfile) {
   const { foodName = "", description = "", ingredients = [] } = mealInfo;
 
   // Tất cả text để match
-  const searchText = [foodName, description, ...ingredients]
-    .join(" ")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // bỏ dấu để match dễ hơn
+  const searchText = normalizeHealthTerm([foodName, description, ...ingredients].join(" "));
 
   // 1. Kiểm tra dị ứng
   if (Array.isArray(healthProfile.allergies)) {
@@ -208,11 +219,8 @@ export function getHealthAlerts(mealInfo, healthProfile) {
       if (!allergyInfo) continue;
 
       const matched = allergyInfo.keywords.some((kw) => {
-        const kwNorm = kw
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
-        return searchText.includes(kwNorm);
+        const kwNorm = normalizeHealthTerm(kw);
+        return includesHealthTerm(searchText, kwNorm);
       });
 
       if (matched) {
@@ -231,11 +239,8 @@ export function getHealthAlerts(mealInfo, healthProfile) {
   // 2. Kiểm tra thực phẩm hạn chế
   if (Array.isArray(healthProfile.restrictedFoods)) {
     for (const food of healthProfile.restrictedFoods) {
-      const foodNorm = food
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      if (searchText.includes(foodNorm)) {
+      const foodNorm = normalizeHealthTerm(food);
+      if (includesHealthTerm(searchText, foodNorm)) {
         alerts.push({
           id: `restriction_${food}`,
           type: "restriction",

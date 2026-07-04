@@ -29,7 +29,7 @@ export default function CandidateFoodCard({ food, isSelected, onClick }) {
             {food.name}
           </h4>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Độ tin cậy: {Math.round(food.confidence * 100)}%
+            Độ tin cậy: {Math.round(food.confidence)}%
           </p>
         </div>
       </div>

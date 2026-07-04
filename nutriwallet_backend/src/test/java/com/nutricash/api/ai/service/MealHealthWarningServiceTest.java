@@ -33,4 +33,31 @@ class MealHealthWarningServiceTest {
     .contains("ALLERGY_MATCH_MILK","FOOD_RESTRICTION_MATCH");
   assertThat(warnings).allMatch(v->"HIGH".equals(v.severity()));
  }
+
+ @Test void warnsForEggAllergyFromFoodNameWithoutAiIngredientList(){
+  User user=User.builder().id(3L).fullName("User").email("egg@test.com").build();
+  HealthProfile profile=HealthProfile.builder().id(4L).user(user).consentGiven(true).build();
+  profile.getAllergies().add(HealthProfileAllergy.builder().healthProfile(profile)
+    .allergenType(HealthAllergenType.EGG).build());
+  when(profiles.findByUserId(3L)).thenReturn(Optional.of(profile));
+
+  var warnings=service.evaluate(user,"Trứng chiên",List.of(),List.of(),
+    BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO);
+
+  assertThat(warnings).extracting(v->v.ruleId()).containsExactly("ALLERGY_MATCH_EGG");
+  assertThat(warnings.get(0).message()).contains("trứng hoặc chế phẩm từ trứng");
+ }
+
+ @Test void doesNotMistakeOmeletteForSesameBecauseOfShortVietnameseAlias(){
+  User user=User.builder().id(5L).fullName("User").email("sesame@test.com").build();
+  HealthProfile profile=HealthProfile.builder().id(6L).user(user).consentGiven(true).build();
+  profile.getAllergies().add(HealthProfileAllergy.builder().healthProfile(profile)
+    .allergenType(HealthAllergenType.SESAME).build());
+  when(profiles.findByUserId(5L)).thenReturn(Optional.of(profile));
+
+  var warnings=service.evaluate(user,"Omelette",List.of(),List.of(),
+    BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO);
+
+  assertThat(warnings).isEmpty();
+ }
 }
