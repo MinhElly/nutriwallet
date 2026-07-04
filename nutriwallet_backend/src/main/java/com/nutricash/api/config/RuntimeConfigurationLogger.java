@@ -20,7 +20,7 @@ public class RuntimeConfigurationLogger implements ApplicationRunner {
             Environment environment,
             @Value("${spring.datasource.url}") String datasourceUrl,
             @Value("${spring.jpa.hibernate.ddl-auto}") String ddlAuto,
-            @Value("${app.frontend-url}") String frontendUrl) {
+            @Value("${app.frontend-url:https://nutriwallet.vercel.app, http://localhost:5173}") String frontendUrl) {
         this.environment = environment;
         this.datasourceUrl = datasourceUrl;
         this.ddlAuto = ddlAuto;
@@ -30,7 +30,8 @@ public class RuntimeConfigurationLogger implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         log.info("Runtime config: profiles={}, datasourceUrl={}, ddlAuto={}, frontendOrigins={}",
-                Arrays.toString(environment.getActiveProfiles()), maskDatasourceUrl(datasourceUrl), ddlAuto, frontendUrl);
+                Arrays.toString(environment.getActiveProfiles()), maskDatasourceUrl(datasourceUrl), ddlAuto,
+                frontendUrl);
     }
 
     private String maskDatasourceUrl(String value) {
