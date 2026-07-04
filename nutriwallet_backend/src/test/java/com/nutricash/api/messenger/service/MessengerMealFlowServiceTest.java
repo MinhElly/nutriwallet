@@ -42,4 +42,18 @@ class MessengerMealFlowServiceTest {
   verify(replies).sendQuickReplies(eq(profile),contains("87%"),anyList());
   verifyNoInteractions(confirmed);
  }
+
+ @Test void rejectsZeroConfidenceInsteadOfStartingClarification() throws Exception {
+  ReflectionTestUtils.setField(service,"threshold",BigDecimal.valueOf(75));
+  User user=User.builder().id(1L).fullName("User").email("u@test.com").build();
+  ChatbotProfile profile=ChatbotProfile.builder().id(2L).psid("psid").user(user).build();
+  when(logs.saveAndFlush(any())).thenAnswer(i->{AiAnalysisLog value=i.getArgument(0);value.setId(9L);return value;});
+  var json=new ObjectMapper().readTree("{\"foodName\":\"Món ăn chưa xác định\",\"confidence\":0,\"calories\":0,\"proteinGram\":0,\"carbGram\":0,\"fatGram\":0,\"candidateFoods\":[]}");
+
+  service.begin(profile,user,"https://image",json,json.toString(),"gemini");
+
+  verify(replies).send(eq(profile),contains("Không nhận diện được món ăn"));
+  verifyNoInteractions(actions,warnings,confirmed);
+  verify(replies,never()).sendQuickReplies(any(),anyString(),anyList());
+ }
 }

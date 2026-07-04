@@ -49,6 +49,10 @@ public class MessengerMealFlowService {
                 .enrichmentJson(json(Map.of("candidateFoods",candidates,"ingredients",ingredients,"allergens",allergens)))
                 .build());
         String result = result(log);
+        if (log.getConfidence().signum() == 0) {
+            replies.send(profile, "Không nhận diện được món ăn trong ảnh. Vui lòng gửi ảnh món ăn rõ hơn hoặc chụp lại ở góc khác.");
+            return;
+        }
         if (user == null) { replies.send(profile,result+"\nLiên kết tài khoản để xác nhận và lưu bữa ăn."); return; }
         List<AiHealthWarning> warnings=healthWarnings.evaluate(user,log.getFoodName(),ingredients,allergens,log.getSugarGram(),log.getSodiumMg(),log.getParsedCarbGram(),log.getParsedProteinGram());
         if(!warnings.isEmpty()) result+="\n\nLưu ý sức khỏe:\n"+warnings.stream().map(w->"- "+w.message()).reduce((a,b)->a+"\n"+b).orElse("");
