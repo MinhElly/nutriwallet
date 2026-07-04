@@ -25,6 +25,7 @@ public class MessengerAccountService {
     private final ChatbotProfileRepository chatbotProfileRepository;
     private final UserRepository userRepository;
     private final MessengerReplyService messengerReplyService;
+    private final MessengerHealthFlowService healthFlow;
 
     @Transactional
     public void linkAccount(SecurityUser securityUser, LinkAccountRequest request) {
@@ -42,7 +43,19 @@ public class MessengerAccountService {
         profile.setGuestSessionCode(null);
         profile.setLinkedAt(Instant.now());
 
-        chatbotProfileRepository.save(profile);
+        chatbotProfileRepository.saveAndFlush(profile);
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            healthFlow.offerInitial(profile);
+                        } catch (Exception exception) {
+                            log.error("Messenger account linked, but initial health prompt delivery failed for PSID {}",
+                                    profile.getPsid(), exception);
+                        }
+                    }
+                });
         log.info("Successfully linked Messenger profile (PSID: {}) to user ID: {}", profile.getPsid(), user.getId());
     }
 

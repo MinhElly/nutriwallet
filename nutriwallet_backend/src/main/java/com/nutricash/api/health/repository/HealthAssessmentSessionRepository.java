@@ -7,4 +7,5 @@ public interface HealthAssessmentSessionRepository extends JpaRepository<HealthA
     Optional<HealthAssessmentSession> findByIdAndUserId(Long id, Long userId);
     Optional<HealthAssessmentSession> findFirstByUserIdAndAssessmentTypeAndStatusOrderByCreatedAtDesc(
             Long userId, AssessmentType type, AssessmentStatus status);
+    boolean existsByUserIdAndStatus(Long userId, AssessmentStatus status);
 }

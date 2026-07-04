@@ -1,8 +1,19 @@
 spring:
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
   jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
     show-sql: ${JPA_SHOW_SQL:false}
 
 logging:
   level:
     com.nutricash.api: INFO
     org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:INFO}
+
+app:
+  health:
+    reminders:
+      enabled: ${HEALTH_REMINDERS_ENABLED:true}
+  ai:
+    clarification-confidence-threshold: ${AI_CLARIFICATION_CONFIDENCE_THRESHOLD:75}

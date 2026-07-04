@@ -30,6 +30,14 @@ public class NutritionAnalysisCache {
     private BigDecimal carbGram;
     @Column(name = "fat_gram", nullable = false, precision = 10, scale = 2)
     private BigDecimal fatGram;
+    @Column(precision = 5, scale = 2)
+    private BigDecimal confidence;
+    @Column(name = "sugar_gram", precision = 10, scale = 2)
+    private BigDecimal sugarGram;
+    @Column(name = "sodium_mg", precision = 10, scale = 2)
+    private BigDecimal sodiumMg;
+    @Lob @Column(name = "enrichment_json", columnDefinition = "LONGTEXT")
+    private String enrichmentJson;
     @Column(name = "meal_type", length = 20)
     private String mealType;
     @Column(name = "estimated_price_vnd", precision = 12, scale = 0)
