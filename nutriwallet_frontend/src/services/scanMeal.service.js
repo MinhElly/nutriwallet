@@ -66,6 +66,13 @@ function mapMealAnalysis(analysis, imageUrl) {
       fat: toSafeNumber(analysis?.fatGram),
     },
     estimatedPrice: toSafeNumber(analysis?.estimatedPriceVnd),
+    candidateFoods: Array.isArray(analysis?.candidateFoods) ? analysis.candidateFoods : [],
+    ingredients: Array.isArray(analysis?.ingredients) ? analysis.ingredients : [],
+    allergens: Array.isArray(analysis?.allergens) ? analysis.allergens : [],
+    sugarGram: analysis?.sugarGram == null ? null : toSafeNumber(analysis.sugarGram),
+    sodiumMg: analysis?.sodiumMg == null ? null : toSafeNumber(analysis.sodiumMg),
+    requiresClarification: Boolean(analysis?.requiresClarification),
+    healthWarnings: Array.isArray(analysis?.healthWarnings) ? analysis.healthWarnings : [],
     currency: "VND",
     savedMealId: null,
     ai: {
