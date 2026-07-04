@@ -4,7 +4,7 @@ import { uploadImage } from "./storage.service";
 import { createExpense } from "./expense.service";
 
 const ANALYSIS_POLL_INTERVAL_MS = 1500;
-const ANALYSIS_TIMEOUT_MS = 25000;
+const ANALYSIS_TIMEOUT_MS = 60000;
 
 function delay(timeoutMs) {
   return new Promise((resolve) => {
@@ -147,6 +147,13 @@ export async function analyzeMealImage(file) {
       analysis.status !== "FAILED"
     ) {
       analysis = (await pollMealAnalysis(analysis.analysisLogId)) ?? analysis;
+    }
+
+    if (analysis?.status === "PENDING" || analysis?.status === "PROCESSING") {
+      throw createApiError(
+        { response: { data: { message: "Quá thời gian chờ phản hồi từ AI. Vui lòng thử lại sau." } } },
+        "Hệ thống bận.",
+      );
     }
 
     if (analysis?.status === "FAILED") {
