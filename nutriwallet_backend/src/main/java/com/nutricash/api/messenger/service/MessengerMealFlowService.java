@@ -59,14 +59,14 @@ public class MessengerMealFlowService {
         cancel(profile);
         if(log.getConfidence().compareTo(threshold)<0){
             List<AiFoodCandidate> options=candidates.isEmpty()?List.of(new AiFoodCandidate(log.getFoodName(),log.getConfidence())):candidates;
-            saveAction(profile,ChatbotActionType.MEAL_CLARIFICATION,new State(log.getId(),options));
+            saveAction(profile,ChatbotActionType.MEAL_CLARIFICATION,new State(log.getId(),options,log.getEstimatedPriceVnd(),false));
             List<MessengerReplyService.QuickReply> quick=new ArrayList<>();
             for(int i=0;i<Math.min(3,options.size());i++) quick.add(q(shortName(options.get(i).foodName()),"MEAL_CANDIDATE_"+i));
             quick.add(q("Món khác","MEAL_OTHER"));
             replies.sendQuickReplies(profile,result+"\n\nĐộ tin cậy chưa cao. Đây là món nào?",quick);
         }else{
-            saveAction(profile,ChatbotActionType.MEAL_CONFIRMATION,new State(log.getId(),List.of()));
-            replies.sendQuickReplies(profile,result+"\n\nXác nhận để lưu bữa ăn?",confirmReplies());
+            saveAction(profile,ChatbotActionType.MEAL_CONFIRMATION,new State(log.getId(),List.of(),log.getEstimatedPriceVnd(),false));
+            replies.sendQuickReplies(profile,result+"\n\nXác nhận món ăn và số tiền để lưu?",confirmReplies());
         }
     }
 
@@ -97,7 +97,7 @@ public class MessengerMealFlowService {
             confirmedMeals.correct(log.getId(),p.getUser().getId(),selected,null,null,"LOW_CONFIDENCE_CLARIFICATION");
             log.setFoodName(selected.trim()); logs.saveAndFlush(log);
         }
-        a.setType(ChatbotActionType.MEAL_CONFIRMATION); a.setPayloadJson(json(new State(log.getId(),List.of()))); actions.save(a);
+        a.setType(ChatbotActionType.MEAL_CONFIRMATION); a.setPayloadJson(json(new State(log.getId(),List.of(),s.priceVnd(),false))); actions.save(a);
         replies.sendQuickReplies(p,"Đã ghi nhận món “"+selected.trim()+"”. Xác nhận lưu?",confirmReplies()); return true;
     }
 
@@ -106,8 +106,18 @@ public class MessengerMealFlowService {
         if("MEAL_CANCEL".equals(payload)||normalized.matches(".*\\b(huy|khong)\\b.*")){
             a.setStatus(ChatbotActionStatus.CANCELLED); actions.save(a); replies.send(p,"Đã hủy lưu bữa ăn."); return true;
         }
+        if("MEAL_EDIT_PRICE".equals(payload)){
+            a.setPayloadJson(json(new State(s.analysisId(),s.candidates(),s.priceVnd(),true))); actions.save(a);
+            replies.send(p,"Nhập số tiền chính xác, ví dụ: 50000, 50k hoặc 1,5 triệu."); return true;
+        }
+        if(s.awaitingPrice()){
+            BigDecimal price=parsePrice(input);
+            if(price==null){replies.send(p,"Số tiền không hợp lệ. Vui lòng nhập số tiền lớn hơn 0, ví dụ: 50000 hoặc 50k.");return true;}
+            a.setPayloadJson(json(new State(s.analysisId(),s.candidates(),price,false))); actions.save(a);
+            replies.sendQuickReplies(p,"Đã cập nhật số tiền thành "+money(price)+" VND. Xác nhận lưu?",confirmReplies()); return true;
+        }
         if("MEAL_CONFIRM".equals(payload)||normalized.matches(".*\\b(xac nhan|dong y|ok|dung)\\b.*")){
-            var meal=confirmedMeals.confirm(a.getId(),new ConfirmedMealApplicationService.Confirmation(s.analysisId(),null,null,null,null,true));
+            var meal=confirmedMeals.confirm(a.getId(),new ConfirmedMealApplicationService.Confirmation(s.analysisId(),null,null,null,s.priceVnd(),true));
             replies.send(p,"Đã lưu bữa ăn “"+meal.getMealName()+"” vào NutriWallet."); return true;
         }
         if(input!=null&&!input.isBlank()){
@@ -129,7 +139,7 @@ public class MessengerMealFlowService {
                 .filter(a->a.getType()==ChatbotActionType.MEAL_CLARIFICATION||a.getType()==ChatbotActionType.MEAL_CONFIRMATION);
     }
     private void cancel(ChatbotProfile p){active(p).ifPresent(a->{a.setStatus(ChatbotActionStatus.CANCELLED);actions.save(a);});}
-    private List<MessengerReplyService.QuickReply> confirmReplies(){return List.of(q("Xác nhận","MEAL_CONFIRM"),q("Hủy","MEAL_CANCEL"));}
+    private List<MessengerReplyService.QuickReply> confirmReplies(){return List.of(q("Xác nhận","MEAL_CONFIRM"),q("Sửa giá","MEAL_EDIT_PRICE"),q("Hủy","MEAL_CANCEL"));}
     private MessengerReplyService.QuickReply q(String t,String p){return new MessengerReplyService.QuickReply(t,p);}
     private State state(ChatbotPendingAction a){try{return mapper.readValue(a.getPayloadJson(),State.class);}catch(Exception e){throw new IllegalStateException(e);}}
     private String json(Object v){try{return mapper.writeValueAsString(v);}catch(Exception e){throw new IllegalStateException(e);}}
@@ -152,8 +162,24 @@ public class MessengerMealFlowService {
     private String text(JsonNode j,String f,String d){JsonNode v=j.get(f);return v!=null&&!v.asText().isBlank()?v.asText().trim():d;}
     private List<String> strings(JsonNode n){if(!n.isArray())return List.of();List<String> r=new ArrayList<>();n.forEach(v->{if(!v.asText().isBlank()&&r.size()<50)r.add(v.asText());});return r;}
     private List<AiFoodCandidate> candidates(JsonNode n){if(!n.isArray())return List.of();List<AiFoodCandidate> r=new ArrayList<>();n.forEach(v->{if(r.size()<3&&v.hasNonNull("foodName"))r.add(new AiFoodCandidate(v.get("foodName").asText(),confidence(v.get("confidence"))));});return r;}
-    private String result(AiAnalysisLog a){return "Kết quả nhận dạng:\n- Món: "+a.getFoodName()+"\n- Độ tin cậy: "+a.getConfidence()+"%\n- Calo: "+a.getParsedCalories()+" kcal\n- Protein: "+a.getParsedProteinGram()+"g\n- Carb: "+a.getParsedCarbGram()+"g\n- Fat: "+a.getParsedFatGram()+"g";}
+    private String result(AiAnalysisLog a){return "Kết quả nhận dạng:\n- Món: "+a.getFoodName()+"\n- Giá ước lượng: "+money(a.getEstimatedPriceVnd())+" VND\n- Độ tin cậy: "+a.getConfidence()+"%\n- Calo: "+a.getParsedCalories()+" kcal\n- Protein: "+a.getParsedProteinGram()+"g\n- Carb: "+a.getParsedCarbGram()+"g\n- Fat: "+a.getParsedFatGram()+"g";}
+    private BigDecimal parsePrice(String input){
+        if(input==null||input.isBlank())return null;
+        String value=normalize(input).replaceAll("[^a-z0-9.,\\s]"," ").replaceAll("\\s+"," ").trim();
+        java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(trieu|m|k|nghin)?").matcher(value);
+        if(!matcher.find())return null;
+        String raw=matcher.group(1);String unit=matcher.group(2);
+        BigDecimal amount;
+        try{
+            if(unit==null&&raw.matches("\\d{1,3}([.,]\\d{3})+"))amount=new BigDecimal(raw.replace(".","").replace(",",""));
+            else amount=new BigDecimal(raw.replace(',','.'));
+        }catch(NumberFormatException e){return null;}
+        if("trieu".equals(unit)||"m".equals(unit))amount=amount.multiply(BigDecimal.valueOf(1_000_000));
+        else if("k".equals(unit)||"nghin".equals(unit))amount=amount.multiply(BigDecimal.valueOf(1_000));
+        return amount.signum()>0?amount.setScale(0,java.math.RoundingMode.HALF_UP):null;
+    }
+    private String money(BigDecimal value){if(value==null)return "0";return java.text.NumberFormat.getIntegerInstance(Locale.forLanguageTag("vi-VN")).format(value.setScale(0,java.math.RoundingMode.HALF_UP));}
     private String shortName(String v){return v.length()<=20?v:v.substring(0,20);}
     private String normalize(String v){return v==null?"":java.text.Normalizer.normalize(v.toLowerCase(Locale.ROOT),java.text.Normalizer.Form.NFD).replaceAll("\\p{M}","").replace('đ','d');}
-    public record State(Long analysisId,List<AiFoodCandidate> candidates){}
+    public record State(Long analysisId,List<AiFoodCandidate> candidates,BigDecimal priceVnd,boolean awaitingPrice){}
 }
