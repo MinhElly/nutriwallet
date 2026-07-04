@@ -244,9 +244,12 @@ public class AiAnalysisService {
                 m = "Analysis pending";
             }
         }
+        boolean requiresClarification = l.getStatus() == AiAnalysisStatus.SUCCESS
+                && (l.getConfidence() == null || l.getConfidence().compareTo(BigDecimal.valueOf(70)) < 0);
         return new AiAnalyzeMealResponse(l.getId(), l.getStatus(), m, l.getParsedCalories(), l.getParsedProteinGram(),
                 l.getParsedCarbGram(), l.getParsedFatGram(), l.getModelName(), l.getFoodName(), l.getSource(),
-                l.getConfidence(), l.getMealType(), l.getEstimatedPriceVnd());
+                l.getConfidence(), l.getMealType(), l.getEstimatedPriceVnd(), List.of(), List.of(), List.of(),
+                null, null, requiresClarification, List.of());
     }
 
     private void validate(AiAnalyzeMealRequest r) {

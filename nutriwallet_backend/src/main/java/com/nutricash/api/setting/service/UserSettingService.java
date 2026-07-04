@@ -2,6 +2,7 @@ package com.nutricash.api.setting.service;
 
 import com.nutricash.api.budget.service.BudgetService;
 import com.nutricash.api.setting.dto.UpdateUserSettingRequest;
+import com.nutricash.api.setting.dto.UserSettingResponse;
 import com.nutricash.api.setting.entity.UserSetting;
 import com.nutricash.api.setting.repository.UserSettingRepository;
 import com.nutricash.api.user.entity.User;
@@ -61,5 +62,34 @@ public class UserSettingService {
             budgetService.replaceMonthlyBudget(user, request.monthlyBudget());
         }
         return saved;
+    }
+
+    @Transactional
+    public UserSetting restoreProfileFields(User user, UpdateUserSettingRequest request) {
+        UserSetting setting = getOrCreateUserSetting(user);
+        setting.setGender(request.gender());
+        setting.setWeight(request.weight());
+        setting.setHeight(request.height());
+        setting.setGoal(request.goal());
+        setting.setAge(request.age());
+        setting.setDiet(request.diet());
+        setting.setActivityLevel(request.activityLevel());
+        setting.setMonthlyBudget(request.monthlyBudget() == null ? BigDecimal.ZERO : request.monthlyBudget());
+        setting.setLanguage(request.language() == null ? "vi" : request.language());
+        setting.setEmailAnalysisReady(Boolean.TRUE.equals(request.emailAnalysisReady()));
+        setting.setBudgetWarningPush(Boolean.TRUE.equals(request.budgetWarningPush()));
+        setting.setAutoCreateExpense(Boolean.TRUE.equals(request.autoCreateExpense()));
+        setting.setAiRecommendationsEnabled(request.aiRecommendationsEnabled() == null
+                ? Boolean.TRUE : request.aiRecommendationsEnabled());
+        setting.setTheme(request.theme() == null ? "light" : request.theme());
+        return userSettingRepository.save(setting);
+    }
+
+    public UserSettingResponse toResponse(UserSetting setting) {
+        return new UserSettingResponse(setting.getId(), setting.getGender(), setting.getWeight(),
+                setting.getHeight(), setting.getGoal(), setting.getAge(), setting.getDiet(),
+                setting.getActivityLevel(), setting.getMonthlyBudget(), setting.getLanguage(),
+                setting.isEmailAnalysisReady(), setting.isBudgetWarningPush(), setting.isAutoCreateExpense(),
+                setting.isAiRecommendationsEnabled(), setting.getTheme());
     }
 }

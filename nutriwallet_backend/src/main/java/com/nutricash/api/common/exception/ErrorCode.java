@@ -27,6 +27,9 @@ public enum ErrorCode {
     INVALID_TOKEN("INVALID_TOKEN", "Invalid token"),
     TOKEN_EXPIRED("TOKEN_EXPIRED", "Token has expired"),
     TOKEN_ALREADY_USED("TOKEN_ALREADY_USED", "Token has already been used"),
+    ASSESSMENT_EXPIRED("ASSESSMENT_EXPIRED", "Health assessment has expired"),
+    PROFILE_VERSION_CONFLICT("PROFILE_VERSION_CONFLICT", "Health profile was updated by another request"),
+    BACKUP_VERSION_UNSUPPORTED("BACKUP_VERSION_UNSUPPORTED", "Backup schema version is not supported"),
     EMAIL_SEND_FAILED("EMAIL_SEND_FAILED", "Could not send verification email");
 
     private final String code;
