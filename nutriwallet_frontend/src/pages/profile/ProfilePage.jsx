@@ -142,7 +142,7 @@ function TagInput({ tags, onAdd, onRemove, placeholder, ariaLabel, colorClass = 
 
 // ─── HealthProfileSection ─────────────────────────────────────────────────────
 
-function HealthProfileSection({ healthProfile, saveHealthProfile, isSaving }) {
+function HealthProfileSection({ healthProfile, saveHealthProfile, isSaving, error }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const conditionLabels = (healthProfile.medicalConditions || []).map((id) => {
@@ -298,6 +298,7 @@ function HealthProfileSection({ healthProfile, saveHealthProfile, isSaving }) {
             if (result.success) setIsModalOpen(false);
           }}
           isSaving={isSaving}
+          error={error}
         />
       )}
     </>
@@ -321,7 +322,7 @@ function HealthTagGroup({ label, tags, tagClass }) {
 
 // ─── HealthProfileModal ───────────────────────────────────────────────────────
 
-function HealthProfileModal({ healthProfile, onClose, onSave, isSaving }) {
+function HealthProfileModal({ healthProfile, onClose, onSave, isSaving, error }) {
   const [draft, setDraft] = useState({
     medicalConditions: healthProfile.medicalConditions || [],
     customCondition: healthProfile.customCondition || "",
@@ -496,6 +497,12 @@ function HealthProfileModal({ healthProfile, onClose, onSave, isSaving }) {
             </div>
           </section>
 
+          {error && (
+            <p className="text-sm font-semibold text-red-600 dark:text-red-400 mt-2" role="alert">
+              {error}
+            </p>
+          )}
+
           {/* Actions */}
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <button type="button" onClick={onClose}
@@ -535,7 +542,7 @@ export default function ProfilePage() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const { healthProfile, saveHealthProfile, isSaving: isSavingHealth, saveSuccess: saveHealthSuccess } = useHealthProfile();
+  const { healthProfile, saveHealthProfile, isSaving: isSavingHealth, saveSuccess: saveHealthSuccess, error: healthError } = useHealthProfile();
 
   useEffect(() => {
     if (settings) {
@@ -674,6 +681,7 @@ export default function ProfilePage() {
           saveHealthProfile={saveHealthProfile}
           isSaving={isSavingHealth}
           saveSuccess={saveHealthSuccess}
+          error={healthError}
         />
       </section>
 

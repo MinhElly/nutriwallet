@@ -6,6 +6,7 @@ import api, {
   persistAuthSession,
   readStoredSession,
   unwrapApiData,
+  ACCESS_TOKEN_STORAGE_KEY,
 } from "./api";
 
 function formatDateTime(value) {
@@ -68,9 +69,24 @@ export function mapCurrentUser(apiUser, fallbackUser = null) {
   };
 }
 
-function persistMappedAuth(authPayload, fallbackUser = getStoredUser()) {
+async function persistMappedAuth(authPayload, fallbackUser = getStoredUser()) {
   const mappedUser = mapCurrentUser(authPayload?.user, fallbackUser);
   const accessToken = authPayload?.accessToken ?? getStoredAccessToken();
+
+  if (accessToken) {
+    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+  }
+
+  try {
+    const settingsRes = await api.get("/api/settings/user");
+    const settings = unwrapApiData(settingsRes);
+    if (settings && settings.gender) {
+      mappedUser.onboardingCompleted = true;
+      localStorage.setItem("nw_onboarding_completed", "true");
+    }
+  } catch (e) {
+    console.error("Failed to check user settings after login:", e);
+  }
 
   persistAuthSession(mappedUser, accessToken);
 
@@ -98,7 +114,7 @@ export async function login(credentials) {
     const authResponse = unwrapApiData(
       await api.post("/api/auth/login", credentials),
     );
-    return persistMappedAuth(authResponse);
+    return await persistMappedAuth(authResponse);
   } catch (error) {
     throw createApiError(error, "Không thể đăng nhập lúc này.");
   }
@@ -109,7 +125,7 @@ export async function register(payload) {
     const authResponse = unwrapApiData(
       await api.post("/api/auth/register", payload),
     );
-    return persistMappedAuth(authResponse);
+    return await persistMappedAuth(authResponse);
   } catch (error) {
     throw createApiError(error, "Không thể đăng ký lúc này.");
   }
@@ -140,11 +156,35 @@ export async function fetchCurrentUser() {
   try {
     const apiUser = unwrapApiData(await api.get("/api/auth/me"));
     const mappedUser = mapCurrentUser(apiUser, fallbackUser);
+
+    try {
+      const settingsRes = await api.get("/api/settings/user");
+      const settings = unwrapApiData(settingsRes);
+      if (settings && settings.gender) {
+        mappedUser.onboardingCompleted = true;
+        localStorage.setItem("nw_onboarding_completed", "true");
+      }
+    } catch (e) {
+      console.error("Failed to check user settings for onboarding status:", e);
+    }
+
     persistAuthSession(mappedUser, accessToken);
     return mappedUser;
   } catch {
     const apiUser = unwrapApiData(await api.get("/api/users/me"));
     const mappedUser = mapCurrentUser(apiUser, fallbackUser);
+
+    try {
+      const settingsRes = await api.get("/api/settings/user");
+      const settings = unwrapApiData(settingsRes);
+      if (settings && settings.gender) {
+        mappedUser.onboardingCompleted = true;
+        localStorage.setItem("nw_onboarding_completed", "true");
+      }
+    } catch (e) {
+      console.error("Failed to check user settings for onboarding status:", e);
+    }
+
     persistAuthSession(mappedUser, accessToken);
     return mappedUser;
   }
@@ -163,7 +203,7 @@ export async function loginWithGoogle(idToken) {
     const authResponse = unwrapApiData(
       await api.post("/api/auth/google", { idToken }),
     );
-    return persistMappedAuth(authResponse);
+    return await persistMappedAuth(authResponse);
   } catch (error) {
     throw createApiError(error, "Lỗi đăng nhập Google.");
   }
@@ -174,7 +214,7 @@ export async function loginWithFacebook(accessToken) {
     const authResponse = unwrapApiData(
       await api.post("/api/auth/facebook", { accessToken }),
     );
-    return persistMappedAuth(authResponse);
+    return await persistMappedAuth(authResponse);
   } catch (error) {
     throw createApiError(error, "Lỗi đăng nhập Facebook.");
   }

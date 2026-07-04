@@ -8,8 +8,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../hooks/useAuth";
 import { calculateTDEE } from "../../utils/calculations";
 import { saveOnboarding } from "../../services/profile.service";
+import { useHealthProfile } from "../../hooks/useHealthProfile";
+import api, { unwrapApiData } from "../../services/api";
 import {
-  saveHealthProfile,
   calcNextEvaluationDate,
   MEDICAL_CONDITIONS,
   COMMON_ALLERGIES,
@@ -168,6 +169,7 @@ function TagInput({ tags, onAdd, onRemove, placeholder, ariaLabel }) {
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { replaceUser, currentUser } = useAuth();
+  const { saveHealthProfile } = useHealthProfile();
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("nw_onboarding_step");
@@ -208,10 +210,44 @@ export default function OnboardingPage() {
     };
   });
 
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+  useEffect(() => {
+    async function checkExistingSettings() {
+      try {
+        const settingsRes = await api.get("/api/settings/user");
+        const settings = unwrapApiData(settingsRes);
+
+        if (settings && settings.gender) {
+          localStorage.setItem("nw_onboarding_completed", "true");
+          replaceUser({ ...currentUser, onboardingCompleted: true });
+          navigate("/dashboard");
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking existing onboarding settings:", err);
+      } finally {
+        setCheckingOnboarding(false);
+      }
+    }
+    checkExistingSettings();
+  }, [currentUser, replaceUser, navigate]);
+
   // ─── Persistence ────────────────────────────────────────────────────────────
 
   useEffect(() => { localStorage.setItem("nw_onboarding_draft", JSON.stringify(formData)); }, [formData]);
   useEffect(() => { localStorage.setItem("nw_onboarding_step", step); }, [step]);
+
+  if (checkingOnboarding) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50/50 dark:bg-slate-900">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Đang tải cấu hình...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Step navigation ─────────────────────────────────────────────────────────
 
@@ -361,8 +397,8 @@ export default function OnboardingPage() {
         replaceUser({ ...currentUser, ...response.user });
       }
 
-      // 2. Lưu health profile vào localStorage
-      saveHealthProfile({
+      // 2. Lưu health profile vào API
+      const healthResult = await saveHealthProfile({
         medicalConditions: formData.medicalConditions,
         customCondition: formData.customCondition,
         allergies: formData.allergies,
@@ -374,13 +410,17 @@ export default function OnboardingPage() {
         nextEvaluationDate: calcNextEvaluationDate(formData.evaluationScheduleId),
       });
 
+      if (!healthResult.success) {
+        throw new Error(healthResult.error || "Không thể lưu hồ sơ sức khỏe.");
+      }
+
       localStorage.setItem("nw_onboarding_completed", "true");
       localStorage.removeItem("nw_onboarding_draft");
       localStorage.removeItem("nw_onboarding_step");
       localStorage.removeItem("nw_onboarding_maxStep");
       navigate("/dashboard");
-    } catch {
-      setError("Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.");
+    } catch (err) {
+      setError(err?.message || "Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.");
     } finally {
       setIsSubmitting(false);
     }
