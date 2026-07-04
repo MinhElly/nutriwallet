@@ -173,7 +173,6 @@ function buildDashboardSnapshotFromApi({
   const startDateValue = toDateString(startDate);
   const endDateValue = toDateString(endDate);
   const rangeDates = buildDateRange(startDate, endDate);
-  const selectedDayCount = getInclusiveDayCount(startDate, endDate);
   const filteredMeals = filterMealsByRange(meals, startDateValue, endDateValue);
   const filteredExpenses = filterExpensesByRange(
     expenses,

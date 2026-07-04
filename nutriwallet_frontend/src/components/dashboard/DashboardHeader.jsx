@@ -1,5 +1,5 @@
 import Typewriter from "../common/Typewriter";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import {
   CalendarDays,
@@ -55,16 +55,7 @@ export default function DashboardHeader({
 
   const effectivePeriod = selectedPeriod ?? localPeriod;
 
-  useEffect(() => {
-    if (effectivePeriod === "Tùy chọn") {
-      setRangeStart(customStartDate);
-      setRangeEnd(customEndDate);
-    } else {
-      const { startDate, endDate } = getPeriodRange(selectedDate, effectivePeriod);
-      setRangeStart(startDate);
-      setRangeEnd(endDate);
-    }
-  }, [customStartDate, customEndDate, selectedDate, effectivePeriod, isDatePickerOpen]);
+
 
   const periodLabel = useMemo(() => effectivePeriod, [effectivePeriod]);
   const dateLabel = useMemo(
@@ -88,6 +79,8 @@ export default function DashboardHeader({
     setLocalPeriod(nextPeriod);
     onPeriodChange?.(nextPeriod);
     if (nextPeriod === "Tùy chọn") {
+      setRangeStart(customStartDate);
+      setRangeEnd(customEndDate);
       setIsDatePickerOpen(true);
     }
   };
@@ -95,6 +88,16 @@ export default function DashboardHeader({
   const openDatePicker = () => {
     setIsPeriodMenuOpen(false);
     setViewDate(selectedDate);
+    if (!isDatePickerOpen) {
+      if (effectivePeriod === "Tùy chọn") {
+        setRangeStart(customStartDate);
+        setRangeEnd(customEndDate);
+      } else {
+        const { startDate, endDate } = getPeriodRange(selectedDate, effectivePeriod);
+        setRangeStart(startDate);
+        setRangeEnd(endDate);
+      }
+    }
     setIsDatePickerOpen((current) => !current);
   };
 
@@ -232,26 +235,19 @@ export default function DashboardHeader({
                     const isEnd = rangeEnd && isSameDay(date, rangeEnd);
                     const isInRange = rangeStart && rangeEnd && date > rangeStart && date < rangeEnd;
 
-                    let buttonClass = "";
-                    if (effectivePeriod === "Tùy chọn") {
-                      if (isStart || isEnd) {
-                        buttonClass = "bg-emerald-600 text-white shadow-sm rounded-2xl";
-                      } else if (isInRange) {
-                        buttonClass = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-none";
-                      } else if (isCurrentMonth) {
-                        buttonClass = "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 rounded-2xl";
-                      } else {
-                        buttonClass = "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800 rounded-2xl";
-                      }
-                    } else {
-                      if (isSelected) {
-                        buttonClass = "bg-emerald-600 text-white shadow-sm rounded-2xl";
-                      } else if (isCurrentMonth) {
-                        buttonClass = "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 rounded-2xl";
-                      } else {
-                        buttonClass = "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800 rounded-2xl";
-                      }
-                    }
+                    const buttonClass = effectivePeriod === "Tùy chọn"
+                      ? (isStart || isEnd
+                          ? "bg-emerald-600 text-white shadow-sm rounded-2xl"
+                          : isInRange
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-none"
+                            : isCurrentMonth
+                              ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 rounded-2xl"
+                              : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800 rounded-2xl")
+                      : (isSelected
+                          ? "bg-emerald-600 text-white shadow-sm rounded-2xl"
+                          : isCurrentMonth
+                            ? "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 rounded-2xl"
+                            : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-800 rounded-2xl");
 
                     const showRing = isToday && (effectivePeriod === "Tùy chọn" ? (!isStart && !isEnd) : !isSelected);
 

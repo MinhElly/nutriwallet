@@ -20,7 +20,6 @@ export function useDashboardData() {
     let ignore = false;
 
     if (selectedPeriod === "Tùy chọn" && (!customStartDate || !customEndDate)) {
-      setLoading(false);
       return;
     }
 
