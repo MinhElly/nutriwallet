@@ -1,4 +1,4 @@
-import React from "react";
+
 import { MessageSquarePlus } from "lucide-react";
 
 export default function ToppingInput({ value, onChange }) {

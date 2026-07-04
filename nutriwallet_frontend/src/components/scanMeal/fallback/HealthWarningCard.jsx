@@ -1,4 +1,4 @@
-import React from "react";
+
 import { AlertTriangle, ShieldAlert, Info } from "lucide-react";
 
 const SEVERITY_CONFIG = {

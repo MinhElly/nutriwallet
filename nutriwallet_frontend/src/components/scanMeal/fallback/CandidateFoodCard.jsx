@@ -1,4 +1,4 @@
-import React from "react";
+
 import { CheckCircle2, ChevronRight } from "lucide-react";
 
 export default function CandidateFoodCard({ food, isSelected, onClick }) {

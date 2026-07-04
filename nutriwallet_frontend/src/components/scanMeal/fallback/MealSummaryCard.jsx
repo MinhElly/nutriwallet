@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Utensils, Scale, MessageSquarePlus, AlertTriangle } from "lucide-react";
 
 export default function MealSummaryCard({

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import CandidateFoodSelector from "./CandidateFoodSelector";
 import CustomFoodInput from "./CustomFoodInput";
 import ServingSizeSelector from "./ServingSizeSelector";
@@ -114,7 +114,7 @@ export default function ScanMealFallback({ analysisResult, onSave }) {
       
       {/* Progress bar */}
       <div className="mb-8 flex gap-2">
-        {[1, 2, 3, hasWarnings ? 4 : null, 5].filter(Boolean).map((s, idx, arr) => {
+        {[1, 2, 3, hasWarnings ? 4 : null, 5].filter(Boolean).map((s) => {
           // Normalize step for progress bar display
           const displayStep = s;
           const isActive = step >= displayStep;
