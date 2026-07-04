@@ -45,7 +45,6 @@ export default function AnalysisResultCard({
   isSaving = false,
   healthAlerts = [],
   healthProfile = null,
-  needsConfirmation = false,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftResult, setDraftResult] = useState(result);
@@ -99,13 +98,6 @@ export default function AnalysisResultCard({
         alt={`Ảnh phân tích: ${displayResult.foodName}`}
         className="h-72 w-full rounded-2xl object-cover shadow-sm"
       />
-
-      {needsConfirmation && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          <p className="font-semibold">AI nhận diện món này với độ tin cậy {displayResult.ai.confidence}%.</p>
-          <p className="mt-1">Vui lòng xác nhận kết quả hoặc chỉnh sửa thông tin trước khi lưu.</p>
-        </div>
-      )}
 
       {/* Health Alerts — hiển thị ngay sau ảnh */}
       {healthAlerts.length > 0 && (
@@ -210,7 +202,7 @@ export default function AnalysisResultCard({
             className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60 disabled:hover:translate-y-0"
             aria-busy={isSaving}>
             <Save size={18} aria-hidden="true" />
-            {isSaving ? "Đang lưu..." : needsConfirmation ? "Xác nhận & Lưu bữa ăn" : "Lưu bữa ăn"}
+            {isSaving ? "Đang lưu..." : "Lưu bữa ăn"}
           </button>
           <button type="button" onClick={handleStartEdit}
             className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 active:scale-[0.98] dark:border-emerald-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-emerald-950/40">

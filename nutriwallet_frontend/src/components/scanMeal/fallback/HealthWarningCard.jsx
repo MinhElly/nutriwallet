@@ -2,17 +2,17 @@
 import { AlertTriangle, ShieldAlert, Info } from "lucide-react";
 
 const SEVERITY_CONFIG = {
-  HIGH: {
+  High: {
     icon: ShieldAlert,
     colors: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400",
     iconColors: "text-rose-600 dark:text-rose-500",
   },
-  MEDIUM: {
+  Medium: {
     icon: AlertTriangle,
     colors: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400",
     iconColors: "text-amber-600 dark:text-amber-500",
   },
-  LOW: {
+  Low: {
     icon: Info,
     colors: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-400",
     iconColors: "text-sky-600 dark:text-sky-500",
@@ -35,22 +35,21 @@ export default function HealthWarningCard({ warnings }) {
 
       <div className="space-y-3">
         {warnings.map((warning, idx) => {
-          const severity = String(warning.severity || "LOW").toUpperCase();
-          const config = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.LOW;
+          const config = SEVERITY_CONFIG[warning.severity] || SEVERITY_CONFIG.Low;
           const Icon = config.icon;
 
           return (
             <div
-              key={warning.ruleId || idx}
+              key={idx}
               className={`flex items-start gap-3 rounded-2xl border p-4 ${config.colors}`}
             >
               <div className="mt-0.5 shrink-0">
                 <Icon className={config.iconColors} size={20} />
               </div>
               <div>
-                <h4 className="font-bold">{warning.title || (warning.ruleId?.startsWith("ALLERGY_MATCH_") ? "Cảnh báo dị ứng" : "Lưu ý sức khỏe")}</h4>
+                <h4 className="font-bold">{warning.title}</h4>
                 <p className="mt-1 text-sm font-medium opacity-90">
-                  {warning.description || warning.message}
+                  {warning.description}
                 </p>
               </div>
             </div>
