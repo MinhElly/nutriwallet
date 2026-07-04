@@ -70,7 +70,8 @@ public class MessengerHealthFlowService {
         var session=assessments.start(p.getUser(),new StartAssessmentRequest(AssessmentChannel.MESSENGER,type));
         State s=new State(session.id(),session.version(),type,"CONSENT",false,health.firstCompletedAt()!=null,
                 p.getUser().getFullName(),us.getAge(),us.getGender(),us.getHeight(),us.getWeight(),us.getActivityLevel(),us.getDiet(),us.getGoal(),
-                new ArrayList<>(health.conditions()),new ArrayList<>(health.allergies()),new ArrayList<>(health.foodRestrictions()),null);
+                new ArrayList<>(health.conditions()),new ArrayList<>(health.allergies()),new ArrayList<>(health.foodRestrictions()),
+                health.nextQuarterlyReviewAt()!=null?AssessmentType.QUARTERLY:health.nextAnnualReviewAt()!=null?AssessmentType.ANNUAL:null);
         actions.save(ChatbotPendingAction.builder().chatbotProfile(p).type(ChatbotActionType.HEALTH_ASSESSMENT)
                 .status(ChatbotActionStatus.AWAITING_CONFIRMATION).payloadJson(write(s)).expiresAt(Instant.now().plusSeconds(604800)).build());
         replies.sendQuickReplies(p,"Thông tin tự khai chỉ dùng để cá nhân hóa và không thay thế chẩn đoán y khoa. Bạn đồng ý tiếp tục?",
@@ -84,27 +85,43 @@ public class MessengerHealthFlowService {
                 if(!"HEALTH_CONSENT_YES".equals(payload))return choices(p,"Vui lòng chọn đồng ý hoặc không đồng ý.",List.of(q("Đồng ý","HEALTH_CONSENT_YES"),q("Không đồng ý","HEALTH_CONSENT_NO")));
                 s=s.copy("NAME");s.consent=true;persist(a,s);return ask(p,"Tên hiển thị của bạn là gì?",s.updating);
             }
-            case "NAME" -> { if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập tên.",s.updating);s.name=text;} return next(p,a,s,"AGE","Bạn bao nhiêu tuổi?",true); }
-            case "AGE" -> { if(!keep(payload)){Integer v=integer(text,1,120);if(v==null)return ask(p,"Tuổi phải là số từ 1 đến 120.",s.updating);s.age=v;} s.step="GENDER";persist(a,s);return genderPrompt(p,s.updating); }
+            case "NAME" -> { if(update(payload))return ask(p,"Vui lòng nhập tên mới.",false);if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập tên.",s.updating);s.name=text;} return next(p,a,s,"AGE","Bạn bao nhiêu tuổi?",true); }
+            case "AGE" -> { if(update(payload))return ask(p,"Vui lòng nhập tuổi mới.",false);if(!keep(payload)){Integer v=integer(text,1,120);if(v==null)return ask(p,"Tuổi phải là số từ 1 đến 120.",s.updating);s.age=v;} s.step="GENDER";persist(a,s);return genderPrompt(p,s.updating); }
             case "GENDER" -> {
+                if(update(payload))return genderPrompt(p,false);
                 if(!keep(payload)){String v=switch(String.valueOf(payload)){case "HEALTH_GENDER_MALE"->"MALE";case "HEALTH_GENDER_FEMALE"->"FEMALE";case "HEALTH_GENDER_OTHER"->"OTHER";default->null;};if(v==null)return genderPrompt(p,s.updating);s.gender=v;}
                 return next(p,a,s,"HEIGHT","Chi?u cao c?a b?n (cm)?",true);
             }
-            case "HEIGHT" -> { if(!keep(payload)){Double v=decimal(text,50,250);if(v==null)return ask(p,"Chiều cao phải từ 50 đến 250 cm.",s.updating);s.height=v;} return next(p,a,s,"WEIGHT","Cân nặng của bạn (kg)?",true); }
-            case "WEIGHT" -> { if(!keep(payload)){Double v=decimal(text,10,500);if(v==null)return ask(p,"Cân nặng phải từ 10 đến 500 kg.",s.updating);s.weight=v;} s.step="ACTIVITY";persist(a,s);return activityPrompt(p,s.updating); }
+            case "HEIGHT" -> { if(update(payload))return ask(p,"Vui lòng nhập chiều cao mới (cm).",false);if(!keep(payload)){Double v=decimal(text,50,250);if(v==null)return ask(p,"Chiều cao phải từ 50 đến 250 cm.",s.updating);s.height=v;} return next(p,a,s,"WEIGHT","Cân nặng của bạn (kg)?",true); }
+            case "WEIGHT" -> { if(update(payload))return ask(p,"Vui lòng nhập cân nặng mới (kg).",false);if(!keep(payload)){Double v=decimal(text,10,500);if(v==null)return ask(p,"Cân nặng phải từ 10 đến 500 kg.",s.updating);s.weight=v;} s.step="ACTIVITY";persist(a,s);return activityPrompt(p,s.updating); }
             case "ACTIVITY" -> {
+                if(update(payload))return activityPrompt(p,false);
                 if(!keep(payload)){String v=switch(String.valueOf(payload)){case "HEALTH_ACTIVITY_LOW"->"LOW";case "HEALTH_ACTIVITY_MODERATE"->"MODERATE";case "HEALTH_ACTIVITY_HIGH"->"HIGH";default->null;};if(v==null)return activityPrompt(p,s.updating);s.activity=v;}
                 return next(p,a,s,"DIET","Chế độ ăn kiêng của bạn? Nhập “không” nếu không có.",true);
             }
-            case "DIET" -> { if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập chế độ ăn hoặc “không”.",s.updating);s.diet=none(text)?null:text;} return next(p,a,s,"GOAL","Mục tiêu sử dụng: giảm cân, tăng cân, giữ dáng, kiểm soát sức khỏe...?",true); }
-            case "GOAL" -> { if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập mục tiêu sử dụng.",s.updating);s.goal=text;} return next(p,a,s,"CONDITIONS","Bạn có bệnh nền nào? Nhập cách nhau bằng dấu phẩy hoặc “không”.",true); }
-            case "CONDITIONS" -> { if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập bệnh nền hoặc “không”.",s.updating);s.conditions=new ArrayList<>(parseConditions(text));} return next(p,a,s,"ALLERGIES","Bạn dị ứng thực phẩm nào? Nhập cách nhau bằng dấu phẩy hoặc “không”.",true); }
-            case "ALLERGIES" -> { if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập dị ứng hoặc “không”.",s.updating);s.allergies=new ArrayList<>(parseAllergies(text));} return next(p,a,s,"RESTRICTIONS","Thực phẩm hoặc chế độ cần hạn chế? Nhập “không” nếu không có.",true); }
-            case "RESTRICTIONS" -> { if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập hạn chế hoặc “không”.",s.updating);s.restrictions=new ArrayList<>(parseList(text));} s.step="SCHEDULE";persist(a,s);return schedulePrompt(p); }
+            case "DIET" -> { if(update(payload))return ask(p,"Vui lòng nhập chế độ ăn mới.",false);if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập chế độ ăn hoặc “không”.",s.updating);s.diet=none(text)?null:text;} return next(p,a,s,"GOAL","Mục tiêu sử dụng: giảm cân, tăng cân, giữ dáng, kiểm soát sức khỏe...?",true); }
+            case "GOAL" -> { if(update(payload))return ask(p,"Vui lòng nhập mục tiêu mới.",false);if(!keep(payload)){if(text==null)return ask(p,"Vui lòng nhập mục tiêu sử dụng.",s.updating);s.goal=text;} return nextMedical(p,a,s,"CONDITIONS","bệnh nền"); }
+            case "CONDITIONS" -> {
+                if(update(payload))return ask(p,"Nhập bệnh nền mới, cách nhau bằng dấu phẩy. Trả lời “không” để giữ nguyên bệnh án hiện tại.",false);
+                if(!keep(payload)&&!(s.updating&&text!=null&&none(text))){if(text==null)return askMedical(p,"bệnh nền",s.updating);s.conditions=new ArrayList<>(parseConditions(text));}
+                return nextMedical(p,a,s,"ALLERGIES","dị ứng thực phẩm");
+            }
+            case "ALLERGIES" -> {
+                if(update(payload))return ask(p,"Nhập dị ứng mới, cách nhau bằng dấu phẩy. Trả lời “không” để giữ nguyên thông tin hiện tại.",false);
+                if(!keep(payload)&&!(s.updating&&text!=null&&none(text))){if(text==null)return askMedical(p,"dị ứng thực phẩm",s.updating);s.allergies=new ArrayList<>(parseAllergies(text));}
+                return nextMedical(p,a,s,"RESTRICTIONS","thực phẩm hoặc chế độ cần hạn chế");
+            }
+            case "RESTRICTIONS" -> {
+                if(update(payload))return ask(p,"Nhập hạn chế mới. Trả lời “không” để giữ nguyên thông tin hiện tại.",false);
+                if(!keep(payload)&&!(s.updating&&text!=null&&none(text))){if(text==null)return askMedical(p,"thực phẩm hoặc chế độ cần hạn chế",s.updating);s.restrictions=new ArrayList<>(parseList(text));}
+                s.step="SCHEDULE";persist(a,s);return schedulePrompt(p,s.updating);
+            }
             case "SCHEDULE" -> {
+                if(update(payload))return schedulePrompt(p,false);
+                if(keep(payload)&&s.updating&&s.reviewSchedule!=null){s.step="CONFIRM";persist(a,s);return confirmPrompt(p,s);}
                 if("HEALTH_SCHEDULE_QUARTERLY".equals(payload))s.reviewSchedule=AssessmentType.QUARTERLY;
                 else if("HEALTH_SCHEDULE_ANNUAL".equals(payload))s.reviewSchedule=AssessmentType.ANNUAL;
-                else return schedulePrompt(p);
+                else return schedulePrompt(p,false);
                 s.step="CONFIRM";persist(a,s);return confirmPrompt(p,s);
             }
             case "CONFIRM" -> {
@@ -117,11 +134,19 @@ public class MessengerHealthFlowService {
     }
 
     private boolean next(ChatbotProfile p,ChatbotPendingAction a,State s,String step,String prompt,boolean allowKeep){s.step=step;persist(a,s);return ask(p,prompt,allowKeep&&s.updating);}
-    private boolean ask(ChatbotProfile p,String prompt,boolean keep){if(keep)replies.sendQuickReplies(p,prompt,List.of(q("Không đổi","HEALTH_KEEP")));else replies.send(p,prompt);return true;}
+    private boolean nextMedical(ChatbotProfile p,ChatbotPendingAction a,State s,String step,String section){s.step=step;persist(a,s);return askMedical(p,section,s.updating);}
+    private boolean askMedical(ChatbotProfile p,String section,boolean updating){
+        String prompt="Bạn có "+section+" nào? Nhập cách nhau bằng dấu phẩy hoặc “không”.";
+        if(updating)replies.sendQuickReplies(p,"Bạn có muốn cập nhật "+section+"? Nếu giữ nguyên hoặc trả lời “không”, dữ liệu hiện tại sẽ được bảo toàn.",
+                List.of(q("Cập nhật","HEALTH_UPDATE"),q("Giữ nguyên","HEALTH_KEEP")));
+        else replies.send(p,prompt);
+        return true;
+    }
+    private boolean ask(ChatbotProfile p,String prompt,boolean keep){if(keep)replies.sendQuickReplies(p,prompt,List.of(q("Cập nhật","HEALTH_UPDATE"),q("Giữ nguyên","HEALTH_KEEP")));else replies.send(p,prompt);return true;}
     private boolean choices(ChatbotProfile p,String prompt,List<MessengerReplyService.QuickReply> q){replies.sendQuickReplies(p,prompt,q);return true;}
-    private boolean genderPrompt(ChatbotProfile p,boolean keep){var q=new ArrayList<>(List.of(q("Nam","HEALTH_GENDER_MALE"),q("Nữ","HEALTH_GENDER_FEMALE"),q("Khác","HEALTH_GENDER_OTHER")));if(keep)q.add(q("Không đổi","HEALTH_KEEP"));return choices(p,"Giới tính của bạn?",q);}
-    private boolean activityPrompt(ChatbotProfile p,boolean keep){var q=new ArrayList<>(List.of(q("Ít vận động","HEALTH_ACTIVITY_LOW"),q("Vừa phải","HEALTH_ACTIVITY_MODERATE"),q("Nhiều","HEALTH_ACTIVITY_HIGH")));if(keep)q.add(q("Không đổi","HEALTH_KEEP"));return choices(p,"Mức độ vận động?",q);}
-    private boolean schedulePrompt(ChatbotProfile p){return choices(p,"Bạn muốn được nhắc đánh giá lại hồ sơ theo lịch nào?",List.of(q("Hàng quý","HEALTH_SCHEDULE_QUARTERLY"),q("Hàng năm","HEALTH_SCHEDULE_ANNUAL")));}
+    private boolean genderPrompt(ChatbotProfile p,boolean keep){if(keep)return choices(p,"Bạn có muốn cập nhật giới tính?",List.of(q("Cập nhật","HEALTH_UPDATE"),q("Giữ nguyên","HEALTH_KEEP")));return choices(p,"Giới tính của bạn?",List.of(q("Nam","HEALTH_GENDER_MALE"),q("Nữ","HEALTH_GENDER_FEMALE"),q("Khác","HEALTH_GENDER_OTHER")));}
+    private boolean activityPrompt(ChatbotProfile p,boolean keep){if(keep)return choices(p,"Bạn có muốn cập nhật mức độ vận động?",List.of(q("Cập nhật","HEALTH_UPDATE"),q("Giữ nguyên","HEALTH_KEEP")));return choices(p,"Mức độ vận động?",List.of(q("Ít vận động","HEALTH_ACTIVITY_LOW"),q("Vừa phải","HEALTH_ACTIVITY_MODERATE"),q("Nhiều","HEALTH_ACTIVITY_HIGH")));}
+    private boolean schedulePrompt(ChatbotProfile p,boolean keep){if(keep)return choices(p,"Bạn có muốn cập nhật lịch đánh giá lại?",List.of(q("Cập nhật","HEALTH_UPDATE"),q("Giữ nguyên","HEALTH_KEEP")));return choices(p,"Bạn muốn được nhắc đánh giá lại hồ sơ theo lịch nào?",List.of(q("Hàng quý","HEALTH_SCHEDULE_QUARTERLY"),q("Hàng năm","HEALTH_SCHEDULE_ANNUAL")));}
     private boolean confirmPrompt(ChatbotProfile p,State s){return choices(p,summary(s),List.of(q("Xác nhận lưu","HEALTH_CONFIRM"),q("Làm lại","HEALTH_RESTART")));}
 
     private void complete(ChatbotProfile p,ChatbotPendingAction a,State s){
@@ -140,6 +165,7 @@ public class MessengerHealthFlowService {
     private String write(Object v){try{return mapper.writeValueAsString(v);}catch(Exception e){throw new IllegalStateException(e);}}
     private AssessmentType type(String v){try{return AssessmentType.valueOf(v);}catch(Exception e){return AssessmentType.INITIAL;}}
     private boolean keep(String p){return "HEALTH_KEEP".equals(p);}
+    private boolean update(String p){return "HEALTH_UPDATE".equals(p);}
     private String clean(String v){return v==null||v.isBlank()?null:v.trim();}
     private String normalize(String v){return java.text.Normalizer.normalize(v.toLowerCase(Locale.ROOT),java.text.Normalizer.Form.NFD).replaceAll("\\p{M}","").replace('\u0111','d');}
     private boolean none(String v){return normalize(v).matches(".*\\b(khong|none|no)\\b.*");}

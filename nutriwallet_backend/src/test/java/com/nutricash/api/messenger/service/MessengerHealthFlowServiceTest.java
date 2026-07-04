@@ -48,4 +48,25 @@ class MessengerHealthFlowServiceTest {
   verify(actions).save(argThat(a->a.getType()==ChatbotActionType.HEALTH_ASSESSMENT&&a.getStatus()==ChatbotActionStatus.AWAITING_CONFIRMATION));
   verify(replies).sendQuickReplies(eq(profile),contains("y khoa"),anyList());
  }
+
+ @Test void keepsExistingMedicalHistoryWhenUpdateAnswerIsNo() throws Exception {
+  User user=User.builder().id(1L).fullName("User").email("u@test.com").role(UserRole.USER).status(UserStatus.ACTIVE).build();
+  ChatbotProfile profile=ChatbotProfile.builder().id(2L).psid("psid").user(user).build();
+  var conditions=new ArrayList<>(List.of(new HealthConditionInput(HealthConditionType.DIABETES,null)));
+  var state=new MessengerHealthFlowService.State(3L,0L,AssessmentType.QUARTERLY,"CONDITIONS",true,true,
+    "User",30,"MALE",170.0,70.0,"MODERATE",null,"Giữ sức khỏe",conditions,new ArrayList<>(),new ArrayList<>(),AssessmentType.QUARTERLY);
+  var mapper=new com.fasterxml.jackson.databind.ObjectMapper();
+  ChatbotPendingAction action=ChatbotPendingAction.builder().chatbotProfile(profile).type(ChatbotActionType.HEALTH_ASSESSMENT)
+    .status(ChatbotActionStatus.AWAITING_CONFIRMATION).payloadJson(mapper.writeValueAsString(state)).expiresAt(Instant.now().plusSeconds(100)).build();
+  when(actions.findFirstByChatbotProfileIdAndStatusInOrderByCreatedAtDesc(eq(2L),anyCollection())).thenReturn(Optional.of(action));
+  when(assessments.update(eq(user),eq(3L),any())).thenReturn(new AssessmentResponse(3L,AssessmentChannel.MESSENGER,
+    AssessmentType.QUARTERLY,"ALLERGIES",Map.of(),AssessmentStatus.IN_PROGRESS,1L,Instant.now().plusSeconds(100),null));
+  when(actions.save(any())).thenAnswer(i->i.getArgument(0));
+
+  org.assertj.core.api.Assertions.assertThat(service.handle(profile,new MessengerMessage("m2","không",List.of(),null))).isTrue();
+
+  org.assertj.core.api.Assertions.assertThat(action.getPayloadJson()).contains("DIABETES").contains("ALLERGIES");
+  verify(replies).sendQuickReplies(eq(profile),contains("dị ứng"),argThat(values->
+    values.stream().anyMatch(v->v.title().equals("Cập nhật"))&&values.stream().anyMatch(v->v.title().equals("Giữ nguyên"))));
+ }
 }
