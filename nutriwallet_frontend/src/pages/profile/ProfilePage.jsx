@@ -1,6 +1,6 @@
-import { Pencil, Wallet, X, Heart, Sparkles, Save, ShieldCheck, Calendar, AlertTriangle, CheckCircle2, Plus, Info, CalendarCheck2, RefreshCw } from "lucide-react";
+import { Pencil, Wallet, X, Heart, Sparkles, Save, ShieldCheck, Calendar, AlertTriangle, CheckCircle2, Plus, Info, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import AppShell from "../../components/layout/AppShell";
 import { useProfileData } from "../../hooks/useProfileData";
 import { useAuth } from "../../hooks/useAuth";
@@ -142,7 +142,7 @@ function TagInput({ tags, onAdd, onRemove, placeholder, ariaLabel, colorClass = 
 
 // ─── HealthProfileSection ─────────────────────────────────────────────────────
 
-function HealthProfileSection({ healthProfile, saveHealthProfile, isSaving, saveSuccess }) {
+function HealthProfileSection({ healthProfile, saveHealthProfile, isSaving }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const conditionLabels = (healthProfile.medicalConditions || []).map((id) => {
