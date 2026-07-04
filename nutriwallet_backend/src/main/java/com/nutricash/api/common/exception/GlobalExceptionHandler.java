@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +45,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException exception) {
+        ErrorResponse response = new ErrorResponse(
+                exception.getStatusCode().toString(),
+                exception.getReason() != null ? exception.getReason() : "Request failed",
+                Instant.now()
+        );
+        return ResponseEntity.status(exception.getStatusCode()).body(response);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        log.error("Database constraint violation", exception);
+        ErrorResponse response = new ErrorResponse(
+                ErrorCode.CONFLICT.name(),
+                "Request conflicts with persisted data",
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception exception) {
         log.error("Unexpected error", exception);

@@ -96,9 +96,10 @@ export function getPeriodRange(selectedDate, selectedPeriod) {
     return { startDate, endDate };
   }
 
-  if (selectedPeriod === "1 tháng qua") {
-    startDate.setDate(endDate.getDate() - 29);
-    return { startDate, endDate };
+  if (selectedPeriod === "Tháng này") {
+    const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+    return { startDate: start, endDate: end };
   }
 
   if (selectedPeriod === "3 tháng qua") {

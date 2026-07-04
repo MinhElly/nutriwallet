@@ -37,6 +37,7 @@ public class AiAnalysisService {
     private final AiJobPublisher publisher;
     private final AiWorkerRateLimiter limiter;
     private final SystemAiErrorReportService systemErrorReports;
+    private final MealHealthWarningService healthWarnings;
     private final ObjectMapper mapper = new ObjectMapper();
     @Value("${app.ai.cache.ttl-days:30}")
     private long ttl;
@@ -86,7 +87,10 @@ public class AiAnalysisService {
             l.setParsedProteinGram(validateAndGetNumber(j, "proteinGram"));
             l.setParsedCarbGram(validateAndGetNumber(j, "carbGram"));
             l.setParsedFatGram(validateAndGetNumber(j, "fatGram"));
+            l.setSugarGram(validateAndGetNumber(j, "sugarGram"));
+            l.setSodiumMg(validateAndGetNumber(j, "sodiumMg"));
             l.setConfidence(validateAndGetConfidence(j));
+            l.setEnrichmentJson(enrichment(j));
             l.setMealType(txtOpt(j, "mealType"));
             
             BigDecimal price = validateAndGetNumber(j, "estimatedPriceVnd");
@@ -190,6 +194,8 @@ public class AiAnalysisService {
         caches.save(NutritionAnalysisCache.builder().cacheKey(l.getCacheKey()).foodName(l.getFoodName())
                 .normalizedFoodName(norm(l.getFoodName())).calories(l.getParsedCalories())
                 .proteinGram(l.getParsedProteinGram()).carbGram(l.getParsedCarbGram()).fatGram(l.getParsedFatGram())
+                .confidence(l.getConfidence()).sugarGram(l.getSugarGram()).sodiumMg(l.getSodiumMg())
+                .enrichmentJson(l.getEnrichmentJson())
                 .mealType(l.getMealType()).estimatedPriceVnd(l.getEstimatedPriceVnd()).modelName(l.getModelName())
                 .useCount(1).build());
     }
@@ -200,10 +206,13 @@ public class AiAnalysisService {
         l.setParsedProteinGram(c.getProteinGram());
         l.setParsedCarbGram(c.getCarbGram());
         l.setParsedFatGram(c.getFatGram());
+        l.setSugarGram(c.getSugarGram());
+        l.setSodiumMg(c.getSodiumMg());
+        l.setEnrichmentJson(c.getEnrichmentJson());
         l.setMealType(c.getMealType());
         l.setEstimatedPriceVnd(c.getEstimatedPriceVnd());
         l.setModelName(c.getModelName());
-        l.setConfidence(BigDecimal.valueOf(95.0));
+        l.setConfidence(c.getConfidence() == null ? BigDecimal.valueOf(95) : c.getConfidence());
     }
 
     private AiAnalyzeMealResponse response(AiAnalysisLog l, String m) {
@@ -244,13 +253,68 @@ public class AiAnalysisService {
                 m = "Analysis pending";
             }
         }
+        Enrichment extra = readEnrichment(l.getEnrichmentJson());
+        List<AiHealthWarning> warnings = l.getUser() == null ? List.of()
+                : healthWarnings.evaluate(l.getUser(), extra.ingredients(), extra.allergens(), l.getSugarGram(),
+                        l.getSodiumMg(), l.getParsedCarbGram(), l.getParsedProteinGram());
+        boolean highWarning = warnings.stream().anyMatch(w -> "HIGH".equals(w.severity()));
         boolean requiresClarification = l.getStatus() == AiAnalysisStatus.SUCCESS
-                && (l.getConfidence() == null || l.getConfidence().compareTo(BigDecimal.valueOf(70)) < 0);
+                && (l.getConfidence() == null || l.getConfidence().compareTo(BigDecimal.valueOf(70)) < 0
+                        || clean(l.getFoodName()) == null || highWarning);
         return new AiAnalyzeMealResponse(l.getId(), l.getStatus(), m, l.getParsedCalories(), l.getParsedProteinGram(),
                 l.getParsedCarbGram(), l.getParsedFatGram(), l.getModelName(), l.getFoodName(), l.getSource(),
-                l.getConfidence(), l.getMealType(), l.getEstimatedPriceVnd(), List.of(), List.of(), List.of(),
-                null, null, requiresClarification, List.of());
+                l.getConfidence(), l.getMealType(), l.getEstimatedPriceVnd(), extra.candidates(), extra.ingredients(),
+                extra.allergens(), l.getSugarGram(), l.getSodiumMg(), requiresClarification, warnings);
     }
+
+    private String enrichment(JsonNode root) {
+        try {
+            return mapper.writeValueAsString(Map.of("candidateFoods", candidates(root.get("candidateFoods")),
+                    "ingredients", strings(root.get("ingredients"), 50),
+                    "allergens", strings(root.get("allergens"), 30)));
+        } catch (Exception e) { return "{}"; }
+    }
+
+    private List<AiFoodCandidate> candidates(JsonNode node) {
+        if (node == null || !node.isArray()) return List.of();
+        List<AiFoodCandidate> result = new ArrayList<>();
+        for (JsonNode item : node) {
+            String name = item.has("foodName") && item.get("foodName").isTextual() ? clean(item.get("foodName").asText()) : null;
+            if (name != null) result.add(new AiFoodCandidate(name, confidence(item.get("confidence"))));
+            if (result.size() == 3) break;
+        }
+        return List.copyOf(result);
+    }
+
+    private BigDecimal confidence(JsonNode node) {
+        if (node == null || !node.isNumber()) return BigDecimal.ZERO;
+        BigDecimal value = node.decimalValue();
+        if (value.signum() < 0) return BigDecimal.ZERO;
+        if (value.compareTo(BigDecimal.ONE) <= 0) value = value.multiply(BigDecimal.valueOf(100));
+        return value.min(BigDecimal.valueOf(100));
+    }
+
+    private List<String> strings(JsonNode node, int limit) {
+        if (node == null || !node.isArray()) return List.of();
+        List<String> result = new ArrayList<>();
+        for (JsonNode item : node) {
+            String value = item.isTextual() ? clean(item.asText()) : null;
+            if (value != null && !result.contains(value)) result.add(value);
+            if (result.size() == limit) break;
+        }
+        return List.copyOf(result);
+    }
+
+    private Enrichment readEnrichment(String json) {
+        if (json == null || json.isBlank()) return new Enrichment(List.of(), List.of(), List.of());
+        try {
+            JsonNode root = mapper.readTree(json);
+            return new Enrichment(candidates(root.get("candidateFoods")), strings(root.get("ingredients"), 50),
+                    strings(root.get("allergens"), 30));
+        } catch (Exception e) { return new Enrichment(List.of(), List.of(), List.of()); }
+    }
+
+    private record Enrichment(List<AiFoodCandidate> candidates, List<String> ingredients, List<String> allergens) {}
 
     private void validate(AiAnalyzeMealRequest r) {
         if (r == null || (clean(r.text()) == null && clean(r.imageUrl()) == null))

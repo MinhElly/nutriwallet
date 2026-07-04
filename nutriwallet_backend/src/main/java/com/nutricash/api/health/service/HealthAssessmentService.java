@@ -27,7 +27,11 @@ public class HealthAssessmentService {
 
     @Transactional
     public AssessmentResponse start(SecurityUser principal, StartAssessmentRequest request) {
-        User user = user(principal);
+        return start(user(principal), request);
+    }
+
+    @Transactional
+    public AssessmentResponse start(User user, StartAssessmentRequest request) {
         Optional<HealthAssessmentSession> active = sessions
                 .findFirstByUserIdAndAssessmentTypeAndStatusOrderByCreatedAtDesc(
                         user.getId(), request.type(), AssessmentStatus.IN_PROGRESS);
@@ -41,7 +45,13 @@ public class HealthAssessmentService {
 
     @Transactional
     public AssessmentResponse update(SecurityUser principal, Long id, UpdateAssessmentRequest request) {
-        HealthAssessmentSession session = owned(principal, id);
+        return update(user(principal), id, request);
+    }
+
+    @Transactional
+    public AssessmentResponse update(User user, Long id, UpdateAssessmentRequest request) {
+        HealthAssessmentSession session = sessions.findByIdAndUserId(id, user.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
         ensureActive(session);
         if (session.getVersion() != request.expectedVersion()) throw new AppException(ErrorCode.PROFILE_VERSION_CONFLICT);
         session.setCurrentStep(request.currentStep().trim());
@@ -51,7 +61,11 @@ public class HealthAssessmentService {
 
     @Transactional
     public HealthProfileResponse complete(SecurityUser principal, Long id, CompleteAssessmentRequest request) {
-        User user = user(principal);
+        return complete(user(principal), id, request);
+    }
+
+    @Transactional
+    public HealthProfileResponse complete(User user, Long id, CompleteAssessmentRequest request) {
         HealthAssessmentSession session = sessions.findByIdAndUserId(id, user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
         ensureActive(session);
