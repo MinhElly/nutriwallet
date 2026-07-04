@@ -111,6 +111,17 @@ async function pollMealAnalysis(analysisLogId) {
 }
 
 function buildMealDescription(result) {
+  let fallbackText = "";
+  if (result.fallbackData) {
+    const { servingSize, toppings } = result.fallbackData;
+    const parts = [];
+    if (servingSize) parts.push(`Khẩu phần: ${servingSize}`);
+    if (toppings) parts.push(`Topping: ${toppings}`);
+    if (parts.length > 0) {
+      fallbackText = `[Đã đính chính] ${parts.join(" - ")}. `;
+    }
+  }
+
   const sourceLabel = result.ai?.source
     ? `Nguồn: ${result.ai.source}. `
     : "";
@@ -118,7 +129,7 @@ function buildMealDescription(result) {
     ? `Trạng thái AI: ${result.ai.status}.`
     : "";
 
-  return `${sourceLabel}${statusLabel}`.trim() || "Bữa ăn được lưu từ ảnh tải lên.";
+  return `${fallbackText}${sourceLabel}${statusLabel}`.trim() || "Bữa ăn được lưu từ ảnh tải lên.";
 }
 
 export async function analyzeMealImage(file) {
