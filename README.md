@@ -38,10 +38,10 @@ NutriWallet là hệ thống hỗ trợ người dùng quản lý sức khỏe d
 - [15. Cơ chế phân tích hình ảnh qua Gemini AI](#15-cơ-chế-phân-tích-hình-ảnh-qua-gemini-ai)
 - [16. Kiểm thử (Testing)](#16-kiểm-thử-testing)
 - [17. Tài khoản dùng thử (Demo)](#17-tài-khoản-dùng-thử-demo)
-- [18. Thành viên dự án và Phân chia công việc](#18-thành-viên-dự-án-và-phân-chia-công-việc)
+- [18. Thành viên](#18-thành-viên)
 - [19. Git workflow & Branching Strategy](#19-git-workflow--branching-strategy)
 - [20. Hạn chế hiện tại và Định hướng phát triển](#20-hạn-chế-hiện-tại-và-định-hướng-phát-triển)
-- [21. Contributors & Bản quyền (License)](#21-contributors--bản-quyền-license)
+- [21. Bản quyền (License)](#21-bản-quyền-license)
 
 ---
 
@@ -597,16 +597,16 @@ Dự án cung cấp hệ thống kiểm thử tự động cho backend:
 
 ---
 
-## 18. Thành viên dự án và Phân chia công việc
+## 18. Thành viên
 
-Dự án NutriWallet được xây dựng và phát triển bởi nhóm gồm 4 thành viên. Phân chia công việc thực tế được tổng hợp từ lịch sử Git commit của repository:
+Dự án NutriWallet được xây dựng và phát triển bởi nhóm gồm 4 thành viên. Dưới đây là danh sách thành viên dự án và vai trò đóng góp chính:
 
 | Thành viên | Vai trò chính |
-| :--- | :--- |
-| @MinhElly(https://github.com/MinhElly) | Full-stack / DevOps / AI |
-| @phamsytuyet1976-droid(https://github.com/phamsytuyet1976-droid) | Frontend Developer |
-| @thedainguyen(https://github.com/tdnguyen06) | Frontend Developer |
-| @D-Tien(https://github.com/D-Tien) | Frontend Developer |
+|---|---|
+| <img src="https://github.com/MinhElly.png?size=80" width="36" height="36" alt="@MinhElly"> [**@MinhElly**](https://github.com/MinhElly) | Full-stack / DevOps / AI |
+| <img src="https://github.com/phamsytuyet1976-droid.png?size=80" width="36" height="36" alt="@phamsytuyet1976-droid"> [**@phamsytuyet1976-droid**](https://github.com/phamsytuyet1976-droid) | Frontend Developer |
+| <img src="https://github.com/tdnguyen06.png?size=80" width="36" height="36" alt="@tdnguyen06"> [**@tdnguyen06**](https://github.com/tdnguyen06) | Frontend Developer |
+| <img src="https://github.com/D-Tien.png?size=80" width="36" height="36" alt="@D-Tien"> [**@D-Tien**](https://github.com/D-Tien) | Frontend Developer |
 
 ### Quy trình phối hợp nhóm:
 *   **Chiến lược Branch**: Nhóm sử dụng nhánh `develop` làm nhánh tích hợp trung gian. Các thành viên tạo nhánh tính năng từ `develop`, sau khi hoàn thành sẽ tạo Pull Request để kiểm tra CI trước khi merge. Nhánh `main` là nhánh ổn định dùng để triển khai production.
@@ -653,7 +653,7 @@ fix/*      ───────────────────────
 
 ---
 
-## 21. Contributors & Bản quyền (License)
+## 21. Bản quyền (License)
 
 Dự án NutriWallet được phát triển phục vụ mục đích nghiên cứu học thuật và xây dựng sản phẩm mẫu. 
 
