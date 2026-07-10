@@ -603,10 +603,10 @@ Dự án NutriWallet được xây dựng và phát triển bởi nhóm gồm 4 
 
 | Thành viên | Vai trò chính |
 |---|---|
-| <img src="https://github.com/MinhElly.png?size=80" width="36" height="36" alt="@MinhElly"> [**@MinhElly**](https://github.com/MinhElly) | Full-stack / DevOps / AI |
-| <img src="https://github.com/phamsytuyet1976-droid.png?size=80" width="36" height="36" alt="@phamsytuyet1976-droid"> [**@phamsytuyet1976-droid**](https://github.com/phamsytuyet1976-droid) | Frontend Developer |
-| <img src="https://github.com/tdnguyen06.png?size=80" width="36" height="36" alt="@tdnguyen06"> [**@tdnguyen06**](https://github.com/tdnguyen06) | Frontend Developer |
-| <img src="https://github.com/D-Tien.png?size=80" width="36" height="36" alt="@D-Tien"> [**@D-Tien**](https://github.com/D-Tien) | Frontend Developer |
+| <img src="https://github.com/MinhElly.png?size=80" width="36" height="36" align="middle" alt="@MinhElly">&nbsp;&nbsp;[**@MinhElly**](https://github.com/MinhElly) | Full-stack / DevOps / AI |
+| <img src="https://github.com/phamsytuyet1976-droid.png?size=80" width="36" height="36" align="middle" alt="@phamsytuyet1976-droid">&nbsp;&nbsp;[**@phamsytuyet1976-droid**](https://github.com/phamsytuyet1976-droid) | Frontend Developer |
+| <img src="https://github.com/tdnguyen06.png?size=80" width="36" height="36" align="middle" alt="@tdnguyen06">&nbsp;&nbsp;[**@tdnguyen06**](https://github.com/tdnguyen06) | Frontend Developer |
+| <img src="https://github.com/D-Tien.png?size=80" width="36" height="36" align="middle" alt="@D-Tien">&nbsp;&nbsp;[**@D-Tien**](https://github.com/D-Tien) | Frontend Developer |
 
 ### Quy trình phối hợp nhóm:
 *   **Chiến lược Branch**: Nhóm sử dụng nhánh `develop` làm nhánh tích hợp trung gian. Các thành viên tạo nhánh tính năng từ `develop`, sau khi hoàn thành sẽ tạo Pull Request để kiểm tra CI trước khi merge. Nhánh `main` là nhánh ổn định dùng để triển khai production.
