@@ -603,10 +603,10 @@ Dự án NutriWallet được xây dựng và phát triển bởi nhóm gồm 4 
 
 | Thành viên | Vai trò chính |
 | :--- | :--- |
-| @ngqminh2428 | Full-stack / DevOps / AI |
-| @phamsytuyet1976-droid | Frontend Developer |
-| @thedainguyen | Frontend Developer |
-| @D-Tien | Frontend Developer |
+| @MinhElly(https://github.com/MinhElly) | Full-stack / DevOps / AI |
+| @phamsytuyet1976-droid(https://github.com/phamsytuyet1976-droid) | Frontend Developer |
+| @thedainguyen(https://github.com/tdnguyen06) | Frontend Developer |
+| @D-Tien(https://github.com/D-Tien) | Frontend Developer |
 
 ### Quy trình phối hợp nhóm:
 *   **Chiến lược Branch**: Nhóm sử dụng nhánh `develop` làm nhánh tích hợp trung gian. Các thành viên tạo nhánh tính năng từ `develop`, sau khi hoàn thành sẽ tạo Pull Request để kiểm tra CI trước khi merge. Nhánh `main` là nhánh ổn định dùng để triển khai production.
